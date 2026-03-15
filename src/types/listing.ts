@@ -1,4 +1,7 @@
-export type ListingStatus = "draft" | "active" | "sold" | "expired" | "deleted";
+export type ListingStatus = "draft" | "active" | "inactive" | "sold" | "expired" | "deleted" | "removed";
+
+/** Status values an admin may assign when moderating a listing. */
+export type AdminModerationStatus = "active" | "inactive" | "removed";
 export type ListingCondition = "new" | "used_like_new" | "used_good" | "used_fair" | "for_parts";
 export type PriceType = "fixed" | "negotiable" | "free" | "contact";
 

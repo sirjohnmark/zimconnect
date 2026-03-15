@@ -1,6 +1,6 @@
 // Central type exports
-export type { Listing, ListingFilters, ListingStatus, ListingCondition, PriceType, CreateListingInput, UpdateListingInput, ListingImage, SellerProfile, ListingCategory, ListingWithDetails } from "./listing";
-export type { Profile, UpdateProfileInput } from "./profile";
+export type { Listing, ListingFilters, ListingStatus, AdminModerationStatus, ListingCondition, PriceType, CreateListingInput, UpdateListingInput, ListingImage, SellerProfile, ListingCategory, ListingWithDetails } from "./listing";
+export type { Profile, UpdateProfileInput, UserRole } from "./profile";
 export type { Category, CategoryWithChildren } from "./category";
 export type { LoginInput, SignupInput, AuthUser } from "./auth";
 
