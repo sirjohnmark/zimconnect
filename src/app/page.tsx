@@ -1,17 +1,4 @@
-import Hero from "../components/Hero";
-import Features from "../components/Features";
-import Categories from "../components/Categories";
-import HowItWorks from "../components/HowItWorks";
-import CTA from "../components/CTA";
-
-export default function Home() {
-    return (
-        <div className="flex flex-col">
-            <Hero />
-            <Features />
-            <Categories />
-            <HowItWorks />
-            <CTA />
-        </div>
-    );
-}
+// The homepage lives in src/app/(public)/page.tsx.
+// This file re-exports it so both the route group and the root page
+// resolve to the same component, avoiding duplicate-page build errors.
+export { default } from "./(public)/page";
