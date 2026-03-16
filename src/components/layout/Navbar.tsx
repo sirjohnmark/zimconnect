@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Inbox } from "lucide-react";
+import { Inbox, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import SearchForm from "@/components/forms/SearchForm";
 import MobileMenu from "@/components/layout/MobileMenu";
 import { getUnreadCount } from "@/lib/queries/messages";
+import { signOut } from "@/lib/actions/auth";
 
 export default async function Navbar() {
   const supabase = await createClient();
@@ -78,6 +79,15 @@ export default async function Navbar() {
                 >
                   {username ?? "Dashboard"}
                 </Link>
+                <form action={signOut}>
+                  <button
+                    type="submit"
+                    className="ml-1 p-2 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    aria-label="Log out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </form>
               </>
             ) : (
               <>

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Inbox } from "lucide-react";
+import { Menu, X, Inbox, LogOut } from "lucide-react";
+import { signOut } from "@/lib/actions/auth";
 
 interface MobileMenuProps {
   isAuthenticated: boolean;
@@ -66,6 +67,16 @@ export default function MobileMenu({ isAuthenticated, username, unreadCount = 0 
                 >
                   Post a listing
                 </Link>
+                <div className="h-px bg-slate-100 my-1" />
+                <form action={signOut}>
+                  <button
+                    type="submit"
+                    className="flex w-full items-center gap-2 px-3 py-3 rounded-xl text-base font-medium text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Log out
+                  </button>
+                </form>
               </>
             ) : (
               <>

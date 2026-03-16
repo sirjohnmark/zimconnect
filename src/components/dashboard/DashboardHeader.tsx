@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, LogOut } from "lucide-react";
+import { signOut } from "@/lib/actions/auth";
 
 interface DashboardHeaderProps {
   displayName: string;
@@ -19,13 +20,24 @@ export default function DashboardHeader({ displayName, listingCount }: Dashboard
             : `You have ${listingCount} listing${listingCount === 1 ? "" : "s"}.`}
         </p>
       </div>
-      <Link
-        href="/sell"
-        className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 transition-colors shrink-0"
-      >
-        <PlusCircle className="w-4 h-4" />
-        Post listing
-      </Link>
+      <div className="flex items-center gap-2 shrink-0">
+        <Link
+          href="/sell"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700 transition-colors"
+        >
+          <PlusCircle className="w-4 h-4" />
+          Post listing
+        </Link>
+        <form action={signOut}>
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Log out
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
