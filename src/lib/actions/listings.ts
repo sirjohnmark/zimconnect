@@ -72,7 +72,7 @@ export async function createListing(
     return { fieldErrors: { images: [imageError] } };
   }
 
-  const { title, description, price, category_id, location } = parsed.data;
+  const { title, description, price, category_id, location, condition } = parsed.data;
   const listingId = randomUUID();
   const slug = `${slugify(title)}-${listingId.slice(0, 8)}`;
 
@@ -87,6 +87,7 @@ export async function createListing(
     category_id,
     user_id: user.id,
     location,
+    condition,
     status: "draft",
   });
 

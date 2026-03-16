@@ -16,6 +16,10 @@ export const createListingSchema = z.object({
     .positive("Price must be a positive number"),
   category_id: z.string().min(1, "Please select a category"),
   location: z.string().min(1, "Location is required"),
+  condition: z.enum(
+    ["new", "used_like_new", "used_good", "used_fair", "for_parts"],
+    { error: "Please select a condition" }
+  ),
 });
 
 export const updateListingSchema = createListingSchema.partial();
@@ -28,6 +32,7 @@ export function parseListingFormData(formData: FormData) {
     price: formData.get("price") || undefined,
     category_id: formData.get("category_id"),
     location: formData.get("location"),
+    condition: formData.get("condition"),
   };
 }
 
