@@ -22,7 +22,7 @@ function isAdminRoute(pathname: string): boolean {
   return ADMIN_ROUTES.some((re) => re.test(pathname));
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { supabase, response } = createClient(request);
 
   // Refresh the session — keeps the cookie alive between requests.
