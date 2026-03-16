@@ -3,18 +3,23 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MessageCircle, Phone, BadgeCheck, MapPin, ExternalLink } from "lucide-react";
+import { Phone, BadgeCheck, MapPin, ExternalLink } from "lucide-react";
 import { buildWhatsAppUrl, maskPhone, revealPhone } from "@/lib/utils/contact";
 import type { SellerProfile } from "@/types";
+import StartConversationForm from "@/components/messages/StartConversationForm";
 
 interface SellerContactCardProps {
   seller: SellerProfile;
   listingTitle: string;
+  listingId?: string;
+  currentUserId?: string | null;
 }
 
 export default function SellerContactCard({
   seller,
   listingTitle,
+  listingId,
+  currentUserId,
 }: SellerContactCardProps) {
   const [phoneRevealed, setPhoneRevealed] = useState(false);
 
@@ -73,6 +78,15 @@ export default function SellerContactCard({
 
       {/* ─── Contact actions ─────────────────────────────────────────────── */}
       <div className="space-y-2 pt-1">
+        {/* In-app message */}
+        {listingId && currentUserId && currentUserId !== seller.id && (
+          <StartConversationForm
+            listingId={listingId}
+            sellerId={seller.id}
+            listingTitle={listingTitle}
+          />
+        )}
+
         {/* WhatsApp */}
         {whatsappUrl ? (
           <a
@@ -81,7 +95,6 @@ export default function SellerContactCard({
             rel="noopener noreferrer"
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#1ebe5b] transition-colors"
           >
-            <MessageCircle className="w-4 h-4" />
             Chat on WhatsApp
           </a>
         ) : (

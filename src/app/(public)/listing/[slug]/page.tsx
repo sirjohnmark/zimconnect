@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
 import { getListingBySlug } from "@/lib/queries/listings";
 import { getListingImageUrl } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/server";
 import ListingGallery from "@/components/listings/ListingGallery";
 import ListingDetails from "@/components/listings/ListingDetails";
 import ListingMeta from "@/components/listings/ListingMeta";
@@ -64,6 +65,9 @@ export default async function ListingPage({
 
   if (!listing) notFound();
 
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { category, seller } = listing;
 
   return (
@@ -122,7 +126,12 @@ export default async function ListingPage({
           {/* Right column: seller + meta (sticky on desktop) */}
           <div className="space-y-4 lg:sticky lg:top-24">
             {seller ? (
-              <SellerContactCard seller={seller} listingTitle={listing.title} />
+              <SellerContactCard
+                seller={seller}
+                listingTitle={listing.title}
+                listingId={listing.id}
+                currentUserId={user?.id ?? null}
+              />
             ) : (
               <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500 text-center shadow-sm">
                 Seller information unavailable

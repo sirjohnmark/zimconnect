@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ImagePlus, X } from "lucide-react";
@@ -63,6 +63,7 @@ export default function ListingForm({ categories }: ListingFormProps) {
     createListing,
     null
   );
+  const [, startTransition] = useTransition();
 
   // Redirect to listing detail on success.
   useEffect(() => {
@@ -146,7 +147,7 @@ export default function ListingForm({ categories }: ListingFormProps) {
     fd.delete("images");
     previews.forEach((p) => fd.append("images", p.file));
 
-    formAction(fd);
+    startTransition(() => formAction(fd));
   }
 
   const fe = state?.fieldErrors ?? {};

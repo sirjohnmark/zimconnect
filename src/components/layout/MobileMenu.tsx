@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Inbox } from "lucide-react";
 
 interface MobileMenuProps {
   isAuthenticated: boolean;
   username: string | null;
+  unreadCount?: number;
 }
 
-export default function MobileMenu({ isAuthenticated, username }: MobileMenuProps) {
+export default function MobileMenu({ isAuthenticated, username, unreadCount = 0 }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -37,6 +38,19 @@ export default function MobileMenu({ isAuthenticated, username }: MobileMenuProp
 
             {isAuthenticated ? (
               <>
+                <Link
+                  href="/inbox"
+                  onClick={close}
+                  className="relative flex items-center gap-2 px-3 py-3 rounded-xl text-base font-medium text-slate-700 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                >
+                  <Inbox className="w-5 h-5" />
+                  Inbox
+                  {unreadCount > 0 && (
+                    <span className="ml-auto h-5 min-w-5 rounded-full bg-red-500 text-[11px] font-bold text-white flex items-center justify-center px-1">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
                 <Link
                   href="/dashboard"
                   onClick={close}

@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { Inbox } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import SearchForm from "@/components/forms/SearchForm";
 import MobileMenu from "@/components/layout/MobileMenu";
+import { getUnreadCount } from "@/lib/queries/messages";
 
 export default async function Navbar() {
   const supabase = await createClient();
@@ -10,6 +12,7 @@ export default async function Navbar() {
   } = await supabase.auth.getUser();
 
   let username: string | null = null;
+  let unreadCount = 0;
   if (user) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any)
@@ -18,6 +21,7 @@ export default async function Navbar() {
       .eq("id", user.id)
       .maybeSingle();
     username = data?.display_name ?? data?.username ?? user.email?.split("@")[0] ?? null;
+    unreadCount = await getUnreadCount(user.id);
   }
 
   return (
@@ -49,6 +53,19 @@ export default async function Navbar() {
 
             {user ? (
               <>
+                {/* Inbox with unread badge */}
+                <Link
+                  href="/inbox"
+                  className="relative p-2 rounded-lg text-slate-600 hover:text-brand-600 hover:bg-brand-50 transition-colors"
+                  aria-label="Inbox"
+                >
+                  <Inbox className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center px-0.5">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
                 <Link
                   href="/sell"
                   className="ml-1 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
@@ -82,7 +99,7 @@ export default async function Navbar() {
 
           {/* ── Mobile menu (client component) ── */}
           <div className="md:hidden ml-auto">
-            <MobileMenu isAuthenticated={!!user} username={username} />
+            <MobileMenu isAuthenticated={!!user} username={username} unreadCount={unreadCount} />
           </div>
         </div>
 

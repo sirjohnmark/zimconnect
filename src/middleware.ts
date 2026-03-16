@@ -8,6 +8,7 @@ const PROTECTED_ROUTES: RegExp[] = [
   /^\/listings\/[^/]+\/edit(\/.*)?$/,
   /^\/settings(\/.*)?$/,
   /^\/admin(\/.*)?$/,
+  /^\/inbox(\/.*)?$/,
 ];
 
 // Paths that require role = 'admin'. Must be a subset of PROTECTED_ROUTES.

@@ -3,6 +3,7 @@ export type { Listing, ListingFilters, ListingStatus, AdminModerationStatus, Lis
 export type { Profile, UpdateProfileInput, UserRole } from "./profile";
 export type { Category, CategoryWithChildren } from "./category";
 export type { LoginInput, SignupInput, AuthUser } from "./auth";
+export type { Conversation, Message, ConversationSummary, MessageWithSender } from "./message";
 
 // Supabase DB types — replace this entire block by running:
 //   supabase gen types typescript --project-id <id> > src/types/database.types.ts
