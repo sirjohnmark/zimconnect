@@ -38,23 +38,15 @@ const VALID_MODERATION_STATUSES: AdminModerationStatus[] = [
  * Change a listing's status to active, inactive, or removed.
  * Caller must be an admin — verified against profiles.role before update.
  */
-export async function moderateListing(
-  formData: FormData
-): Promise<{ error?: string }> {
-  try {
-    await assertAdmin();
-  } catch (e) {
-    return { error: (e as Error).message };
-  }
+export async function moderateListing(formData: FormData): Promise<void> {
+  await assertAdmin();
 
   const id = formData.get("id");
   const status = formData.get("status") as AdminModerationStatus | null;
 
-  if (typeof id !== "string" || !id.trim()) {
-    return { error: "Missing listing ID." };
-  }
+  if (typeof id !== "string" || !id.trim()) throw new Error("Missing listing ID.");
   if (!status || !VALID_MODERATION_STATUSES.includes(status)) {
-    return { error: `Status must be one of: ${VALID_MODERATION_STATUSES.join(", ")}.` };
+    throw new Error(`Status must be one of: ${VALID_MODERATION_STATUSES.join(", ")}.`);
   }
 
   const supabase = await createClient();
@@ -67,11 +59,10 @@ export async function moderateListing(
 
   if (error) {
     console.error("[moderateListing]", error.message);
-    return { error: error.message };
+    throw new Error(error.message);
   }
 
   revalidatePath("/admin");
-  return {};
 }
 
 /**
@@ -79,23 +70,15 @@ export async function moderateListing(
  * Expects formData fields: id (profile uuid), suspend ("true" | "false").
  * Caller must be an admin.
  */
-export async function suspendUser(
-  formData: FormData
-): Promise<{ error?: string }> {
-  try {
-    await assertAdmin();
-  } catch (e) {
-    return { error: (e as Error).message };
-  }
+export async function suspendUser(formData: FormData): Promise<void> {
+  await assertAdmin();
 
   const id = formData.get("id");
   const suspendRaw = formData.get("suspend");
 
-  if (typeof id !== "string" || !id.trim()) {
-    return { error: "Missing user ID." };
-  }
+  if (typeof id !== "string" || !id.trim()) throw new Error("Missing user ID.");
   if (suspendRaw !== "true" && suspendRaw !== "false") {
-    return { error: "suspend must be 'true' or 'false'." };
+    throw new Error("suspend must be 'true' or 'false'.");
   }
 
   const isSuspended = suspendRaw === "true";
@@ -109,9 +92,8 @@ export async function suspendUser(
 
   if (error) {
     console.error("[suspendUser]", error.message);
-    return { error: error.message };
+    throw new Error(error.message);
   }
 
   revalidatePath("/admin");
-  return {};
 }

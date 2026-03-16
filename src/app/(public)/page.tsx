@@ -1,20 +1,3 @@
-<<<<<<< HEAD
-import Hero from "@/components/Hero";
-import Features from "@/components/Features";
-import Categories from "@/components/Categories";
-import HowItWorks from "@/components/HowItWorks";
-import CTA from "@/components/CTA";
-
-export default function HomePage() {
-  return (
-    <div className="flex flex-col">
-      <Hero />
-      <Features />
-      <Categories />
-      <HowItWorks />
-      <CTA />
-    </div>
-=======
 import { getAllCategories } from "@/lib/queries/categories";
 import { getListings } from "@/lib/queries/listings";
 import Hero from "@/components/home/Hero";
@@ -38,6 +21,5 @@ export default async function HomePage() {
       <HowItWorks />
       <CTASection />
     </>
->>>>>>> e179d60495272511561bad59a06136f4fce3ab81
   );
 }

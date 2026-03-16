@@ -20,11 +20,13 @@ interface ListingsTableProps {
 type BadgeVariant = "success" | "warning" | "danger" | "default";
 
 const statusConfig: Record<ListingStatus, { label: string; variant: BadgeVariant }> = {
-  active: { label: "Active", variant: "success" },
-  draft: { label: "Draft", variant: "warning" },
-  sold: { label: "Sold", variant: "default" },
-  expired: { label: "Expired", variant: "danger" },
-  deleted: { label: "Deleted", variant: "danger" },
+  active:   { label: "Active",   variant: "success"  },
+  draft:    { label: "Draft",    variant: "warning"  },
+  inactive: { label: "Inactive", variant: "default"  },
+  sold:     { label: "Sold",     variant: "default"  },
+  expired:  { label: "Expired",  variant: "danger"   },
+  removed:  { label: "Removed",  variant: "danger"   },
+  deleted:  { label: "Deleted",  variant: "danger"   },
 };
 
 function formatListingPrice(listing: Listing): string {

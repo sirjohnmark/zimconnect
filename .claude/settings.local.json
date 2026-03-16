@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node -e \"const p = require\\(''c:/dev/myapp/zimconnect/package.json''\\); console.log\\(JSON.stringify\\({...p.dependencies, ...p.devDependencies}, null, 2\\)\\)\")"
+      "Bash(node -e \"const p = require\\(''c:/dev/myapp/zimconnect/package.json''\\); console.log\\(JSON.stringify\\({...p.dependencies, ...p.devDependencies}, null, 2\\)\\)\")",
+      "Bash(find /c/dev/myapp/zimconnect -name *.sql -o -name *trigger* -o -name *migration*)"
     ]
   }
 }

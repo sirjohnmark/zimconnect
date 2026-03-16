@@ -32,7 +32,7 @@ function pageUrl(q: string, page: number) {
 // ─── Page ─────────────────────────────────────────────────────────────────
 
 export default async function SearchPage({ searchParams }: PageProps) {
-  const sp = await (searchParams ?? Promise.resolve({}));
+  const sp = await (searchParams ?? Promise.resolve({} as Record<string, string | string[] | undefined>));
 
   const rawQ = typeof sp.q === "string" ? sp.q.trim() : "";
   const page = Math.max(1, parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
