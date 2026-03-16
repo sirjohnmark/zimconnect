@@ -76,14 +76,37 @@ create index if not exists idx_profiles_username on profiles(username);
 
 create or replace function handle_new_user()
 returns trigger language plpgsql security definer as $$
+declare
+  base_username text;
+  final_username text;
+  suffix int := 0;
 begin
+  base_username := coalesce(
+    new.raw_user_meta_data->>'username',
+    split_part(new.email, '@', 1)
+  );
+  base_username := regexp_replace(base_username, '[^a-zA-Z0-9_]', '', 'g');
+  if length(base_username) < 3 then
+    base_username := 'user';
+  end if;
+
+  final_username := base_username;
+  loop
+    exit when not exists (select 1 from profiles where username = final_username);
+    suffix := suffix + 1;
+    final_username := base_username || suffix::text;
+  end loop;
+
   insert into profiles (id, username, display_name)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
-    coalesce(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1))
+    final_username,
+    coalesce(new.raw_user_meta_data->>'display_name', final_username)
   )
   on conflict (id) do nothing;
+
+  return new;
+exception when others then
   return new;
 end;
 $$;
