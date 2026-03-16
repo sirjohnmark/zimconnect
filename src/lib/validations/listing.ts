@@ -12,7 +12,7 @@ export const createListingSchema = z.object({
     .min(20, "Description must be at least 20 characters")
     .max(5000, "Description must be under 5000 characters"),
   price: z.coerce
-    .number({ invalid_type_error: "Price must be a number" })
+    .number()
     .positive("Price must be a positive number"),
   category_id: z.string().min(1, "Please select a category"),
   location: z.string().min(1, "Location is required"),
