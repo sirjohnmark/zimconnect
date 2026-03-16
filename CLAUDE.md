@@ -1,275 +1,373 @@
-# CLAUDE.md — ZimConnect Project Intelligence
+# ZimConnect — Claude Code Project Memory
 
-> This file is the operating brain for Claude when working on ZimConnect.
-> Read this at the start of every session. Follow every rule without exception.
+## Project Overview
+ZimConnect is a marketplace web application for Zimbabwe. Users can buy and sell products and services through a clean, fast, and scalable platform.
 
----
-
-## Project Identity
-
-**ZimConnect** is a Zimbabwean local marketplace web app.
-**Stack:** Next.js 14 App Router · TypeScript (strict) · Tailwind CSS · Supabase (PostgreSQL + Auth + Storage)
-**Phase:** 1 — Core marketplace loop only
-
----
-
-## Workflow Orchestration
-
-### 1. Plan Node Default
-
-- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
-- Before writing code, state: what you are building, which files you will create or modify, and why
-- If something goes sideways, STOP and re-plan — do not keep pushing broken code
-- Use plan mode for verification steps, not just building
-- Never add features outside the current phase scope without asking first
-
-### 2. Subagent Strategy
-
-- Use subagents liberally to keep the main context window clean
-- Offload research, exploration, and file analysis to subagents
-- For complex problems (e.g. RLS policies + query + component at once) split into focused subagents
-- One task per subagent: one subagent writes the query, another writes the component
-- Never mix database logic and UI component work in the same output block
-
-### 3. Self-Improvement Loop
-
-- After ANY correction from the user: update `tasks/lessons.md` with the pattern
-- Write a rule for yourself that prevents the same mistake from recurring
-- Ruthlessly iterate on these lessons until mistake rate drops
-- Review `tasks/lessons.md` at the start of every session involving the corrected area
-
-### 4. Verification Before Done
-
-- Never mark a task complete without proving it works
-- Diff between expected behavior and your implementation before calling it done
-- Ask yourself: "Would a senior Next.js + Supabase engineer approve this?"
-- Always confirm: RLS policies are set, types match the DB schema, and server/client split is correct
-- Run type checks mentally — if a prop type is unknown, stop and look it up
-
-### 5. Demand Elegance (Balanced)
-
-- For non-trivial changes: pause and ask "is there a more elegant way?"
-- If a fix feels hacky — knowing everything about Next.js 14 App Router — implement the correct solution
-- Skip over-engineering for simple, obvious fixes
-- Challenge your own implementation before presenting it
-- Never use `any` in TypeScript — find the correct type
-
-### 6. Autonomous Bug Fixing
-
-- When given a bug report: diagnose it, then fix it — do not ask for hand-holding
-- Point to logs, errors, or type failures — then resolve them
-- Zero context switching required from the user for bugs within your knowledge
-- Fix Supabase RLS errors, TypeScript errors, and missing env vars without being told how
+**Core marketplace loop:**
+1. User signs up → creates a profile
+2. User creates a listing with images and contact info
+3. Buyer browses or searches listings
+4. Buyer opens listing details
+5. Buyer contacts seller via WhatsApp or phone
+6. Seller manages listings from dashboard
 
 ---
 
-## Task Management
+## Technology Stack
 
-1. **Plan First** — Write plan to `tasks/todo.md` with checkable items before touching code
-2. **Verify Plan** — Check in before starting implementation on anything over 3 files
-3. **Track Progress** — Mark items complete as you go using `- [x]`
-4. **Explain Changes** — High-level summary at each step: what changed and why
-5. **Document Results** — Add a review section to `tasks/todo.md` when a feature is done
-6. **Capture Lessons** — Update `tasks/lessons.md` after any correction or discovery
+### Frontend
+- **Next.js 14+** — App Router (not Pages Router)
+- **React 18**
+- **TypeScript** — strict mode always (`"strict": true` in tsconfig)
+- **Tailwind CSS** — utility classes only, no custom CSS files unless necessary
 
----
+### Backend / Infrastructure
+- **Supabase** — PostgreSQL + Auth + Storage
+- **Row Level Security (RLS)** — must be enabled on every table
+- **Supabase SSR** — use `@supabase/ssr` package, never `@supabase/auth-helpers-nextjs`
 
-## Core Principles
-
-- **Simplicity First** — Make every change as simple as possible. Impact minimal code.
-- **No Laziness** — Find root causes. No temporary fixes. Senior developer standards.
-- **Minimal Impact** — Changes should only touch what is necessary. Avoid introducing side effects.
-- **Server/Client Discipline** — Never use `use client` unless interactivity demands it. Default to server components.
-- **Security Always** — Every user-mutating action must verify `auth.uid() === resource.user_id` before proceeding.
-
----
-
-## Architecture Rules
-
-### Next.js App Router
-
-- Default to **Server Components** — only use `'use client'` for interactivity (forms, menus, modals)
-- Data fetching belongs in **Server Components** or **Server Actions** — never in `useEffect`
-- Use **Server Actions** (`'use server'`) for all form submissions and mutations
-- **Never** expose `SUPABASE_SERVICE_ROLE_KEY` to the client — server-side only
-- Use `next/image` for **every** image — never raw `<img>` tags
-
-### Supabase
-
-- **Always** use the correct client: `browser.ts` for client components, `server.ts` for server components
-- **Always** check auth before mutating: verify `auth.uid() === row.user_id`
-- **Never** write unbounded SELECT queries — always add `.range()` or `.limit()` pagination
-- RLS policies must be active on: `listings`, `listing_images`, `profiles`
-- Storage path pattern: `{user_id}/{listing_id}/{uuid}.{ext}`
-
-### TypeScript
-
-- Strict mode is non-negotiable — `"strict": true` in tsconfig
-- All DB rows must map to types in `src/types/`
-- `ListingStatus` = `'active' | 'inactive' | 'sold'` — never use raw strings
-- Never use `as any` — if you need to cast, find the correct type first
-
-### Styling
-
-- **Tailwind only** — no inline styles, no CSS modules, no styled-components
-- Mobile-first: design for small screens, scale up
-- Brand green: `#1A7A4A` — use `text-[#1A7A4A]` or define in `tailwind.config.ts`
+### Tooling
+- **Git + GitHub**
+- **npm** (not yarn, not pnpm)
+- **ESLint + Prettier**
+- **VS Code**
 
 ---
 
-## Agents & Skills
+## Repository Structure
 
-### Agent: `auth-agent`
-**Responsibility:** Authentication, session management, middleware
-**Files owned:**
-- `src/lib/auth/`
-- `src/lib/supabase/`
-- `src/middleware.ts`
-- `src/lib/actions/auth.ts`
-- `src/components/forms/LoginForm.tsx`
-- `src/components/forms/SignupForm.tsx`
-
-**Rules:**
-- Always use `@supabase/ssr` — never `@supabase/supabase-js` directly in Next.js App Router
-- Cookie handling must use the Next.js 14 pattern with `get/set/remove`
-- Middleware must protect: `/dashboard`, `/sell`, `/listings/*/edit`, `/settings`
-- On signup: create profile row in `profiles` table immediately after `auth.signUp()`
-
----
-
-### Agent: `listing-agent`
-**Responsibility:** Listing creation, editing, deletion, image upload
-**Files owned:**
-- `src/lib/actions/listings.ts`
-- `src/lib/queries/listings.ts`
-- `src/lib/validations/listing.ts`
-- `src/components/forms/ListingForm.tsx`
-- `src/components/listings/`
-- `src/app/(dashboard)/sell/`
-- `src/app/(dashboard)/listings/`
-
-**Rules:**
-- Validate with Zod before any Supabase insert
-- Generate slug from title: `slugify(title) + '-' + uuid().slice(0, 8)`
-- Images: max 6, max 5MB each, types: jpeg/png/webp only
-- On delete: remove images from Supabase Storage AND delete DB rows
-- Always verify ownership: `if (listing.user_id !== session.user.id) throw Unauthorized`
-
----
-
-### Agent: `search-agent`
-**Responsibility:** Full-text search, category browsing, filtering
-**Files owned:**
-- `src/lib/queries/search.ts`
-- `src/lib/queries/categories.ts`
-- `src/components/forms/SearchForm.tsx`
-- `src/app/(public)/search/`
-- `src/app/(public)/category/`
-
-**Rules:**
-- Use `search_vector @@ to_tsquery('english', $1)` — never `ilike`
-- Sanitize query input before passing to `to_tsquery`
-- Paginate all results: 12 per page using `.range(from, to)`
-- Empty query = show recent active listings (fallback)
-- Category page uses slug param: `getCategoryBySlug(slug)` then `getListingsByCategoryId(id)`
-
----
-
-### Agent: `dashboard-agent`
-**Responsibility:** Seller dashboard, listing management table, stats
-**Files owned:**
-- `src/components/dashboard/`
-- `src/app/(dashboard)/dashboard/`
-- `src/app/(dashboard)/settings/`
-- `src/lib/queries/profiles.ts`
-- `src/lib/actions/profile.ts`
-
-**Rules:**
-- Dashboard is a server component — fetch listings server-side
-- Confirm before delete — use a modal, never inline delete without confirmation
-- Show `EmptyState` component when user has no listings
-- `StatsCards` shows: total listings, active listings, inactive listings
-
----
-
-### Agent: `ui-agent`
-**Responsibility:** Shared UI components, layout, homepage sections
-**Files owned:**
-- `src/components/ui/`
-- `src/components/layout/`
-- `src/components/home/`
-- `src/app/layout.tsx`
-- `src/app/(public)/page.tsx`
-
-**Rules:**
-- All UI components must accept `className` prop for extensibility
-- `Button` component must support: `variant` (primary, secondary, ghost), `size` (sm, md, lg), `isLoading` state
-- `Navbar` is a server component — `MobileMenu` is a client component
-- `Container` = `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8`
-- Homepage data fetching must be parallelized: `Promise.all([getCategories(), getRecentListings()])`
-
----
-
-### Agent: `contact-agent`
-**Responsibility:** Seller contact utilities, WhatsApp link generation
-**Files owned:**
-- `src/lib/utils/contact.ts`
-- `src/components/listings/SellerContactCard.tsx`
-
-**Rules:**
-- Zimbabwe format: strip leading `0`, prepend `263`
-- WhatsApp link: `https://wa.me/263{number}?text={encodeURIComponent(message)}`
-- Phone reveal: hide last 4 digits until user clicks — then show full number
-- Never store raw phone without formatting validation
-
----
-
-## File Naming Conventions
-
-| Type | Convention | Example |
-|---|---|---|
-| Components | PascalCase | `ListingCard.tsx` |
-| Pages | lowercase `page.tsx` | `page.tsx` |
-| Utilities | camelCase | `formatPrice.ts` |
-| Actions | camelCase | `listings.ts` |
-| Types | camelCase | `listing.ts` |
-| Constants | camelCase | `categories.ts` |
+```
+src/
+├── app/
+│   ├── (public)/
+│   │   ├── page.tsx                    # Homepage
+│   │   ├── login/page.tsx
+│   │   ├── signup/page.tsx
+│   │   ├── category/[slug]/page.tsx
+│   │   ├── listing/[slug]/page.tsx
+│   │   ├── search/page.tsx
+│   │   └── profile/[username]/page.tsx
+│   ├── (dashboard)/
+│   │   ├── dashboard/page.tsx
+│   │   ├── sell/page.tsx
+│   │   ├── listings/[id]/edit/page.tsx
+│   │   ├── settings/page.tsx
+│   │   └── admin/page.tsx              # Phase 2
+│   ├── layout.tsx                      # Root layout
+│   ├── not-found.tsx
+│   └── error.tsx
+├── components/
+│   ├── layout/
+│   │   ├── Navbar.tsx
+│   │   ├── MobileMenu.tsx
+│   │   ├── Footer.tsx
+│   │   └── Container.tsx
+│   ├── home/
+│   │   ├── Hero.tsx
+│   │   ├── FeaturedCategories.tsx
+│   │   ├── FeaturedListings.tsx
+│   │   ├── HowItWorks.tsx
+│   │   └── CTASection.tsx
+│   ├── listings/
+│   │   ├── ListingCard.tsx
+│   │   ├── ListingGrid.tsx
+│   │   ├── ListingGallery.tsx
+│   │   ├── ListingDetails.tsx
+│   │   ├── ListingMeta.tsx
+│   │   └── SellerContactCard.tsx
+│   ├── forms/
+│   │   ├── SignupForm.tsx
+│   │   ├── LoginForm.tsx
+│   │   ├── ListingForm.tsx
+│   │   ├── ProfileForm.tsx
+│   │   └── SearchForm.tsx
+│   ├── dashboard/
+│   │   ├── ListingsTable.tsx
+│   │   ├── DashboardHeader.tsx
+│   │   └── EmptyState.tsx
+│   ├── category/
+│   │   ├── CategoryCard.tsx
+│   │   └── CategoryGrid.tsx
+│   └── ui/
+│       ├── Button.tsx
+│       ├── Input.tsx
+│       ├── Badge.tsx
+│       ├── Skeleton.tsx
+│       └── Toast.tsx
+├── lib/
+│   ├── supabase/
+│   │   ├── browser.ts
+│   │   ├── server.ts
+│   │   └── middleware.ts
+│   ├── auth/
+│   │   └── helpers.ts
+│   ├── queries/
+│   │   ├── listings.ts
+│   │   ├── categories.ts
+│   │   ├── profiles.ts
+│   │   └── search.ts
+│   ├── actions/
+│   │   ├── auth.ts
+│   │   ├── listings.ts
+│   │   └── profile.ts
+│   ├── validations/
+│   │   ├── listing.ts
+│   │   └── auth.ts
+│   ├── utils/
+│   │   ├── contact.ts
+│   │   ├── slug.ts
+│   │   └── format.ts
+│   ├── constants/
+│   │   └── categories.ts
+│   └── config.ts
+├── types/
+│   ├── listing.ts
+│   ├── profile.ts
+│   ├── category.ts
+│   ├── auth.ts
+│   └── index.ts
+└── middleware.ts
+```
 
 ---
 
 ## Environment Variables
 
-```
-NEXT_PUBLIC_SUPABASE_URL          # safe for client
-NEXT_PUBLIC_SUPABASE_ANON_KEY     # safe for client
-SUPABASE_SERVICE_ROLE_KEY         # server ONLY — never expose
+```bash
+# Public (safe to expose to browser)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+# Server only (never expose to client, never in NEXT_PUBLIC_*)
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Validate env vars at boot in `src/lib/config.ts`. Throw a clear error if any are missing.
+**Rule:** Never use `SUPABASE_SERVICE_ROLE_KEY` in client components or any file that could be bundled client-side.
 
 ---
 
-## Tasks Folder Structure
+## Database Schema
 
+### `profiles` table
+```sql
+id            uuid PRIMARY KEY REFERENCES auth.users(id)
+username      text UNIQUE NOT NULL
+phone         text
+location      text
+avatar_url    text
+created_at    timestamptz DEFAULT now()
+role          text DEFAULT 'user' CHECK (role IN ('user', 'admin'))
+is_suspended  boolean DEFAULT false
 ```
-tasks/
-├── todo.md        # active feature checklist — updated every session
-└── lessons.md     # mistakes + rules learned — reviewed every session
+
+### `categories` table
+```sql
+id          uuid PRIMARY KEY DEFAULT gen_random_uuid()
+name        text NOT NULL
+slug        text UNIQUE NOT NULL
+icon_url    text
+sort_order  int DEFAULT 0
+```
+
+### `listings` table
+```sql
+id             uuid PRIMARY KEY DEFAULT gen_random_uuid()
+user_id        uuid REFERENCES profiles(id) ON DELETE CASCADE
+category_id    uuid REFERENCES categories(id)
+title          text NOT NULL
+description    text
+price          numeric(10,2)
+location       text
+status         text DEFAULT 'active' CHECK (status IN ('active','inactive','sold','removed'))
+slug           text UNIQUE
+search_vector  tsvector GENERATED ALWAYS AS (
+                 to_tsvector('english', title || ' ' || coalesce(description,''))
+               ) STORED
+created_at     timestamptz DEFAULT now()
+updated_at     timestamptz DEFAULT now()
+```
+
+### `listing_images` table
+```sql
+id            uuid PRIMARY KEY DEFAULT gen_random_uuid()
+listing_id    uuid REFERENCES listings(id) ON DELETE CASCADE
+storage_path  text NOT NULL
+sort_order    int DEFAULT 0
+is_primary    boolean DEFAULT false
+```
+
+### Required Indexes
+```sql
+CREATE INDEX listings_search_idx ON listings USING GIN (search_vector);
+CREATE INDEX listings_user_id_idx ON listings(user_id);
+CREATE INDEX listings_category_id_idx ON listings(category_id);
+CREATE INDEX listings_status_idx ON listings(status);
+```
+
+### RLS Policies
+```sql
+-- listings
+ALTER TABLE listings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read" ON listings FOR SELECT USING (true);
+CREATE POLICY "Auth insert" ON listings FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Owner update" ON listings FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Owner delete" ON listings FOR DELETE USING (auth.uid() = user_id);
+
+-- listing_images (via listing ownership)
+ALTER TABLE listing_images ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read images" ON listing_images FOR SELECT USING (true);
+CREATE POLICY "Owner insert images" ON listing_images FOR INSERT
+  WITH CHECK (auth.uid() = (SELECT user_id FROM listings WHERE id = listing_id));
+CREATE POLICY "Owner delete images" ON listing_images FOR DELETE
+  USING (auth.uid() = (SELECT user_id FROM listings WHERE id = listing_id));
+
+-- profiles
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read profiles" ON profiles FOR SELECT USING (true);
+CREATE POLICY "Owner update profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 ```
 
 ---
 
-## What Claude Must Never Do
+## Routing & Middleware Rules
 
-- Never use `<img>` — always `next/image`
-- Never use `useEffect` for data fetching — use server components
-- Never skip RLS policy verification when writing mutations
-- Never use `any` in TypeScript
-- Never commit `.env.local` — it is in `.gitignore`
-- Never push directly to `main` — always use a feature branch
-- Never build Phase 2 features (admin, promoted listings, messaging) until Phase 1 is stable
-- Never write unbounded database queries — always paginate
+### Public routes (no auth required)
+- `/` — homepage
+- `/login` — login
+- `/signup` — signup
+- `/category/[slug]` — browse by category
+- `/listing/[slug]` — listing detail
+- `/search` — search results
+- `/profile/[username]` — public seller profile
+
+### Protected routes (redirect to `/login` if unauthenticated)
+- `/dashboard`
+- `/sell`
+- `/listings/[id]/edit`
+- `/settings`
+- `/admin` — also requires `role = 'admin'`, else 404
 
 ---
 
-*ZimConnect CLAUDE.md — keep this file updated as the project evolves.*
+## Core Coding Rules
+
+### General
+1. **TypeScript strict mode everywhere** — no `any`, no `@ts-ignore` without explanation
+2. **Server components by default** — only add `'use client'` when component needs state, effects, or browser APIs
+3. **Server Actions for all mutations** — no API route handlers unless absolutely necessary
+4. **Zod for all validation** — validate on server, pass errors back to client
+5. **Never use raw `<img>` tags** — always use `next/image`
+6. **Never use unbounded SELECT queries** — always paginate with `.range(from, to)`
+
+### Supabase Client Usage
+- **Browser client** (`src/lib/supabase/browser.ts`) → use in Client Components
+- **Server client** (`src/lib/supabase/server.ts`) → use in Server Components, Server Actions, Route Handlers
+- **Middleware client** (`src/lib/supabase/middleware.ts`) → use only in `src/middleware.ts`
+
+### Error Handling
+- Every API/Supabase call must handle the `error` return
+- All API routes return `{ error: string, status: number }` shape on failure
+- App-level `error.tsx` catches unexpected errors
+- `not-found.tsx` handles 404s with back-to-home navigation
+
+### Styling
+- Tailwind CSS only — no inline styles, no CSS modules unless forced
+- Brand primary color: `#1A7A4A` (green)
+- Mobile-first responsive design
+- Use `Container` component for max-width wrapping: `max-w-7xl mx-auto px-4`
+
+### Image Uploads (Supabase Storage)
+- Bucket: `listing-images` (public read, authenticated write)
+- Max: 6 images per listing, 5MB per image
+- Types: `image/jpeg`, `image/png`, `image/webp`
+- Path: `{user_id}/{listing_id}/{uuid}.{ext}`
+
+### WhatsApp Links (Zimbabwe)
+- Format: `https://wa.me/263{number}?text={encodedMessage}`
+- Strip leading `0` from local number: `0771234567` → `263771234567`
+- Use `formatWhatsAppLink()` from `src/lib/utils/contact.ts`
+
+### Search
+- Use PostgreSQL full-text search via `search_vector` tsvector column
+- Never use `ilike` for search — use `to_tsquery`
+- Sanitize query input before passing to `to_tsquery`
+
+---
+
+## Git Conventions
+
+### Branch Naming
+```
+feature/{feature-name}    e.g. feature/listing-form
+fix/{issue}               e.g. fix/image-upload-error
+chore/{task}              e.g. chore/update-dependencies
+docs/{topic}              e.g. docs/update-readme
+```
+
+### Commit Prefixes
+```
+feat:      new feature
+fix:       bug fix
+chore:     non-code task (deps, config)
+docs:      documentation
+refactor:  code restructure without feature change
+test:      adding or updating tests
+```
+
+---
+
+## Build Order
+
+Follow this sequence to avoid dependency issues:
+
+1. Project setup + folder structure
+2. Supabase client helpers + `middleware.ts`
+3. Database schema + RLS in Supabase dashboard
+4. Authentication (signup, login, logout)
+5. Navbar + Footer + root layout
+6. Category system + constants
+7. Homepage (needs categories + recent listings)
+8. Listing creation + image upload
+9. Listing detail page
+10. Category browse page
+11. Search page
+12. Seller dashboard + listing management
+13. User profile + settings
+14. Admin moderation (Phase 2)
+
+---
+
+## Common Patterns
+
+### Server Component with data fetch
+```tsx
+// Always handle errors, never throw bare
+export default async function Page() {
+  const supabase = createServerClient()
+  const { data, error } = await supabase.from('listings').select('*')
+  if (error) return <div>Failed to load listings</div>
+  return <ListingGrid listings={data} />
+}
+```
+
+### Server Action pattern
+```ts
+'use server'
+export async function createListing(formData: FormData) {
+  const supabase = createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+  // validate with zod, then insert
+}
+```
+
+### Pagination pattern
+```ts
+const PAGE_SIZE = 12
+const from = (page - 1) * PAGE_SIZE
+const to = from + PAGE_SIZE - 1
+const { data } = await supabase
+  .from('listings')
+  .select('*')
+  .range(from, to)
+```

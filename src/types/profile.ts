@@ -1,4 +1,5 @@
-// TODO: implement — align with DB schema
+export type UserRole = "user" | "admin";
+
 export interface Profile {
   id: string;
   username: string;
@@ -8,6 +9,8 @@ export interface Profile {
   location: string | null;
   phone: string | null;
   is_verified: boolean;
+  is_suspended: boolean;
+  role: UserRole;
   listings_count: number;
   created_at: string;
 }

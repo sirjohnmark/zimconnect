@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { LISTINGS_PER_PAGE, CATEGORY_LISTINGS_PER_PAGE } from "@/lib/constants";
-import type { Listing, ListingFilters } from "@/types";
+import type { Listing, ListingFilters, ListingWithDetails } from "@/types";
 
 export async function getListings(
   filters?: ListingFilters
@@ -64,12 +64,20 @@ export async function getListings(
   return { listings: (data ?? []) as Listing[], total: count ?? 0 };
 }
 
-export async function getListingBySlug(slug: string): Promise<Listing | null> {
+export async function getListingBySlug(
+  slug: string
+): Promise<ListingWithDetails | null> {
   const supabase = await createClient();
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from("listings")
-    .select("*")
+    .select(
+      `*,
+      listing_images(id, listing_id, storage_path, sort_order, is_primary),
+      seller:profiles!user_id(id, username, display_name, avatar_url, location, phone, is_verified, listings_count),
+      category:categories!category_id(id, name, slug, icon_url)`
+    )
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();
@@ -84,7 +92,7 @@ export async function getListingBySlug(slug: string): Promise<Listing | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   void (supabase as any).rpc("increment_listing_views", { listing_id: data.id });
 
-  return data as Listing;
+  return data as ListingWithDetails;
 }
 
 export async function getListingsByUser(
@@ -106,6 +114,9 @@ export async function getListingsByUser(
 
   if (status !== "all") {
     query = query.eq("status", status);
+  } else {
+    // Exclude soft-deleted listings from the dashboard view.
+    query = query.neq("status", "deleted");
   }
 
   const { data, error } = await query;
@@ -143,6 +154,23 @@ export async function getListingsByCategory(
     listings: (data ?? []) as Listing[],
     total: count ?? 0,
   };
+}
+
+export async function getListingById(id: string): Promise<Listing | null> {
+  const supabase = await createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("listings")
+    .select("*")
+    .eq("id", id)
+    .neq("status", "deleted")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getListingById]", error.message);
+    return null;
+  }
+  return data as Listing | null;
 }
 
 export async function getFeaturedListings(limit = 8): Promise<Listing[]> {
