@@ -190,3 +190,58 @@ export async function getFeaturedListings(limit = 8): Promise<Listing[]> {
   }
   return (data ?? []) as Listing[];
 }
+
+/** Top Deals — most-viewed active listings site-wide. */
+export async function getTopDeals(limit = 6): Promise<Listing[]> {
+  const supabase = await createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("listings")
+    .select("*")
+    .eq("status", "active")
+    .order("views_count", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("[getTopDeals]", error.message);
+    return [];
+  }
+  return (data ?? []) as Listing[];
+}
+
+export interface DashboardStats {
+  total: number;
+  active: number;
+  inactive: number;
+  sold: number;
+  totalViews: number;
+  topByViews: Array<{ title: string; views_count: number; slug: string }>;
+}
+
+/** Aggregate stats for the seller dashboard. */
+export async function getDashboardStats(userId: string): Promise<DashboardStats> {
+  const supabase = await createClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (supabase as any)
+    .from("listings")
+    .select("status, views_count, title, slug")
+    .eq("user_id", userId)
+    .neq("status", "deleted")
+    .order("views_count", { ascending: false });
+
+  const rows = (data ?? []) as Array<{ status: string; views_count: number; title: string; slug: string }>;
+
+  return {
+    total: rows.length,
+    active: rows.filter((r) => r.status === "active").length,
+    inactive: rows.filter((r) => r.status === "inactive").length,
+    sold: rows.filter((r) => r.status === "sold").length,
+    totalViews: rows.reduce((sum, r) => sum + (r.views_count ?? 0), 0),
+    topByViews: rows.slice(0, 5).map((r) => ({
+      title: r.title.length > 22 ? r.title.slice(0, 22) + "…" : r.title,
+      views_count: r.views_count ?? 0,
+      slug: r.slug,
+    })),
+  };
+}
