@@ -238,21 +238,43 @@ export default function ListingForm({ categories }: ListingFormProps) {
         </div>
       </div>
 
-      {/* Location */}
-      <div>
-        <Label htmlFor="location" required>City</Label>
-        <select
-          id="location"
-          name="location"
-          defaultValue=""
-          className={inputCls(!!fe.location)}
-        >
-          <option value="" disabled>Select your city…</option>
-          {ZIMBABWE_CITIES.map((city) => (
-            <option key={city} value={city}>{city}</option>
-          ))}
-        </select>
-        <FieldError messages={fe.location} />
+      {/* Condition + Location side by side on md+ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Condition */}
+        <div>
+          <Label htmlFor="condition" required>Condition</Label>
+          <select
+            id="condition"
+            name="condition"
+            defaultValue=""
+            className={inputCls(!!fe.condition)}
+          >
+            <option value="" disabled>Select condition…</option>
+            <option value="new">New</option>
+            <option value="used_like_new">Used — Like New</option>
+            <option value="used_good">Used — Good</option>
+            <option value="used_fair">Used — Fair</option>
+            <option value="for_parts">For Parts / Not Working</option>
+          </select>
+          <FieldError messages={fe.condition} />
+        </div>
+
+        {/* Location */}
+        <div>
+          <Label htmlFor="location" required>City</Label>
+          <select
+            id="location"
+            name="location"
+            defaultValue=""
+            className={inputCls(!!fe.location)}
+          >
+            <option value="" disabled>Select your city…</option>
+            {ZIMBABWE_CITIES.map((city) => (
+              <option key={city} value={city}>{city}</option>
+            ))}
+          </select>
+          <FieldError messages={fe.location} />
+        </div>
       </div>
 
       {/* Image upload */}
