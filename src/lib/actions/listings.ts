@@ -137,11 +137,16 @@ export async function createListing(
     return { error: "Failed to save images. Please try again." };
   }
 
-  // --- Activate listing ---
+  // --- Activate listing + store public image URLs ---
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const imageUrls = imageRows.map(
+    (r) => `${supabaseUrl}/storage/v1/object/public/listing-images/${r.storage_path}`
+  );
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: activateError } = await (supabase as any)
     .from("listings")
-    .update({ status: "active" })
+    .update({ status: "active", images: imageUrls })
     .eq("id", listingId);
 
   if (activateError) {
