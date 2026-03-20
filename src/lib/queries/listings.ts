@@ -69,6 +69,9 @@ export async function getListingBySlug(
 ): Promise<ListingWithDetails | null> {
   const supabase = await createClient();
 
+  // NOTE: listings.user_id has a FK to auth.users (not profiles), so PostgREST
+  // cannot resolve "seller:profiles!user_id". Fetch listing + category first,
+  // then fetch the seller profile separately by user_id.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from("listings")
@@ -77,7 +80,6 @@ export async function getListingBySlug(
       status, location, is_featured, views_count, created_at, updated_at,
       expires_at, slug, category_id, user_id, images,
       listing_images(id, listing_id, storage_path, sort_order, is_primary),
-      seller:profiles!user_id(id, username, display_name, avatar_url, location, phone, is_verified, listings_count),
       category:categories!category_id(id, name, slug, icon_url)`
     )
     .eq("slug", slug)
@@ -89,6 +91,16 @@ export async function getListingBySlug(
     return null;
   }
   if (!data) return null;
+
+  // Fetch seller profile separately (bypasses the missing FK to profiles).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: sellerData } = await (supabase as any)
+    .from("profiles")
+    .select("id, username, display_name, avatar_url, location, phone, is_verified, listings_count")
+    .eq("id", data.user_id)
+    .maybeSingle();
+
+  data.seller = sellerData ?? null;
 
   // Sort images by sort_order; primary first as tiebreak.
   if (Array.isArray(data.listing_images)) {

@@ -3,31 +3,38 @@
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
--- 1. Fix seller FK (drop stale constraint if it exists, re-add correctly)
+-- 1. Fix seller FK
+-- ---------------------------------------------------------------------------
+-- Migration 001 created listings.user_id → auth.users(id) with the implicit
+-- name listings_user_id_fkey.  PostgREST cannot join listings → profiles
+-- through that constraint because it points at auth.users, not public.profiles.
+-- We add a SECOND FK with a distinct name pointing at profiles so PostgREST
+-- can resolve the relationship and fetch seller data in a single query.
 -- ---------------------------------------------------------------------------
 ALTER TABLE listings
   DROP CONSTRAINT IF EXISTS listings_seller_id_fkey;
 
--- The listings.user_id → profiles.id FK should already exist from migration 001.
--- This block is a no-op safety net in case a divergent migration named it differently.
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.table_constraints
-    WHERE constraint_name = 'listings_user_id_fkey'
-      AND table_name = 'listings'
+    SELECT 1
+    FROM information_schema.referential_constraints rc
+    JOIN information_schema.table_constraints tc
+      ON rc.constraint_name = tc.constraint_name
+    WHERE tc.table_name        = 'listings'
+      AND rc.constraint_name   = 'listings_user_id_profiles_fkey'
   ) THEN
     ALTER TABLE listings
-      ADD CONSTRAINT listings_user_id_fkey
+      ADD CONSTRAINT listings_user_id_profiles_fkey
       FOREIGN KEY (user_id)
-      REFERENCES profiles(id)
+      REFERENCES public.profiles(id)
       ON DELETE CASCADE;
   END IF;
 END;
 $$;
 
--- Force PostgREST to reload its schema cache so new FK relationships
--- are visible to the JS client immediately after this migration runs.
+-- Force PostgREST to reload its schema cache so the new FK relationship
+-- is visible immediately (allows seller:profiles!user_id join hint to work).
 NOTIFY pgrst, 'reload schema';
 
 -- ---------------------------------------------------------------------------
