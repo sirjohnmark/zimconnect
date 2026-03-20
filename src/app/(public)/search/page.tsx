@@ -3,7 +3,7 @@ import { SlidersHorizontal } from "lucide-react";
 import type { Metadata } from "next";
 import { searchListings, sanitizeQuery, SEARCH_PER_PAGE } from "@/lib/queries/search";
 import { getListings } from "@/lib/queries/listings";
-import SearchForm from "@/components/forms/SearchForm";
+import InstantSearchBar from "@/components/search/InstantSearchBar";
 import ListingGrid from "@/components/listings/ListingGrid";
 import type { PageProps } from "@/types";
 
@@ -72,7 +72,10 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
         {/* ── Search bar ── */}
         <div className="max-w-2xl">
-          <SearchForm defaultValue={rawQ} placeholder="Search listings in Zimbabwe…" />
+          <InstantSearchBar
+            initialQuery={rawQ}
+            placeholder="Search listings in Zimbabwe…"
+          />
         </div>
 
         {/* ── Header row ── */}

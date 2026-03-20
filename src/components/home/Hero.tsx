@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Search, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import InstantSearchBar from "@/components/search/InstantSearchBar";
 
 export default function Hero() {
   return (
@@ -38,15 +39,16 @@ export default function Hero() {
             property and fashion — connect directly with buyers and sellers across Zimbabwe.
           </p>
 
+          {/* Search bar */}
+          <div className="mt-10 mx-auto max-w-xl">
+            <InstantSearchBar
+              placeholder="Search listings in Zimbabwe…"
+              inputClassName="py-3.5 text-base"
+            />
+          </div>
+
           {/* CTA buttons */}
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              href="/search"
-              className="inline-flex items-center gap-2 w-full sm:w-auto justify-center rounded-xl bg-brand-600 px-7 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all hover:-translate-y-0.5"
-            >
-              <Search className="w-4 h-4" />
-              Browse Listings
-            </Link>
+          <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/sell"
               className="inline-flex items-center gap-2 w-full sm:w-auto justify-center rounded-xl border border-slate-300 bg-white px-7 py-3.5 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 hover:border-brand-400 transition-all hover:-translate-y-0.5"

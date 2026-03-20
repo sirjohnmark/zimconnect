@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getCategoryBySlug } from "@/lib/queries/categories";
 import { getListingsByCategory } from "@/lib/queries/listings";
+import { createClient } from "@/lib/supabase/server";
+import { recordCategoryView } from "@/lib/actions/browse";
 import ListingCard from "@/components/listings/ListingCard";
 import CategoryBreadcrumb from "@/components/category/CategoryBreadcrumb";
 import { CATEGORY_LISTINGS_PER_PAGE } from "@/lib/constants";
@@ -20,6 +22,13 @@ export default async function CategoryPage({
 
   const category = await getCategoryBySlug(slug);
   if (!category) notFound();
+
+  // Fire-and-forget browse tracking — never blocks the page render.
+  {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) void recordCategoryView(category.id);
+  }
 
   const { listings, total } = await getListingsByCategory(category.id, page);
 

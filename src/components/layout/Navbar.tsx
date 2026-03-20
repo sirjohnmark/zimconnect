@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Inbox, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import SearchForm from "@/components/forms/SearchForm";
+import InstantSearchBar from "@/components/search/InstantSearchBar";
 import MobileMenu from "@/components/layout/MobileMenu";
 import { getUnreadCount } from "@/lib/queries/messages";
 import { signOut } from "@/lib/actions/auth";
@@ -40,7 +40,7 @@ export default async function Navbar() {
 
           {/* ── Search (center, desktop) ── */}
           <div className="hidden md:flex flex-1 max-w-xl mx-auto">
-            <SearchForm placeholder="Search listings in Zimbabwe…" />
+            <InstantSearchBar placeholder="Search listings in Zimbabwe…" />
           </div>
 
           {/* ── Desktop nav ── */}
@@ -115,7 +115,7 @@ export default async function Navbar() {
 
         {/* ── Mobile search bar (below header row) ── */}
         <div className="md:hidden pb-3">
-          <SearchForm placeholder="Search listings…" />
+          <InstantSearchBar placeholder="Search listings…" />
         </div>
       </div>
     </header>

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { updateProfileSchema } from "@/lib/validations/profile";
+import { sanitiseText, sanitiseRichText } from "@/lib/security/sanitise";
 import type { ActionResult } from "@/types/auth";
 
 export async function updateProfile(
@@ -31,9 +32,16 @@ export async function updateProfile(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
+  // Sanitise before writing — display_name/location are plain text, bio allows light formatting.
+  const sanitised = { ...parsed.data };
+  if (sanitised.display_name) sanitised.display_name = sanitiseText(sanitised.display_name);
+  if (sanitised.location)     sanitised.location     = sanitiseText(sanitised.location);
+  if (sanitised.phone)        sanitised.phone        = sanitiseText(sanitised.phone);
+  if (sanitised.bio)          sanitised.bio          = sanitiseRichText(sanitised.bio);
+
   // Only update fields that were submitted
   const updates = Object.fromEntries(
-    Object.entries(parsed.data).filter(([, v]) => v !== undefined)
+    Object.entries(sanitised).filter(([, v]) => v !== undefined)
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -32,6 +32,13 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // ── Authenticated homepage redirect ─────────────────────────────────────
+  // Logged-in users visiting / are sent to their personalised dashboard.
+  // Unauthenticated visitors and crawlers always reach the public homepage.
+  if (pathname === "/" && session) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
   // ── Unauthenticated guard ────────────────────────────────────────────────
   if (!session && isProtected(pathname)) {
     const loginUrl = new URL("/login", request.url);

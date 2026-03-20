@@ -65,6 +65,7 @@ export async function searchListings(
     .select("*", { count: "exact" })
     .textSearch("search_vector", sanitized, { config: "english" })
     .eq("status", "active")
+    .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -73,5 +74,13 @@ export async function searchListings(
     return { listings: [], total: 0 };
   }
 
-  return { listings: (data ?? []) as Listing[], total: count ?? 0 };
+  // Deduplicate — safety net against any duplicate rows from the query
+  const seen = new Set<string>();
+  const unique = ((data ?? []) as Listing[]).filter((r) => {
+    if (seen.has(r.id)) return false;
+    seen.add(r.id);
+    return true;
+  });
+
+  return { listings: unique, total: count ?? 0 };
 }

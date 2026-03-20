@@ -5,6 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
 import { createListingSchema, updateListingSchema, parseListingFormData } from "@/lib/validations/listing";
 import { SUPPORTED_IMAGE_TYPES, MAX_IMAGE_SIZE_MB, MAX_IMAGES_PER_LISTING } from "@/lib/constants";
+import { applyRateLimit, listingCreateLimiter, RateLimitError } from "@/lib/security/rate-limit";
+import { sanitiseText, sanitiseRichText } from "@/lib/security/sanitise";
+import { validateAndSanitiseImage, UploadValidationError } from "@/lib/security/upload-guard";
 import type { ActionResult } from "@/types/auth";
 
 const BUCKET = "listing-images";
@@ -58,6 +61,14 @@ export async function createListing(
   } = await supabase.auth.getUser();
   if (!user) return { error: "You must be signed in to post a listing." };
 
+  // Rate limit by user ID — 10 listings per hour per account.
+  try {
+    await applyRateLimit(listingCreateLimiter, user.id);
+  } catch (err) {
+    if (err instanceof RateLimitError) return { error: err.message };
+    throw err;
+  }
+
   // --- Validate text fields ---
   const raw = parseListingFormData(formData);
   const parsed = createListingSchema.safeParse(raw);
@@ -72,7 +83,13 @@ export async function createListing(
     return { fieldErrors: { images: [imageError] } };
   }
 
-  const { title, description, price, category_id, location, condition } = parsed.data;
+  const { price, category_id, condition } = parsed.data;
+
+  // --- Sanitise user-supplied strings before any DB write ---
+  const title       = sanitiseText(parsed.data.title);
+  const description = sanitiseRichText(parsed.data.description);
+  const location    = sanitiseText(parsed.data.location);
+
   const listingId = randomUUID();
   const slug = `${slugify(title)}-${listingId.slice(0, 8)}`;
 
@@ -99,22 +116,36 @@ export async function createListing(
   }
 
   // --- Upload images ---
+  // Each file is validated (magic bytes, size), EXIF-stripped, then uploaded.
   const imageRows: { listing_id: string; storage_path: string; sort_order: number; is_primary: boolean }[] = [];
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
+
+    // Validate MIME from buffer bytes and strip metadata via sharp.
+    let safeBuffer: Buffer;
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      safeBuffer = await validateAndSanitiseImage(Buffer.from(arrayBuffer), file.name);
+    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).from("listings").delete().eq("id", listingId);
+      if (err instanceof UploadValidationError) return { fieldErrors: { images: [err.message] } };
+      return { error: "Image processing failed. Please try a different image." };
+    }
+
     const storagePath = getStoragePath(user.id, listingId, file.name);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: uploadError } = await (supabase as any).storage
       .from(BUCKET)
-      .upload(storagePath, file, { contentType: file.type, upsert: false });
+      .upload(storagePath, safeBuffer, { contentType: file.type, upsert: false });
 
     if (uploadError) {
       // Clean up the draft listing; listing_images cascade-deletes via FK.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (supabase as any).from("listings").delete().eq("id", listingId);
-      return { error: `Image upload failed: ${uploadError.message}` };
+      return { error: "Image upload failed. Please try again." };
     }
 
     imageRows.push({
@@ -193,9 +224,15 @@ export async function updateListing(
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const updates: Record<string, unknown> = { ...parsed.data };
-  if (parsed.data.title) {
-    updates.slug = `${slugify(parsed.data.title)}-${listingId.slice(0, 8)}`;
+  // Sanitise mutable string fields before writing.
+  const sanitised: Partial<typeof parsed.data> = { ...parsed.data };
+  if (parsed.data.title)       sanitised.title       = sanitiseText(parsed.data.title);
+  if (parsed.data.description) sanitised.description = sanitiseRichText(parsed.data.description);
+  if (parsed.data.location)    sanitised.location    = sanitiseText(parsed.data.location);
+
+  const updates: Record<string, unknown> = { ...sanitised };
+  if (sanitised.title) {
+    updates.slug = `${slugify(sanitised.title)}-${listingId.slice(0, 8)}`;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

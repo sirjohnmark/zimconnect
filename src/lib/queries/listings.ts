@@ -73,7 +73,9 @@ export async function getListingBySlug(
   const { data, error } = await (supabase as any)
     .from("listings")
     .select(
-      `*,
+      `id, title, description, price, price_type, condition,
+      status, location, is_featured, views_count, created_at, updated_at,
+      expires_at, slug, category_id, user_id, images,
       listing_images(id, listing_id, storage_path, sort_order, is_primary),
       seller:profiles!user_id(id, username, display_name, avatar_url, location, phone, is_verified, listings_count),
       category:categories!category_id(id, name, slug, icon_url)`
@@ -88,11 +90,65 @@ export async function getListingBySlug(
   }
   if (!data) return null;
 
+  // Sort images by sort_order; primary first as tiebreak.
+  if (Array.isArray(data.listing_images)) {
+    data.listing_images.sort(
+      (a: { sort_order: number; is_primary: boolean }, b: { sort_order: number; is_primary: boolean }) => {
+        if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+        return a.is_primary ? -1 : 1;
+      }
+    );
+  }
+
   // Increment view count asynchronously — never block the render.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  void (supabase as any).rpc("increment_listing_views", { listing_id: data.id });
+  void (supabase as any)
+    .from("listings")
+    .update({ views_count: (data.views_count ?? 0) + 1 })
+    .eq("id", data.id);
 
   return data as ListingWithDetails;
+}
+
+// ---------------------------------------------------------------------------
+// getSimilarListings
+// ---------------------------------------------------------------------------
+// Up to 4 active listings in the same category, excluding the current one.
+// ---------------------------------------------------------------------------
+
+export interface SimilarListing {
+  id: string;
+  slug: string;
+  title: string;
+  price: number | null;
+  price_type: string;
+  location: string;
+  listing_images: Array<{ storage_path: string; is_primary: boolean }>;
+}
+
+export async function getSimilarListings(
+  categoryId: string,
+  excludeId: string
+): Promise<SimilarListing[]> {
+  const supabase = await createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("listings")
+    .select("id, slug, title, price, price_type, location, listing_images(storage_path, is_primary)")
+    .eq("category_id", categoryId)
+    .eq("status", "active")
+    .neq("id", excludeId)
+    .order("is_featured", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(0, 3);
+
+  if (error) {
+    console.error("[getSimilarListings]", error.message);
+    return [];
+  }
+
+  return (data ?? []) as SimilarListing[];
 }
 
 export async function getListingsByUser(

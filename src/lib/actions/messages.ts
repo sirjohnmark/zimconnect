@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { startConversationSchema, sendMessageSchema } from "@/lib/validations/messages";
+import { applyRateLimit, messageSendLimiter, RateLimitError } from "@/lib/security/rate-limit";
 import type { ActionResult } from "@/types/auth";
 
 // ─── startConversation ────────────────────────────────────────────────────
@@ -82,6 +83,14 @@ export async function sendMessage(
   if (!parsed.success) return { fieldErrors: parsed.error.flatten().fieldErrors };
 
   const { body, conversation_id } = parsed.data;
+
+  // Rate limit by user ID — 30 messages per user per 10 minutes.
+  try {
+    await applyRateLimit(messageSendLimiter, user.id);
+  } catch (err) {
+    if (err instanceof RateLimitError) return { error: err.message };
+    throw err;
+  }
 
   // Verify caller is a participant — RLS enforces this too, but fail fast.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

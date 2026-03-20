@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema, signupSchema, resetPasswordSchema } from "@/lib/validations/auth";
+import { applyRateLimit, signupLimiter, getRequestIp, RateLimitError } from "@/lib/security/rate-limit";
 import type { ActionResult } from "@/types/auth";
 
 // ---------------------------------------------------------------------------
@@ -12,6 +14,15 @@ export async function signUp(
   _prevState: ActionResult | null,
   formData: FormData
 ): Promise<ActionResult> {
+  // Rate limit by IP — 5 signups per hour per IP.
+  try {
+    const ip = getRequestIp(await headers());
+    await applyRateLimit(signupLimiter, ip);
+  } catch (err) {
+    if (err instanceof RateLimitError) return { error: err.message };
+    throw err;
+  }
+
   const raw = {
     email: formData.get("email"),
     password: formData.get("password"),
