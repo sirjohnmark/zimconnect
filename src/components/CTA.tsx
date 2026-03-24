@@ -9,7 +9,7 @@ export default function CTA() {
                         Ready to turn your unused items into cash?
                     </h2>
                     <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-brand-100">
-                        Join thousands of Zimbabweans who are buying and selling locally every day. It's safe, fast, and completely free to join.
+                        Join thousands of Zimbabweans who are buying and selling locally every day. It&apos;s safe, fast, and completely free to join.
                     </p>
                     <div className="mt-10 flex items-center justify-center gap-x-6">
                         <Link

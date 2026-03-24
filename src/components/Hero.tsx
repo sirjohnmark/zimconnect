@@ -13,7 +13,7 @@ export default function Hero() {
                 <div className="text-center max-w-3xl mx-auto">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium mb-6 border border-brand-100">
                         <span className="flex h-2 w-2 rounded-full bg-brand-600"></span>
-                        Zimbabwe's fastest growing marketplace
+                        Zimbabwe&apos;s fastest growing marketplace
                     </div>
                     <h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-6xl mb-6">
                         Buy and sell locally, <br className="hidden sm:block" />

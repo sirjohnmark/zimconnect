@@ -6,6 +6,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function Input({ label, error, ...props }: InputProps) {
   return null;
 }

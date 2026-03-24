@@ -18,6 +18,7 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("en-ZW", { day: "2-digit", month: "short" });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ConversationRow({ conversation: c, currentUserId }: ConversationRowProps) {
   const hasUnread = c.unread_count > 0;
 

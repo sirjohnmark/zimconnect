@@ -93,7 +93,6 @@ export default function ListingGallery({ images, title }: ListingGalleryProps) {
           {sorted.map((img, idx) => (
             <button
               key={img.id}
-              role="listitem"
               onClick={() => setActiveIndex(idx)}
               aria-label={`View image ${idx + 1}`}
               aria-pressed={activeIndex === idx}

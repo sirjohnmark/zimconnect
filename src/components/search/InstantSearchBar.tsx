@@ -54,9 +54,8 @@ export default function InstantSearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Reset highlighted row when results change
-  useEffect(() => {
-    setActiveIndex(-1);
-  }, [results]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setActiveIndex(-1); }, [results]);
 
   // Close dropdown on outside click
   useEffect(() => {

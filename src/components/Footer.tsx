@@ -14,7 +14,7 @@ export default function Footer() {
                             ZimConnect<span className="text-accent-500">.</span>
                         </Link>
                         <p className="text-sm leading-6 text-slate-600 max-w-xs">
-                            Zimbabwe's smart local commerce platform. Buy, sell, and discover amazing deals right in your neighborhood effortlessly.
+                            Zimbabwe&apos;s smart local commerce platform. Buy, sell, and discover amazing deals right in your neighborhood effortlessly.
                         </p>
                         <div className="flex space-x-6">
                             <a href="#" className="text-slate-400 hover:text-brand-600 transition-colors">

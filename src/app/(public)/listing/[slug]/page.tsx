@@ -2,6 +2,7 @@ import { cache } from "react";
 import { Fragment } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Image from "next/image";
 import { ChevronLeft, MapPin, Eye, Clock, Tag } from "lucide-react";
 import type { Metadata } from "next";

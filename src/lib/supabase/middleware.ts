@@ -16,7 +16,7 @@ export function createClient(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           // Write cookies onto the outgoing request so Server Components see them.
-          for (const { name, value, options } of cookiesToSet) {
+          for (const { name, value } of cookiesToSet) {
             request.cookies.set(name, value);
           }
           // Re-create the response so it carries the refreshed cookies.

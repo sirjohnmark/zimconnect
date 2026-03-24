@@ -24,7 +24,7 @@ export default function Hero() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-sm font-medium mb-6 border border-brand-100">
             <span className="flex h-2 w-2 rounded-full bg-brand-600" aria-hidden="true" />
-            Zimbabwe's growing marketplace
+            Zimbabwe&apos;s growing marketplace
           </div>
 
           {/* Headline */}

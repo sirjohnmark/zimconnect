@@ -52,6 +52,7 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
   const [mounted, setMounted] = useState(false);
   const counterRef = useRef(0);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMounted(true); }, []);
 
   const dismiss = useCallback((id: string) => {

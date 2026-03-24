@@ -25,7 +25,7 @@ export default function CTASection() {
             Ready to sell?
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg leading-8 text-brand-100">
-            Join thousands of Zimbabweans already buying and selling on ZimConnect. It's
+            Join thousands of Zimbabweans already buying and selling on ZimConnect. It&apos;s
             free, fast, and takes less than a minute to post your first listing.
           </p>
 

@@ -33,7 +33,7 @@ export default function Features() {
                         Everything you need for successful deals
                     </p>
                     <p className="mt-6 text-lg leading-8 text-slate-600">
-                        We've built ZimConnect to modernize local commerce in Zimbabwe, giving you the fastest and most reliable platform to trade.
+                        We&apos;ve built ZimConnect to modernize local commerce in Zimbabwe, giving you the fastest and most reliable platform to trade.
                     </p>
                 </div>
 

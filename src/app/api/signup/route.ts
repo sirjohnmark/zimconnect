@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     // TODO: Add real user creation logic (database, hashing, email unique check, etc.)
 
     return NextResponse.json({ success: true, message: "Signup successful" });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, message: "Invalid request data." }, { status: 400 });
   }
 }

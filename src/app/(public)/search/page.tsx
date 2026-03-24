@@ -88,11 +88,11 @@ export default async function SearchPage({ searchParams }: PageProps) {
                     <span className="text-brand-600">{total.toLocaleString()}</span>
                     {" result"}
                     {total !== 1 ? "s" : ""} for{" "}
-                    <span className="italic">"{rawQ}"</span>
+                    <span className="italic">&quot;{rawQ}&quot;</span>
                   </>
                 ) : (
                   <>
-                    No results for <span className="italic">"{rawQ}"</span>
+                    No results for <span className="italic">&quot;{rawQ}&quot;</span>
                   </>
                 )}
               </h1>

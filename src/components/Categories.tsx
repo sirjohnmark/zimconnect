@@ -16,7 +16,7 @@ export default function Categories() {
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12">
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Popular Categories</h2>
-                        <p className="mt-4 text-lg text-slate-600">Explore top categories to find exactly what you're looking for.</p>
+                        <p className="mt-4 text-lg text-slate-600">Explore top categories to find exactly what you&apos;re looking for.</p>
                     </div>
                     <a href="/categories" className="hidden sm:block text-brand-600 font-semibold hover:text-brand-700 hover:underline">
                         View all categories &rarr;

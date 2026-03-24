@@ -224,14 +224,16 @@ export interface InboxPreview {
 export async function getInboxPreview(userId: string): Promise<InboxPreview> {
   const supabase = await createClient();
 
+  // conversations.buyer_id/seller_id reference auth.users (not public.profiles),
+  // so PostgREST cannot resolve the join. Fetch conversations + listings first,
+  // then fetch profiles separately by the collected user IDs.
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any)
     .from("conversations")
     .select(`
       id, listing_id, buyer_id, seller_id, created_at, updated_at,
       listing:listings!listing_id ( title, slug ),
-      buyer:profiles!buyer_id ( id, username, display_name, avatar_url ),
-      seller:profiles!seller_id ( id, username, display_name, avatar_url ),
       messages ( body, created_at, is_read, sender_id )
     `)
     .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
@@ -243,16 +245,43 @@ export async function getInboxPreview(userId: string): Promise<InboxPreview> {
     return { conversations: [], total_unread: 0 };
   }
 
+  const rows = (data ?? []) as Array<{
+    id: string;
+    listing_id: string | null;
+    buyer_id: string;
+    seller_id: string;
+    created_at: string;
+    updated_at: string;
+    listing: { title: string; slug: string } | null;
+    messages: { body: string; created_at: string; is_read: boolean; sender_id: string }[];
+  }>;
+
+  // Collect all participant IDs we need profiles for
+  const participantIds = [...new Set(rows.flatMap((r) => [r.buyer_id, r.seller_id]))];
+
+  let profileMap = new Map<string, { id: string; username: string; display_name: string | null; avatar_url: string | null }>();
+
+  if (participantIds.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profileRows } = await (supabase as any)
+      .from("profiles")
+      .select("id, username, display_name, avatar_url")
+      .in("id", participantIds);
+
+    profileMap = new Map(
+      ((profileRows ?? []) as Array<{ id: string; username: string; display_name: string | null; avatar_url: string | null }>)
+        .map((p) => [p.id, p])
+    );
+  }
+
   let total_unread = 0;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const conversations: ConversationSummary[] = (data ?? []).map((row: any): ConversationSummary => {
+  const conversations: ConversationSummary[] = rows.map((row): ConversationSummary => {
     const isBuyer = row.buyer_id === userId;
-    const other   = isBuyer ? row.seller : row.buyer;
+    const otherId = isBuyer ? row.seller_id : row.buyer_id;
+    const other   = profileMap.get(otherId) ?? null;
 
-    const msgs: { body: string; created_at: string; is_read: boolean; sender_id: string }[] =
-      row.messages ?? [];
-
+    const msgs = row.messages ?? [];
     const sorted = [...msgs].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
@@ -261,7 +290,6 @@ export async function getInboxPreview(userId: string): Promise<InboxPreview> {
     const unread_count = msgs.filter((m) => !m.is_read && m.sender_id !== userId).length;
     total_unread      += unread_count;
 
-    // Truncate last message body to 80 chars
     const lastBody = last?.body
       ? last.body.length > 80 ? last.body.slice(0, 77) + "…" : last.body
       : null;
@@ -275,7 +303,7 @@ export async function getInboxPreview(userId: string): Promise<InboxPreview> {
       updated_at:               row.updated_at,
       listing_title:            row.listing?.title  ?? null,
       listing_slug:             row.listing?.slug   ?? null,
-      other_party_id:           other?.id           ?? "",
+      other_party_id:           other?.id           ?? otherId,
       other_party_username:     other?.username     ?? "unknown",
       other_party_display_name: other?.display_name ?? "Unknown",
       other_party_avatar_url:   other?.avatar_url   ?? null,
