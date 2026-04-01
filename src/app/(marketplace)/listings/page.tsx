@@ -2,160 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { ListingsSearch } from "@/components/marketplace/ListingsSearch";
-import type { Listing } from "@/types/listing";
+import { getListings } from "@/lib/data/listings";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Listings" };
-
-// ── Mock data ─────────────────────────────────────────────────────────────────
-// In production: replace with `await db.listing.findMany(...)` or `fetch("/api/listings")`
-
-const ALL_LISTINGS: Listing[] = [
-  {
-    id: "1",
-    title: "Samsung Galaxy S24 Ultra — 256GB, Phantom Black",
-    price: 650,
-    location: "Harare",
-    condition: "like-new",
-    category: "electronics",
-    description: "Pristine condition, used 3 months. Original box and all accessories included.",
-    images: [{ url: "/placeholder-listing.jpg" }],
-  },
-  {
-    id: "2",
-    title: "Toyota Corolla 2019 — 45,000km, Full Service History",
-    price: 12500,
-    location: "Bulawayo",
-    condition: "good",
-    category: "vehicles",
-    description: "One owner, accident-free. New tyres fitted March 2024.",
-    images: [],
-  },
-  {
-    id: "3",
-    title: "2-Bedroom Apartment — Avondale, all-inclusive",
-    price: 450,
-    location: "Harare",
-    condition: "new",
-    category: "property",
-    description: "Modern finishing, 24-hour security, water and electricity included.",
-    images: [],
-  },
-  {
-    id: "4",
-    title: "MacBook Pro M3 14\" — 16GB RAM, 512GB SSD",
-    price: 1800,
-    location: "Harare",
-    condition: "new",
-    category: "electronics",
-    description: "Sealed in box, space grey. Receipt and 1-year Apple warranty.",
-    images: [],
-  },
-  {
-    id: "5",
-    title: "Honda Fit 2017 — 62,000km, Manual",
-    price: 8500,
-    location: "Mutare",
-    condition: "good",
-    category: "vehicles",
-    images: [],
-  },
-  {
-    id: "6",
-    title: "Office Space — Samora Machel CBD, 120m²",
-    price: 900,
-    location: "Harare",
-    condition: "good",
-    category: "property",
-    description: "Open plan, fibre-ready, parking included. Available immediately.",
-    images: [],
-  },
-  {
-    id: "7",
-    title: "iPhone 15 Pro — 128GB, Natural Titanium",
-    price: 950,
-    location: "Harare",
-    condition: "like-new",
-    category: "electronics",
-    images: [],
-  },
-  {
-    id: "8",
-    title: "Software Engineer — Remote, USD salary",
-    price: 1200,
-    location: "Remote",
-    condition: "new",
-    category: "jobs",
-    description: "3+ years React/Node. Competitive salary. Full-time remote.",
-    images: [],
-  },
-  {
-    id: "9",
-    title: "Mazda CX-5 2021 — AWD, Sunroof",
-    price: 22000,
-    location: "Harare",
-    condition: "good",
-    category: "vehicles",
-    images: [],
-  },
-  {
-    id: "10",
-    title: "Plumbing Services — Emergency & Routine",
-    price: 30,
-    location: "Harare",
-    condition: "new",
-    category: "services",
-    description: "Licensed plumber, 10 years experience. Available 7 days.",
-    images: [],
-  },
-  {
-    id: "11",
-    title: "Studio Apartment — Borrowdale, furnished",
-    price: 380,
-    location: "Harare",
-    condition: "good",
-    category: "property",
-    images: [],
-  },
-  {
-    id: "12",
-    title: "PlayStation 5 — Disc Edition + 2 controllers",
-    price: 480,
-    location: "Bulawayo",
-    condition: "like-new",
-    category: "electronics",
-    description: "Barely used, perfect working order. Comes with FIFA 24.",
-    images: [],
-  },
-];
-
-// ── Data layer ────────────────────────────────────────────────────────────────
-// Isolated function — swap body for a real fetch/db call without touching the page.
-
-interface GetListingsParams {
-  query?: string;
-  category?: string;
-}
-
-function getListings({ query = "", category = "" }: GetListingsParams): Listing[] {
-  let results = ALL_LISTINGS;
-
-  if (category) {
-    results = results.filter((l) => l.category === category);
-  }
-
-  if (query.trim()) {
-    const q = query.trim().toLowerCase();
-    results = results.filter(
-      (l) =>
-        l.title.toLowerCase().includes(q) ||
-        l.location.toLowerCase().includes(q) ||
-        l.description?.toLowerCase().includes(q),
-    );
-  }
-
-  return results;
-}
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
@@ -189,14 +39,21 @@ function EmptyState({ query, category }: { query: string; category: string }) {
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
+// Server Component — filtering is delegated to Django via query params.
+// Search, category, and pagination all pass through to the API cleanly.
 
 interface ListingsPageProps {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; page?: string }>;
 }
 
 export default async function ListingsPage({ searchParams }: ListingsPageProps) {
-  const { q = "", category = "" } = await searchParams;
-  const listings = getListings({ query: q, category });
+  const { q = "", category = "", page = "1" } = await searchParams;
+
+  const { data: listings, total } = await getListings({
+    q,
+    category,
+    page: Number(page),
+  });
 
   const headingText = category
     ? `${category.charAt(0).toUpperCase()}${category.slice(1)}`
@@ -209,7 +66,7 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
         <h1 className="text-xl font-semibold text-gray-900">
           {headingText}
           <span className="ml-2 text-sm font-normal text-gray-400">
-            {listings.length} result{listings.length !== 1 ? "s" : ""}
+            {total} result{total !== 1 ? "s" : ""}
           </span>
         </h1>
       </div>

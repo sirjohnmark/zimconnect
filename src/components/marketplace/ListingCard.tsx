@@ -99,7 +99,7 @@ export function ListingCard({
   imageAspect = "4/3",
   className,
 }: ListingCardProps) {
-  const { id, title, price, location, condition, description, images } = listing;
+  const { id, title, price, currency = "$", location, condition, description, images } = listing;
   const destination = href ?? `/listings/${id}`;
   const coverImage = images[0]?.url ?? null;
 
@@ -117,7 +117,7 @@ export function ListingCard({
         "overflow-hidden",
         className,
       )}
-      aria-label={`${title} — $${price.toLocaleString()} in ${location}`}
+      aria-label={`${title} — ${currency}${price.toLocaleString()} in ${location}`}
     >
       {/* ── Image ── */}
       <div className={cn("relative w-full overflow-hidden bg-gray-100", IMAGE_ASPECT[imageAspect])}>
@@ -133,10 +133,12 @@ export function ListingCard({
           <ImageFallback />
         )}
 
-        {/* Condition badge — overlaid on image */}
-        <div className="absolute bottom-2 left-2">
-          <ConditionBadge condition={condition} />
-        </div>
+        {/* Condition badge — overlaid on image, hidden when not set */}
+        {condition && (
+          <div className="absolute bottom-2 left-2">
+            <ConditionBadge condition={condition} />
+          </div>
+        )}
       </div>
 
       {/* ── Body ── */}
@@ -155,7 +157,7 @@ export function ListingCard({
 
         {/* Price */}
         <p className="text-lg font-bold text-emerald-600 leading-none">
-          ${price.toLocaleString()}
+          {currency}{price.toLocaleString()}
         </p>
 
         {/* Location */}

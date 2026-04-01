@@ -71,6 +71,12 @@ export async function getListing(id: string): Promise<Listing> {
   });
 }
 
+export async function getListingBySlug(slug: string): Promise<Listing> {
+  return api.get<Listing>(`/listings/slug/${slug}`, {
+    next: { revalidate: 60, tags: [`listing-slug-${slug}`] },
+  });
+}
+
 export async function createListing(body: CreateListingBody): Promise<Listing> {
   return api.post<Listing>("/listings", body);
 }

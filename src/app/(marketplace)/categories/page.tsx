@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CategoryCard } from "@/components/marketplace/CategoryCard";
-import { getCategories } from "@/lib/api/categories";
+import { getCategories } from "@/lib/data/categories";
 import type { Category } from "@/types/category";
 
 export const dynamic = "force-dynamic";

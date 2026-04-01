@@ -5,8 +5,9 @@ export type Listing = {
   title: string;
   price: number;
   location: string;
-  condition: ListingCondition;
+  condition?: ListingCondition;
   category: string;
+  currency?: string;
   description?: string;
   images: { url: string }[];
 };
