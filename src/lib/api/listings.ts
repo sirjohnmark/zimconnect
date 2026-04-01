@@ -53,6 +53,7 @@ export interface CreateListingBody {
   category: string;
   description?: string;
   images: { url: string }[];
+  seller?: { name?: string; phone?: string };
 }
 
 // ─── Endpoints ────────────────────────────────────────────────────────────────

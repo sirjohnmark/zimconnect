@@ -3,7 +3,6 @@ import { CategoryCard } from "@/components/marketplace/CategoryCard";
 import { getCategories } from "@/lib/data/categories";
 import type { Category } from "@/types/category";
 
-export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Categories" };
 
 // ── Empty state ───────────────────────────────────────────────────────────────

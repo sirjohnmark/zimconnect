@@ -1,13 +1,17 @@
 import type { Listing } from "@/types/listing";
-import type { PaginatedListings, GetListingsParams } from "@/lib/api/listings";
+import type { PaginatedListings, GetListingsParams, CreateListingBody, UploadedImage } from "@/lib/api/listings";
 
 // ── Switch ────────────────────────────────────────────────────────────────────
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
-// ── Mock implementation ───────────────────────────────────────────────────────
+// ── Mock listings store (localStorage) ───────────────────────────────────────
+// Seed listings come from the static array below.
+// Listings created via the form are appended to localStorage and merged on read.
 
-const MOCK_LISTINGS: Listing[] = [
+const STORAGE_KEY = "zimconnect_listings";
+
+const SEED_LISTINGS: Listing[] = [
   {
     id: "1",
     title: "iPhone 13 Pro Max",
@@ -15,7 +19,8 @@ const MOCK_LISTINGS: Listing[] = [
     location: "Harare",
     category: "electronics",
     condition: "like-new",
-    images: [{ url: "https://via.placeholder.com/300" }],
+    images: [{ url: "https://picsum.photos/seed/zc-1/600/400" }],
+    seller: { name: "Tinashe Moyo", phone: "0771234567" },
   },
   {
     id: "2",
@@ -24,7 +29,8 @@ const MOCK_LISTINGS: Listing[] = [
     location: "Bulawayo",
     category: "vehicles",
     condition: "good",
-    images: [{ url: "https://via.placeholder.com/300" }],
+    images: [{ url: "https://picsum.photos/seed/zc-2/600/400" }],
+    seller: { name: "Farai Ncube", phone: "0782345678" },
   },
   {
     id: "3",
@@ -34,7 +40,8 @@ const MOCK_LISTINGS: Listing[] = [
     category: "electronics",
     condition: "like-new",
     description: "Pristine condition, used 3 months. Original box included.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-3/600/400" }],
+    seller: { name: "Kudzi Tech", phone: "0714567890" },
   },
   {
     id: "4",
@@ -44,7 +51,8 @@ const MOCK_LISTINGS: Listing[] = [
     category: "property",
     condition: "new",
     description: "Modern finishing, 24-hour security, all-inclusive.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-4/600/400" }],
+    seller: { name: "Chiedza Estates", phone: "0773456789" },
   },
   {
     id: "5",
@@ -53,7 +61,8 @@ const MOCK_LISTINGS: Listing[] = [
     location: "Mutare",
     category: "vehicles",
     condition: "good",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-5/600/400" }],
+    seller: { name: "Blessing Chirwa", phone: "0785678901" },
   },
   {
     id: "6",
@@ -63,18 +72,73 @@ const MOCK_LISTINGS: Listing[] = [
     category: "electronics",
     condition: "like-new",
     description: "Barely used, perfect working order. Comes with FIFA 24.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-6/600/400" }],
+    seller: { name: "Munyaradzi Games", phone: "0732345678" },
   },
 ];
 
+function getStoredListings(): Listing[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Listing[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveListingToStore(listing: Listing): void {
+  if (typeof window === "undefined") return;
+  const existing = getStoredListings();
+  existing.unshift(listing); // newest first
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
+}
+
+// ── Mock implementations ──────────────────────────────────────────────────────
+
+/** Convert a File to a base64 data URL so it survives page navigation in mock mode. */
+async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function mockUploadImages(files: File[]): Promise<UploadedImage[]> {
+  const urls = await Promise.all(files.map(fileToDataUrl));
+  return urls.map((url) => ({ url }));
+}
+
+async function mockCreateListing(body: CreateListingBody): Promise<Listing> {
+  const listing: Listing = {
+    id: `local-${Date.now()}`,
+    title: body.title,
+    price: body.price,
+    location: body.location,
+    condition: body.condition,
+    category: body.category,
+    description: body.description,
+    images: body.images,
+    seller: body.seller,
+  };
+  saveListingToStore(listing);
+  return listing;
+}
+
 async function fromMock(params: GetListingsParams): Promise<PaginatedListings> {
   const { q = "", category = "", page = 1, limit = 20 } = params;
-  let results = [...MOCK_LISTINGS];
+
+  // Merge user-created (from localStorage) with seed data, newest first
+  const stored = getStoredListings();
+  const seedIds = new Set(SEED_LISTINGS.map((l) => l.id));
+  const userListings = stored.filter((l) => !seedIds.has(l.id));
+  let results = [...userListings, ...SEED_LISTINGS];
 
   if (category) {
     results = results.filter((l) => l.category === category);
   }
-
   if (q.trim()) {
     const term = q.trim().toLowerCase();
     results = results.filter(
@@ -100,7 +164,8 @@ export async function getListings(params: GetListingsParams = {}): Promise<Pagin
 
 export async function getListingById(id: string): Promise<Listing> {
   if (USE_MOCK) {
-    const listing = MOCK_LISTINGS.find((l) => l.id === id);
+    const all = [...getStoredListings(), ...SEED_LISTINGS];
+    const listing = all.find((l) => l.id === id);
     if (!listing) throw new Error(`Listing "${id}" not found`);
     return listing;
   }
@@ -110,7 +175,8 @@ export async function getListingById(id: string): Promise<Listing> {
 
 export async function getListingBySlug(slug: string): Promise<Listing> {
   if (USE_MOCK) {
-    const listing = MOCK_LISTINGS.find(
+    const all = [...getStoredListings(), ...SEED_LISTINGS];
+    const listing = all.find(
       (l) => l.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug,
     );
     if (!listing) throw new Error(`Listing with slug "${slug}" not found`);
@@ -118,4 +184,16 @@ export async function getListingBySlug(slug: string): Promise<Listing> {
   }
   const { getListingBySlug: apiGetBySlug } = await import("@/lib/api/listings");
   return apiGetBySlug(slug);
+}
+
+export async function createListing(body: CreateListingBody): Promise<Listing> {
+  if (USE_MOCK) return mockCreateListing(body);
+  const { createListing: apiCreate } = await import("@/lib/api/listings");
+  return apiCreate(body);
+}
+
+export async function uploadImages(files: File[]): Promise<UploadedImage[]> {
+  if (USE_MOCK) return mockUploadImages(files);
+  const { uploadImages: apiUpload } = await import("@/lib/api/listings");
+  return apiUpload(files);
 }

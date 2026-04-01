@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth/useAuth";
 
 const NAV_LINKS = [
   { label: "Categories", href: "/categories" },
@@ -10,8 +11,12 @@ const NAV_LINKS = [
   { label: "How it Works", href: "/home#how-it-works" },
 ];
 
+const SELL_HREF = "/dashboard/listings/create";
+const SELL_GATE = "/login?redirect=/dashboard/listings/create";
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
@@ -38,8 +43,8 @@ export function Navbar() {
               Sign In
             </Link>
             <Link
-              href="/dashboard/listings/create"
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+              href={isAuthenticated ? SELL_HREF : SELL_GATE}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.96] active:bg-emerald-800 transition-all duration-75"
             >
               + Sell
             </Link>
@@ -86,9 +91,9 @@ export function Navbar() {
               Sign In
             </Link>
             <Link
-              href="/dashboard/listings/create"
+              href={isAuthenticated ? SELL_HREF : SELL_GATE}
               onClick={() => setOpen(false)}
-              className="rounded-lg bg-emerald-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-emerald-700"
+              className="rounded-lg bg-emerald-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.96] active:bg-emerald-800 transition-all duration-75"
             >
               + Post a Listing
             </Link>

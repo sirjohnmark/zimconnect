@@ -16,10 +16,6 @@ export function HeroSection() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50 py-20 sm:py-28">
-      {/* Background decoration */}
-      <div className="pointer-events-none absolute -top-24 right-0 h-96 w-96 rounded-full bg-emerald-100/50 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 left-0 h-96 w-96 rounded-full bg-teal-100/40 blur-3xl" />
-
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
         {/* Badge */}
         <span className="mb-5 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3.5 py-1.5 text-xs font-semibold text-emerald-700">
@@ -51,7 +47,7 @@ export function HeroSection() {
           />
           <button
             type="submit"
-            className="shrink-0 bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+            className="shrink-0 bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white hover:bg-emerald-700 active:bg-emerald-800 transition-all duration-75"
           >
             Search
           </button>
@@ -61,13 +57,13 @@ export function HeroSection() {
         <div className="mt-6 flex flex-col gap-3 sm:flex-row justify-center">
           <Link
             href="/listings"
-            className="rounded-lg bg-emerald-600 px-8 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors shadow-sm"
+            className="rounded-lg bg-emerald-600 px-8 py-3 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.96] active:bg-emerald-800 transition-all duration-75 shadow-sm"
           >
             Browse Listings
           </Link>
           <Link
             href="/register"
-            className="rounded-lg border border-gray-300 bg-white px-8 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+            className="rounded-lg border border-gray-300 bg-white px-8 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:scale-[0.96] active:bg-gray-100 transition-all duration-75 shadow-sm"
           >
             Start Selling
           </Link>

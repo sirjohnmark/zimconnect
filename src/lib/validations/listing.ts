@@ -38,6 +38,14 @@ export const createListingSchema = z.object({
   condition: z.enum(LISTING_CONDITIONS, { error: "Select a condition" }),
 
   category: z.enum(LISTING_CATEGORIES, { error: "Select a category" }),
+
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine(
+      (v) => v.replace(/\D/g, "").length >= 9,
+      "Enter a valid phone number (at least 9 digits)",
+    ),
 });
 
 export type CreateListingInput = z.infer<typeof createListingSchema>;

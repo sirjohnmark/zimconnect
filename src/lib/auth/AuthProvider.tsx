@@ -2,10 +2,13 @@
 
 import { createContext, useCallback, useContext, useEffect, useReducer } from "react";
 import { useRouter } from "next/navigation";
-import { getMe, loginUser, logoutUser } from "@/lib/api/auth";
+import { getMe, loginUser, logoutUser, registerUser } from "@/lib/api/auth";
 import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
-import type { LoginInput } from "@/lib/validations/auth";
+import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
+import { getStoredUser } from "@/lib/auth/auth";
+
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
 // ─── State shape (discriminated union) ───────────────────────────────────────
 // Using a discriminated union means TypeScript narrows the type correctly:
@@ -36,6 +39,7 @@ function authReducer(_state: AuthState, action: AuthAction): AuthState {
 interface AuthContextValue {
   auth: AuthState;
   login: (credentials: LoginInput) => Promise<LoginResponse>;
+  register: (data: RegisterInput) => Promise<LoginResponse>;
   logout: () => Promise<void>;
 }
 
@@ -51,10 +55,19 @@ export interface AuthProviderProps {
 
 export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProviderProps) {
   const router = useRouter();
+  // Always start as "loading" — identical on server and client, prevents hydration mismatch.
+  // The correct state is resolved in the effect below (client-only, after hydration).
   const [auth, dispatch] = useReducer(authReducer, { status: "loading" });
 
-  // Fetch the current user on mount — silently clears state if not authenticated
   useEffect(() => {
+    // Mock mode: read localStorage synchronously on the client after hydration
+    if (USE_MOCK) {
+      const user = getStoredUser();
+      dispatch(user ? { type: "SET_USER", user } : { type: "CLEAR_USER" });
+      return;
+    }
+
+    // Real API mode: fetch session from backend
     let cancelled = false;
     dispatch({ type: "LOADING" });
 
@@ -86,6 +99,12 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     return response;
   }, []);
 
+  const register = useCallback(async (data: RegisterInput): Promise<LoginResponse> => {
+    const response = await registerUser(data);
+    dispatch({ type: "SET_USER", user: response.user });
+    return response;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await logoutUser();
@@ -98,7 +117,7 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
   }, [logoutRedirect, router]);
 
   return (
-    <AuthContext.Provider value={{ auth, login, logout }}>
+    <AuthContext.Provider value={{ auth, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,5 +1,8 @@
 import type { Listing } from "@/types/listing";
 
+// Images: picsum.photos/seed/{seed}/600/400 — deterministic, no API key needed.
+// Each seed is unique per listing so images don't repeat.
+
 export const MOCK_LISTINGS: Listing[] = [
   {
     id: "1",
@@ -9,7 +12,8 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: "like-new",
     category: "electronics",
     description: "Pristine condition, used 3 months. Original box and all accessories included.",
-    images: [{ url: "/placeholder-listing.jpg" }],
+    images: [{ url: "https://picsum.photos/seed/zc-1/600/400" }],
+    seller: { name: "Tinashe Moyo", phone: "0771234567" },
   },
   {
     id: "2",
@@ -19,7 +23,8 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: "good",
     category: "vehicles",
     description: "One owner, accident-free. New tyres fitted March 2024.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-2/600/400" }],
+    seller: { name: "Farai Ncube", phone: "0782345678" },
   },
   {
     id: "3",
@@ -29,7 +34,8 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: "new",
     category: "property",
     description: "Modern finishing, 24-hour security, water and electricity included.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-3/600/400" }],
+    seller: { name: "Chiedza Estates", phone: "0773456789" },
   },
   {
     id: "4",
@@ -39,7 +45,8 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: "new",
     category: "electronics",
     description: "Sealed in box, space grey. Receipt and 1-year Apple warranty.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-4/600/400" }],
+    seller: { name: "Kudzi Tech", phone: "0714567890" },
   },
   {
     id: "5",
@@ -48,7 +55,8 @@ export const MOCK_LISTINGS: Listing[] = [
     location: "Mutare",
     condition: "good",
     category: "vehicles",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-5/600/400" }],
+    seller: { name: "Blessing Chirwa", phone: "0785678901" },
   },
   {
     id: "6",
@@ -58,7 +66,8 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: "good",
     category: "property",
     description: "Open plan, fibre-ready, parking included. Available immediately.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-6/600/400" }],
+    seller: { name: "Premier Properties", phone: "0776789012" },
   },
   {
     id: "7",
@@ -67,7 +76,8 @@ export const MOCK_LISTINGS: Listing[] = [
     location: "Harare",
     condition: "like-new",
     category: "electronics",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-7/600/400" }],
+    seller: { name: "Simba Gadgets", phone: "0717890123" },
   },
   {
     id: "8",
@@ -77,7 +87,8 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: "new",
     category: "jobs",
     description: "3+ years React/Node. Competitive salary. Full-time remote.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-8/600/400" }],
+    seller: { name: "TechZim Recruits", phone: "0778901234" },
   },
   {
     id: "9",
@@ -86,7 +97,8 @@ export const MOCK_LISTINGS: Listing[] = [
     location: "Harare",
     condition: "good",
     category: "vehicles",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-9/600/400" }],
+    seller: { name: "AutoMart Zimbabwe", phone: "0789012345" },
   },
   {
     id: "10",
@@ -96,7 +108,8 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: "new",
     category: "services",
     description: "Licensed plumber, 10 years experience. Available 7 days.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-10/600/400" }],
+    seller: { name: "Fix-It Fast", phone: "0770123456" },
   },
   {
     id: "11",
@@ -105,7 +118,8 @@ export const MOCK_LISTINGS: Listing[] = [
     location: "Harare",
     condition: "good",
     category: "property",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-11/600/400" }],
+    seller: { name: "Tafadzwa Rentals", phone: "0721234567" },
   },
   {
     id: "12",
@@ -115,6 +129,7 @@ export const MOCK_LISTINGS: Listing[] = [
     condition: "like-new",
     category: "electronics",
     description: "Barely used, perfect working order. Comes with FIFA 24.",
-    images: [],
+    images: [{ url: "https://picsum.photos/seed/zc-12/600/400" }],
+    seller: { name: "Munyaradzi Games", phone: "0732345678" },
   },
 ];

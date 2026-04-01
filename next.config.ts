@@ -4,7 +4,12 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   images: {
     remotePatterns: [
-      // Placeholder images used in mock data
+      // Deterministic free photos — used in mock data (picsum.photos/seed/N/W/H)
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+      },
+      // Legacy placeholder — keep until all mock data is updated
       {
         protocol: "https",
         hostname: "via.placeholder.com",

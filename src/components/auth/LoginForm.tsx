@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { useAuth } from "@/lib/auth/useAuth";
@@ -37,8 +37,10 @@ function FormAlert({ message }: { message: string }) {
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
 
   const {
     register,
@@ -52,13 +54,14 @@ export function LoginForm() {
     setFormError(null);
     try {
       await login(data);
-      router.push("/home");
+      router.push(redirectTo);
       router.refresh();
     } catch (err) {
       if (err instanceof ApiError) {
-        // Map known status codes to user-friendly messages
-        if (err.status === 401) {
-          setFormError("Incorrect email or password. Please try again.");
+        if (err.status === 404) {
+          setFormError("No account found with this email. Please create an account first.");
+        } else if (err.status === 401) {
+          setFormError("Incorrect password. Please try again.");
         } else if (err.status === 429) {
           setFormError("Too many attempts. Please wait a moment and try again.");
         } else {

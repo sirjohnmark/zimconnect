@@ -10,4 +10,8 @@ export type Listing = {
   currency?: string;
   description?: string;
   images: { url: string }[];
+  seller?: {
+    name?: string;
+    phone?: string;
+  };
 };

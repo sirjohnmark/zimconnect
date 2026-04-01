@@ -14,13 +14,13 @@ export function CtaSection() {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row justify-center">
           <Link
             href="/register"
-            className="rounded-lg bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors shadow-sm"
+            className="rounded-lg bg-emerald-600 px-8 py-3.5 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.96] active:bg-emerald-800 transition-all duration-75 shadow-sm"
           >
             Post a Listing — It&apos;s Free
           </Link>
           <Link
             href="/listings"
-            className="rounded-lg border border-gray-300 bg-white px-8 py-3.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors shadow-sm"
+            className="rounded-lg border border-gray-300 bg-white px-8 py-3.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 active:scale-[0.96] active:bg-gray-200 transition-all duration-75 shadow-sm"
           >
             Browse Listings
           </Link>

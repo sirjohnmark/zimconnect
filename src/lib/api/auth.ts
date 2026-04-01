@@ -1,5 +1,15 @@
-import { api } from "./client";
+import { api, ApiError } from "./client";
+import {
+  saveUser,
+  getStoredUser,
+  clearStoredUser,
+  saveAccount,
+  findAccountByEmail,
+} from "@/lib/auth/auth";
 import type { LoginInput } from "@/lib/validations/auth";
+import type { RegisterInput } from "@/lib/validations/auth";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AuthUser {
   id: string;
@@ -12,14 +22,58 @@ export interface LoginResponse {
   token: string;
 }
 
+// ─── Mock / real toggle ───────────────────────────────────────────────────────
+
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+
+// ─── Auth functions ───────────────────────────────────────────────────────────
+
+export async function registerUser(data: RegisterInput): Promise<LoginResponse> {
+  if (USE_MOCK) {
+    if (findAccountByEmail(data.email)) {
+      throw new ApiError(409, "Conflict", "An account with this email already exists.");
+    }
+    const user: AuthUser = {
+      id: `user-${Date.now()}`,
+      name: data.name,
+      email: data.email,
+    };
+    saveAccount({ ...user, password: data.password });
+    saveUser(user);
+    return { user, token: "mock-token" };
+  }
+  return api.post<LoginResponse>("/auth/register", data);
+}
+
 export async function loginUser(credentials: LoginInput): Promise<LoginResponse> {
+  if (USE_MOCK) {
+    const account = findAccountByEmail(credentials.email);
+    if (!account) {
+      throw new ApiError(404, "Not Found", "No account found with this email. Please create an account first.");
+    }
+    if (account.password !== credentials.password) {
+      throw new ApiError(401, "Unauthorized", "Incorrect password. Please try again.");
+    }
+    const user: AuthUser = { id: account.id, name: account.name, email: account.email };
+    saveUser(user);
+    return { user, token: "mock-token" };
+  }
   return api.post<LoginResponse>("/auth/login", credentials);
 }
 
 export async function getMe(): Promise<AuthUser> {
+  if (USE_MOCK) {
+    const user = getStoredUser();
+    if (!user) throw new ApiError(401, "Unauthorized", "Not authenticated");
+    return user;
+  }
   return api.get<AuthUser>("/auth/me");
 }
 
 export async function logoutUser(): Promise<void> {
+  if (USE_MOCK) {
+    clearStoredUser();
+    return;
+  }
   return api.post<void>("/auth/logout", {});
 }

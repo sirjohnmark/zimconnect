@@ -3,7 +3,7 @@
 import { useAuthContext } from "./AuthProvider";
 import type { AuthState } from "./AuthProvider";
 import type { AuthUser } from "@/lib/api/auth";
-import type { LoginInput } from "@/lib/validations/auth";
+import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
 
 // ─── Public hook ──────────────────────────────────────────────────────────────
 
@@ -18,12 +18,14 @@ export interface UseAuthReturn {
   user: AuthUser | null;
   /** Submit credentials — resolves with the full login response. */
   login: (credentials: LoginInput) => Promise<unknown>;
+  /** Create a new account and log in immediately. */
+  register: (data: RegisterInput) => Promise<unknown>;
   /** Clears auth state, calls /api/auth/logout, and redirects. */
   logout: () => Promise<void>;
 }
 
 export function useAuth(): UseAuthReturn {
-  const { auth, login, logout } = useAuthContext();
+  const { auth, login, register, logout } = useAuthContext();
 
   return {
     auth,
@@ -31,6 +33,7 @@ export function useAuth(): UseAuthReturn {
     isAuthenticated: auth.status === "authenticated",
     user:            auth.status === "authenticated" ? auth.user : null,
     login,
+    register,
     logout,
   };
 }

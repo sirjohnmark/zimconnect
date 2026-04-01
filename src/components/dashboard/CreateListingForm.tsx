@@ -10,7 +10,7 @@ import {
   LISTING_CONDITIONS,
   LISTING_CATEGORIES,
 } from "@/lib/validations/listing";
-import { createListing, uploadImages } from "@/lib/api/listings";
+import { createListing, uploadImages } from "@/lib/data/listings";
 import { ApiError } from "@/lib/api/client";
 import { ImageUpload, type ImagePreview } from "./ImageUpload";
 import { Button } from "@/components/ui/button";
@@ -169,6 +169,7 @@ export function CreateListingForm() {
         ...data,
         price: Number(data.price),
         images: uploaded,
+        seller: { phone: data.phone },
       });
 
       router.push("/dashboard/listings");
@@ -296,6 +297,24 @@ export function CreateListingForm() {
                 ))}
               </Select>
             </div>
+          </Card>
+
+          {/* Contact */}
+          <Card padding="lg">
+            <Card.Header>
+              <Card.Title>Contact</Card.Title>
+              <Card.Description>Buyers will use this to call or WhatsApp you.</Card.Description>
+            </Card.Header>
+            <Input
+              {...register("phone")}
+              id="phone"
+              type="tel"
+              label="Phone Number"
+              placeholder="e.g. 0771 234 567"
+              hint="Shown as Call and WhatsApp buttons on your listing."
+              error={errors.phone?.message}
+              required
+            />
           </Card>
 
           {/* Publish */}
