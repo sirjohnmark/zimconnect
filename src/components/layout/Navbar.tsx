@@ -196,7 +196,8 @@ export function Navbar() {
             {/* ── Desktop nav links ── */}
             <nav className="hidden md:flex items-center gap-1 flex-1" aria-label="Main navigation">
               {NAV_LINKS.map(({ label, href }) => {
-                const isActive = pathname === href || (href !== "/home" && pathname.startsWith(href.split("#")[0]));
+                const base = href.split("#")[0];
+                const isActive = pathname === base || (base !== "/home" && pathname.startsWith(base + "/"));
                 return (
                   <Link
                     key={href}
@@ -262,7 +263,8 @@ export function Navbar() {
 
           {/* Primary nav links */}
           {NAV_LINKS.map(({ label, href }) => {
-            const isActive = pathname === href || (href !== "/home" && pathname.startsWith(href.split("#")[0]));
+            const base = href.split("#")[0];
+            const isActive = pathname === base || (base !== "/home" && pathname.startsWith(base + "/"));
             return (
               <Link
                 key={href}
