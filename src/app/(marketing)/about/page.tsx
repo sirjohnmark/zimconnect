@@ -55,12 +55,12 @@ const VALUES = [
 ];
 
 const TEAM = [
-  { name: "Takudzwa Mutasa",  role: "Co-Founder & CEO",      initial: "T", color: "bg-emerald-100 text-emerald-700" },
-  { name: "Simbarashe Choto", role: "Co-Founder & CTO",      initial: "S", color: "bg-blue-100 text-blue-700"    },
-  { name: "Rudo Maziwisa",    role: "Head of Product",       initial: "R", color: "bg-purple-100 text-purple-700" },
-  { name: "Farai Ncube",      role: "Head of Operations",    initial: "F", color: "bg-amber-100 text-amber-700"   },
-  { name: "Chiedza Mpofu",    role: "Marketing Lead",        initial: "C", color: "bg-rose-100 text-rose-700"     },
-  { name: "Tinashe Dube",     role: "Customer Success",      initial: "T", color: "bg-teal-100 text-teal-700"     },
+  { name: "Ian Marware",       role: "Co-Founder & CEO",      initial: "I", color: "bg-emerald-100 text-emerald-700" },
+  { name: "Strive Chitakatira",role: "Co-Founder & CTO",      initial: "S", color: "bg-blue-100 text-blue-700"    },
+  { name: "Rudo Maziwisa",     role: "Head of Product",       initial: "R", color: "bg-purple-100 text-purple-700" },
+  { name: "Farai Ncube",       role: "Head of Operations",    initial: "F", color: "bg-amber-100 text-amber-700"   },
+  { name: "Chiedza Mpofu",     role: "Marketing Lead",        initial: "C", color: "bg-rose-100 text-rose-700"     },
+  { name: "Tinashe Dube",      role: "Customer Success",      initial: "T", color: "bg-teal-100 text-teal-700"     },
 ];
 
 const MILESTONES = [
@@ -137,12 +137,12 @@ export default function AboutPage() {
             <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-8 text-white">
               <p className="text-sm font-semibold text-emerald-200 uppercase tracking-wider mb-4">Our vision</p>
               <p className="text-xl font-bold leading-snug">
-                &ldquo;A Zimbabwe where every individual and business can reach any buyer — instantly, safely, and for free.&rdquo;
+                &ldquo;A Zimbabwe where every individual and business can reach any buyer — a single trusted space where buyers and sellers meet, trade, and grow together, instantly, safely, and for free.&rdquo;
               </p>
               <div className="mt-6 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-sm font-bold">T</span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-sm font-bold">I</span>
                 <div>
-                  <p className="text-sm font-semibold">Takudzwa Mutasa</p>
+                  <p className="text-sm font-semibold">Ian Marware</p>
                   <p className="text-xs text-emerald-200">Co-Founder & CEO</p>
                 </div>
               </div>
