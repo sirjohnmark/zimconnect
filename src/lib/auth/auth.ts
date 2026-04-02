@@ -11,8 +11,9 @@
 
 import type { AuthUser } from "@/lib/api/auth";
 
-const SESSION_KEY  = "zimconnect_user";
-const ACCOUNTS_KEY = "zimconnect_accounts";
+const SESSION_KEY      = "zimconnect_user";
+const ACCOUNTS_KEY     = "zimconnect_accounts";
+const PREFERENCES_KEY  = "zimconnect_prefs";
 
 // ─── Stored account shape (includes password for mock validation) ─────────────
 
@@ -72,4 +73,62 @@ export function clearStoredUser(): void {
 export function isStoredAuthenticated(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem(SESSION_KEY) !== null;
+}
+
+// ─── Password change (mock) ───────────────────────────────────────────────────
+
+export function updateStoredPassword(userId: string, newPassword: string): void {
+  if (typeof window === "undefined") return;
+  const accounts = getStoredAccounts();
+  const idx = accounts.findIndex((a) => a.id === userId);
+  if (idx !== -1) {
+    accounts[idx].password = newPassword;
+    localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+  }
+}
+
+export function getStoredPassword(userId: string): string | null {
+  const account = getStoredAccounts().find((a) => a.id === userId);
+  return account?.password ?? null;
+}
+
+// ─── Preferences ──────────────────────────────────────────────────────────────
+
+export interface UserPreferences {
+  emailNotifications: boolean;
+  smsNotifications: boolean;
+  marketingEmails: boolean;
+  newMessageAlert: boolean;
+  listingViewAlert: boolean;
+  currency: "USD" | "ZWL";
+  language: "en";
+  profileVisibility: "public" | "private";
+  showPhone: boolean;
+}
+
+export const DEFAULT_PREFERENCES: UserPreferences = {
+  emailNotifications: true,
+  smsNotifications: false,
+  marketingEmails: false,
+  newMessageAlert: true,
+  listingViewAlert: true,
+  currency: "USD",
+  language: "en",
+  profileVisibility: "public",
+  showPhone: true,
+};
+
+export function getStoredPreferences(): UserPreferences {
+  if (typeof window === "undefined") return DEFAULT_PREFERENCES;
+  try {
+    const raw = localStorage.getItem(PREFERENCES_KEY);
+    return raw ? { ...DEFAULT_PREFERENCES, ...(JSON.parse(raw) as Partial<UserPreferences>) } : DEFAULT_PREFERENCES;
+  } catch {
+    return DEFAULT_PREFERENCES;
+  }
+}
+
+export function savePreferences(prefs: UserPreferences): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(PREFERENCES_KEY, JSON.stringify(prefs));
 }

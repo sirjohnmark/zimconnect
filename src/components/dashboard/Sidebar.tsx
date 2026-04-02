@@ -14,7 +14,7 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const PRIMARY_NAV: NavItem[] = [
   {
     label: "Overview",
     href: "/dashboard",
@@ -60,6 +60,9 @@ const NAV_ITEMS: NavItem[] = [
       </svg>
     ),
   },
+];
+
+const SECONDARY_NAV: NavItem[] = [
   {
     label: "Profile",
     href: "/dashboard/profile",
@@ -129,7 +132,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
           Menu
         </p>
-        {NAV_ITEMS.map((item) => (
+        {PRIMARY_NAV.map((item) => (
+          <NavLink key={item.href} item={item} onClick={onNavClick} />
+        ))}
+        <div className="my-3 border-t border-gray-100" />
+        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Account
+        </p>
+        {SECONDARY_NAV.map((item) => (
           <NavLink key={item.href} item={item} onClick={onNavClick} />
         ))}
       </nav>

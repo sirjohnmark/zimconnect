@@ -5,6 +5,8 @@ import {
   clearStoredUser,
   saveAccount,
   findAccountByEmail,
+  updateStoredPassword,
+  getStoredPassword,
 } from "@/lib/auth/auth";
 import type { LoginInput } from "@/lib/validations/auth";
 import type { RegisterInput } from "@/lib/validations/auth";
@@ -80,6 +82,20 @@ export async function logoutUser(): Promise<void> {
     return;
   }
   return api.post<void>("/auth/logout", {});
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  if (USE_MOCK) {
+    const user = getStoredUser();
+    if (!user) throw new ApiError(401, "Unauthorized", "Not authenticated");
+    const stored = getStoredPassword(user.id);
+    if (stored !== currentPassword) {
+      throw new ApiError(400, "Bad Request", "Current password is incorrect.");
+    }
+    updateStoredPassword(user.id, newPassword);
+    return;
+  }
+  return api.post<void>("/auth/change-password", { currentPassword, newPassword });
 }
 
 export async function updateProfile(updates: Partial<Omit<AuthUser, "id">>): Promise<AuthUser> {
