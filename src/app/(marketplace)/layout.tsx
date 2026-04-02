@@ -1,4 +1,4 @@
-import { Navbar } from "@/components/marketing/Navbar";
+import { Navbar } from "@/components/layout/Navbar";
 
 const CATEGORIES = ["All", "Electronics", "Vehicles", "Property", "Jobs", "Services"];
 
