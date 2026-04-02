@@ -35,7 +35,7 @@ export function HeroSection() {
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,black_40%,transparent_100%)] opacity-40"
       />
 
-      <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-20 sm:py-28 text-center">
+      <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-28 text-center">
 
         {/* Badge */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-semibold text-emerald-700">
@@ -47,7 +47,7 @@ export function HeroSection() {
         </div>
 
         {/* Headline */}
-        <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
           Buy and Sell{" "}
           <span className="relative text-emerald-600">
             Anything
@@ -85,8 +85,8 @@ export function HeroSection() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search listings — phones, cars, apartments…"
-            className="flex-1 bg-transparent px-4 py-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+            placeholder="Search — phones, cars, apartments…"
+            className="flex-1 min-w-0 bg-transparent px-3 py-3.5 sm:px-4 sm:py-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
           />
           <button
             type="submit"

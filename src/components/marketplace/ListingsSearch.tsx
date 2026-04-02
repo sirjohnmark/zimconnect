@@ -74,7 +74,7 @@ export function ListingsSearch({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={cn("flex items-center gap-2", className)} role="search">
+    <form onSubmit={handleSubmit} className={cn("flex flex-col gap-2 sm:flex-row sm:items-center", className)} role="search">
       {/* Input */}
       <div className="relative flex-1">
         <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
@@ -111,7 +111,7 @@ export function ListingsSearch({
       <button
         type="submit"
         disabled={isPending}
-        className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-70 transition-all duration-75"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-70 transition-all duration-75 sm:w-auto"
       >
         {isPending ? <Spinner /> : <SearchIcon className="h-4 w-4" />}
         {isPending ? "Searching…" : "Search"}

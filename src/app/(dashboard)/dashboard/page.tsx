@@ -200,7 +200,7 @@ export default function DashboardPage() {
     <div className="space-y-10 pb-10">
 
       {/* ── Welcome banner ── */}
-      <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 px-6 py-8 sm:px-10 sm:py-10 text-white shadow-md">
+      <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 px-5 py-7 sm:px-10 sm:py-10 text-white shadow-md">
         <p className="text-sm font-semibold text-emerald-200 uppercase tracking-wider mb-1">{greeting}</p>
         <h1 className="text-2xl sm:text-3xl font-extrabold">{firstName} 👋</h1>
         <p className="mt-2 text-emerald-100 text-sm max-w-md">

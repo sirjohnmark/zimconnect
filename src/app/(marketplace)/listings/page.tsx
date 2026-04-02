@@ -62,7 +62,7 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
   return (
     <div>
       {/* Toolbar */}
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold text-gray-900">
           {headingText}
           <span className="ml-2 text-sm font-normal text-gray-400">
