@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useReducer } from "react";
 import { useRouter } from "next/navigation";
-import { getMe, loginUser, logoutUser, registerUser } from "@/lib/api/auth";
+import { getMe, loginUser, logoutUser, registerUser, updateProfile } from "@/lib/api/auth";
 import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
@@ -41,6 +41,7 @@ interface AuthContextValue {
   login: (credentials: LoginInput) => Promise<LoginResponse>;
   register: (data: RegisterInput) => Promise<LoginResponse>;
   logout: () => Promise<void>;
+  updateUser: (updates: Partial<Omit<AuthUser, "id">>) => Promise<AuthUser>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -116,8 +117,14 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     }
   }, [logoutRedirect, router]);
 
+  const updateUser = useCallback(async (updates: Partial<Omit<AuthUser, "id">>): Promise<AuthUser> => {
+    const updated = await updateProfile(updates);
+    dispatch({ type: "SET_USER", user: updated });
+    return updated;
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ auth, login, register, logout }}>
+    <AuthContext.Provider value={{ auth, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

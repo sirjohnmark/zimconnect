@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth/useAuth";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,15 @@ const NAV_ITEMS: NavItem[] = [
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
         <path fillRule="evenodd" d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  {
+    label: "Orders",
+    href: "/dashboard/orders",
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+        <path fillRule="evenodd" d="M6 5v1H4.667a1.75 1.75 0 0 0-1.743 1.598l-.826 9.14A1.75 1.75 0 0 0 3.84 18.75h12.32a1.75 1.75 0 0 0 1.742-1.012l-.825-9.14A1.75 1.75 0 0 0 15.333 7H14V5a4 4 0 0 0-8 0Zm4-2.5A2.5 2.5 0 0 0 7.5 5v1h5V5A2.5 2.5 0 0 0 10 2.5ZM7.5 10a2.5 2.5 0 0 0 5 0V8.75a.75.75 0 0 1 1.5 0V10a4 4 0 0 1-8 0V8.75a.75.75 0 0 1 1.5 0V10Z" clipRule="evenodd" />
       </svg>
     ),
   },
@@ -127,15 +137,19 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* User section */}
       <div className="border-t border-gray-100 px-3 py-4">
         {user && (
-          <div className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-600">
-              {user.name.charAt(0).toUpperCase()}
+          <Link href="/dashboard/profile" className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
+            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-600 overflow-hidden">
+              {user.avatar ? (
+                <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+              ) : (
+                user.name.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-gray-900">{user.name}</p>
               <p className="truncate text-xs text-gray-400">{user.email}</p>
             </div>
-          </div>
+          </Link>
         )}
         <button
           onClick={logout}

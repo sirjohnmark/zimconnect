@@ -22,10 +22,12 @@ export interface UseAuthReturn {
   register: (data: RegisterInput) => Promise<unknown>;
   /** Clears auth state, calls /api/auth/logout, and redirects. */
   logout: () => Promise<void>;
+  /** Update profile fields and refresh auth state. */
+  updateUser: (updates: Partial<Omit<AuthUser, "id">>) => Promise<AuthUser>;
 }
 
 export function useAuth(): UseAuthReturn {
-  const { auth, login, register, logout } = useAuthContext();
+  const { auth, login, register, logout, updateUser } = useAuthContext();
 
   return {
     auth,
@@ -35,5 +37,6 @@ export function useAuth(): UseAuthReturn {
     login,
     register,
     logout,
+    updateUser,
   };
 }

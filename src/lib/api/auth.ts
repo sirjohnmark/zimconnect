@@ -15,6 +15,10 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
+  phone?: string;
+  location?: string;
+  /** base64 data URL — stored in localStorage in mock mode */
+  avatar?: string;
 }
 
 export interface LoginResponse {
@@ -76,4 +80,15 @@ export async function logoutUser(): Promise<void> {
     return;
   }
   return api.post<void>("/auth/logout", {});
+}
+
+export async function updateProfile(updates: Partial<Omit<AuthUser, "id">>): Promise<AuthUser> {
+  if (USE_MOCK) {
+    const user = getStoredUser();
+    if (!user) throw new ApiError(401, "Unauthorized", "Not authenticated");
+    const updated: AuthUser = { ...user, ...updates };
+    saveUser(updated);
+    return updated;
+  }
+  return api.patch<AuthUser>("/auth/profile", updates);
 }

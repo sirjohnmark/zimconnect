@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -90,8 +91,12 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
           aria-expanded={userMenuOpen}
           aria-haspopup="true"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
-            {user.name.charAt(0).toUpperCase()}
+          <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700 overflow-hidden">
+            {user.avatar ? (
+              <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+            ) : (
+              user.name.charAt(0).toUpperCase()
+            )}
           </span>
           <span className="max-w-[120px] truncate">{user.name}</span>
           <ChevronIcon open={userMenuOpen} />
@@ -306,8 +311,12 @@ export function Navbar() {
               <>
                 {/* Logged-in user info */}
                 <div className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-3">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
-                    {user.name.charAt(0).toUpperCase()}
+                  <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700 overflow-hidden">
+                    {user.avatar ? (
+                      <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+                    ) : (
+                      user.name.charAt(0).toUpperCase()
+                    )}
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-gray-900">{user.name}</p>
