@@ -1,29 +1,18 @@
 "use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useCallback, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
 
-// ─── Search icon ──────────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        fillRule="evenodd"
-        d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
-        clipRule="evenodd"
-      />
+    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
     </svg>
   );
 }
-
-// ─── Clear icon ───────────────────────────────────────────────────────────────
 
 function ClearIcon({ className }: { className?: string }) {
   return (
@@ -33,11 +22,9 @@ function ClearIcon({ className }: { className?: string }) {
   );
 }
 
-// ─── Spinner ──────────────────────────────────────────────────────────────────
-
 function Spinner() {
   return (
-    <svg className="h-4 w-4 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg className="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
     </svg>
@@ -60,70 +47,75 @@ export function ListingsSearch({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  const query = searchParams.get("q") ?? "";
+  // Local draft — only committed to URL on submit
+  const [draft, setDraft] = useState(searchParams.get("q") ?? "");
 
-  // Merge a new param into the current search string
-  const createQueryString = useCallback(
-    (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-      // Always reset to page 1 on new search
-      params.delete("page");
-      return params.toString();
-    },
-    [searchParams],
-  );
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const qs = createQueryString("q", e.target.value);
+  function navigate(value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set("q", value);
+    } else {
+      params.delete("q");
+    }
+    params.delete("page");
     startTransition(() => {
-      router.replace(`${pathname}?${qs}`, { scroll: false });
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     });
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    navigate(draft.trim());
   }
 
   function handleClear() {
-    const qs = createQueryString("q", "");
-    startTransition(() => {
-      router.replace(`${pathname}?${qs}`, { scroll: false });
-    });
+    setDraft("");
+    navigate("");
   }
 
   return (
-    <div className={cn("relative flex items-center", className)}>
-      {/* Left icon — spinner while navigating, search icon otherwise */}
-      <div className="pointer-events-none absolute left-3">
-        {isPending ? <Spinner /> : <SearchIcon className="h-4 w-4 text-gray-400" />}
+    <form onSubmit={handleSubmit} className={cn("flex items-center gap-2", className)} role="search">
+      {/* Input */}
+      <div className="relative flex-1">
+        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+          <SearchIcon className="h-4 w-4 text-gray-400" />
+        </div>
+
+        <input
+          type="search"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={placeholder}
+          aria-label="Search listings"
+          className={cn(
+            "w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900",
+            "placeholder:text-gray-400 shadow-sm",
+            "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors duration-150",
+          )}
+        />
+
+        {/* Clear button — only when there's a draft */}
+        {draft && (
+          <button
+            type="button"
+            onClick={handleClear}
+            aria-label="Clear search"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          >
+            <ClearIcon className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      <input
-        type="search"
-        value={query}
-        onChange={handleChange}
-        placeholder={placeholder}
-        aria-label="Search listings"
-        className={cn(
-          "w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900",
-          "placeholder:text-gray-400 shadow-sm",
-          "transition-colors duration-150",
-          "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400",
-        )}
-      />
-
-      {/* Clear button */}
-      {query && (
-        <button
-          type="button"
-          onClick={handleClear}
-          aria-label="Clear search"
-          className="absolute right-3 rounded-sm text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-        >
-          <ClearIcon className="h-4 w-4" />
-        </button>
-      )}
-    </div>
+      {/* Search button */}
+      <button
+        type="submit"
+        disabled={isPending}
+        className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-70 transition-all duration-75"
+      >
+        {isPending ? <Spinner /> : <SearchIcon className="h-4 w-4" />}
+        {isPending ? "Searching…" : "Search"}
+      </button>
+    </form>
   );
 }
