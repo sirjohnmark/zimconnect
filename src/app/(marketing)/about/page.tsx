@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const STATS = [
   { value: "50K+",  label: "Active Listings"   },
   { value: "12K+",  label: "Verified Sellers"  },
-  { value: "8",     label: "Categories"         },
+  { value: "14",    label: "Categories"          },
   { value: "10+",   label: "Cities Covered"    },
 ];
 
