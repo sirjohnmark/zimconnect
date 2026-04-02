@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { SaveButton } from "@/components/marketplace/SaveButton";
 import type { Listing, ListingCondition } from "@/types/listing";
 
 // ─── Condition badge ──────────────────────────────────────────────────────────
@@ -144,6 +145,10 @@ export function ListingCard({
               <ConditionBadge condition={condition} />
             </div>
           )}
+          {/* Save button */}
+          <div className="absolute top-2 right-2">
+            <SaveButton listingId={id} variant="icon" />
+          </div>
         </div>
 
         {/* Body */}

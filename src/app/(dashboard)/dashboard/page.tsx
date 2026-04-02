@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth/useAuth";
 import { MOCK_LISTINGS } from "@/lib/mock/listings";
+import { getSavedIds } from "@/lib/mock/saved";
+import { EngagementChart, CategoryChart } from "@/components/dashboard/AnalyticsChart";
 import { cn } from "@/lib/utils";
 import type { Listing } from "@/types/listing";
 
@@ -176,16 +178,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setMounted(true);
-    try {
-      const raw = localStorage.getItem("zimconnect_saved");
-      if (raw) {
-        const ids: string[] = JSON.parse(raw);
-        const found = MOCK_LISTINGS.filter((l) => ids.includes(l.id));
-        setSavedListings(found);
-      }
-    } catch {
-      // ignore
-    }
+    const ids = getSavedIds();
+    const found = MOCK_LISTINGS.filter((l) => ids.includes(l.id));
+    setSavedListings(found);
   }, []);
 
   const suggested = MOCK_LISTINGS.slice(0, 8);
@@ -228,13 +223,19 @@ export default function DashboardPage() {
           { label: "Active Listings", value: "12",              color: "text-emerald-600" },
           { label: "Total Views",     value: "3,240",           color: "text-blue-600"   },
           { label: "Unread Messages", value: String(unreadMessages), color: "text-amber-600" },
-          { label: "Saved Items",     value: mounted ? String(savedListings.length || 8) : "—", color: "text-purple-600" },
+          { label: "Saved Items",     value: mounted ? String(savedListings.length) : "—", color: "text-purple-600" },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
             <p className={cn("mt-2 text-3xl font-bold", color)}>{value}</p>
           </div>
         ))}
+      </div>
+
+      {/* ── Charts ── */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+        <EngagementChart />
+        <CategoryChart />
       </div>
 
       {/* ── Main grid: left wide + right narrow ── */}
