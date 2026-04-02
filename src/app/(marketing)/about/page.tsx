@@ -55,8 +55,8 @@ const VALUES = [
 ];
 
 const TEAM = [
-  { name: "Ian Marware",       role: "Co-Founder & CEO",      initial: "I", color: "bg-emerald-100 text-emerald-700" },
-  { name: "Strive Chitakatira",role: "Co-Founder & CTO",      initial: "S", color: "bg-blue-100 text-blue-700"    },
+  { name: "Ian Marware",        role: "Co-Founder & CEO",      initial: "I", color: "bg-emerald-100 text-emerald-700" },
+  { name: "Strive Chitakatira", role: "Co-Founder & CEO",     initial: "S", color: "bg-blue-100 text-blue-700"    },
   { name: "Rudo Maziwisa",     role: "Head of Product",       initial: "R", color: "bg-purple-100 text-purple-700" },
   { name: "Farai Ncube",       role: "Head of Operations",    initial: "F", color: "bg-amber-100 text-amber-700"   },
   { name: "Chiedza Mpofu",     role: "Marketing Lead",        initial: "C", color: "bg-rose-100 text-rose-700"     },
@@ -141,9 +141,10 @@ export default function AboutPage() {
               </p>
               <div className="mt-6 flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-sm font-bold">I</span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-sm font-bold">S</span>
                 <div>
-                  <p className="text-sm font-semibold">Ian Marware</p>
-                  <p className="text-xs text-emerald-200">Co-Founder & CEO</p>
+                  <p className="text-sm font-semibold">Ian Marware &amp; Strive Chitakatira</p>
+                  <p className="text-xs text-emerald-200">Co-Founders &amp; CEOs</p>
                 </div>
               </div>
             </div>
