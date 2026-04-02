@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -85,9 +86,8 @@ const SECONDARY_NAV: NavItem[] = [
 
 // ─── Nav link ─────────────────────────────────────────────────────────────────
 
-function NavLink({ item, onClick }: { item: NavItem; onClick?: () => void }) {
+function NavLink({ item, badge, onClick }: { item: NavItem; badge?: number; onClick?: () => void }) {
   const pathname = usePathname();
-  // Exact match for /dashboard, prefix match for sub-routes
   const isActive =
     item.href === "/dashboard"
       ? pathname === "/dashboard"
@@ -108,7 +108,12 @@ function NavLink({ item, onClick }: { item: NavItem; onClick?: () => void }) {
       <span className={cn(isActive ? "text-emerald-600" : "text-gray-400")}>
         {item.icon}
       </span>
-      {item.label}
+      <span className="flex-1">{item.label}</span>
+      {badge != null && badge > 0 && (
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1 text-[11px] font-bold text-white">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -117,6 +122,14 @@ function NavLink({ item, onClick }: { item: NavItem; onClick?: () => void }) {
 
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const { user, logout } = useAuth();
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    // Lazy import to avoid SSR issues
+    import("@/lib/mock/messages").then(({ getTotalUnread }) => {
+      setUnreadMessages(getTotalUnread());
+    });
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -133,7 +146,12 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           Menu
         </p>
         {PRIMARY_NAV.map((item) => (
-          <NavLink key={item.href} item={item} onClick={onNavClick} />
+          <NavLink
+            key={item.href}
+            item={item}
+            badge={item.href === "/dashboard/messages" ? unreadMessages : undefined}
+            onClick={onNavClick}
+          />
         ))}
         <div className="my-3 border-t border-gray-100" />
         <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
