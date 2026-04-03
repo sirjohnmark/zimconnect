@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { getSavedIds, removeSaved } from "@/lib/mock/saved";
 import { MOCK_LISTINGS } from "@/lib/mock/listings";
@@ -52,6 +53,7 @@ export default function SavedPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <BackButton href="/dashboard" label="Dashboard" className="-ml-1 mb-1" />
           <h1 className="text-xl font-semibold text-gray-900">Saved Listings</h1>
           <p className="mt-0.5 text-sm text-gray-500">
             {listings.length} saved item{listings.length !== 1 ? "s" : ""}

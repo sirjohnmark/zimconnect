@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import type { Listing } from "@/types/listing";
 
@@ -52,6 +53,7 @@ export default function DashboardListingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <BackButton href="/dashboard" label="Dashboard" className="-ml-1 mb-1" />
           <h1 className="text-xl font-semibold text-gray-900">My Listings</h1>
           <p className="mt-0.5 text-sm text-gray-500">
             {listings.length} listing{listings.length !== 1 ? "s" : ""}

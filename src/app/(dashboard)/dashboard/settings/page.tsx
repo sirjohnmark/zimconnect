@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
 import { changePassword } from "@/lib/api/auth";
+import { BackButton } from "@/components/ui/BackButton";
 import {
   getStoredPreferences,
   savePreferences,
@@ -495,6 +496,7 @@ export default function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-8">
       <div>
+        <BackButton href="/dashboard" label="Dashboard" className="-ml-1 mb-2" />
         <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
         <p className="mt-1 text-sm text-gray-500">Manage your account security, notifications, and preferences.</p>
       </div>

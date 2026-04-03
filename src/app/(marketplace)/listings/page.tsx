@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Link from "next/link";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { ListingsSearch } from "@/components/marketplace/ListingsSearch";
 import { getListings } from "@/lib/data/listings";
@@ -61,6 +62,19 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
 
   return (
     <div>
+      {/* Back to categories when filtering by category */}
+      {category && (
+        <Link
+          href="/categories"
+          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 mb-4 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:scale-[0.97] transition-all"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+            <path fillRule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" />
+          </svg>
+          All Categories
+        </Link>
+      )}
+
       {/* Toolbar */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold text-gray-900">

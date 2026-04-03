@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -98,6 +99,7 @@ export default function OrdersPage() {
 
       {/* Header */}
       <div>
+        <BackButton href="/dashboard" label="Dashboard" className="-ml-1 mb-2" />
         <h1 className="text-xl font-semibold text-gray-900">My Orders</h1>
         <p className="mt-1 text-sm text-gray-500">
           {total} order{total !== 1 ? "s" : ""} — {completed} completed, {pending} active

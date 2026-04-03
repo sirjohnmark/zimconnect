@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/useAuth";
+import { BackButton } from "@/components/ui/BackButton";
 import {
   getConversations,
   getConversation,
@@ -418,6 +419,7 @@ export default function MessagesPage() {
       {/* Page heading — outside the panel */}
       <div className="mb-4 flex items-center justify-between">
         <div>
+          <BackButton href="/dashboard" label="Dashboard" className="-ml-1 mb-1" />
           <h1 className="text-xl font-semibold text-gray-900">
             Messages
             {totalUnread > 0 && (

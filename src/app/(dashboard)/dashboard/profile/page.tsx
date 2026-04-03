@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth/useAuth";
+import { BackButton } from "@/components/ui/BackButton";
 import { cn } from "@/lib/utils";
 
 // ─── Avatar upload ────────────────────────────────────────────────────────────
@@ -168,6 +169,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl space-y-8">
       <div>
+        <BackButton href="/dashboard" label="Dashboard" className="mb-2 -ml-1" />
         <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
         <p className="mt-1 text-sm text-gray-500">Manage your personal information and how buyers see you.</p>
       </div>
