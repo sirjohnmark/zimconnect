@@ -18,7 +18,7 @@ const NAV_LINKS = [
 
 const DASHBOARD_LINKS = [
   {
-    label: "Overview",
+    label: "Home",
     href: "/dashboard",
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">

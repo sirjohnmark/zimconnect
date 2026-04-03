@@ -17,7 +17,7 @@ interface NavItem {
 
 const PRIMARY_NAV: NavItem[] = [
   {
-    label: "Overview",
+    label: "Home",
     href: "/dashboard",
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
