@@ -33,7 +33,11 @@ export default function MarketplaceLayout({ children }: { children: React.ReactN
               <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5"><path fillRule="evenodd" d="M5 2.75A1.75 1.75 0 0 1 6.75 1h2.5A1.75 1.75 0 0 1 11 2.75v.25h1.25A1.75 1.75 0 0 1 14 4.75v8.5A1.75 1.75 0 0 1 12.25 15h-8.5A1.75 1.75 0 0 1 2 13.25v-8.5A1.75 1.75 0 0 1 3.75 3H5v-.25ZM6.5 3v.25h3V3a.25.25 0 0 0-.25-.25h-2.5A.25.25 0 0 0 6.5 3Z" clipRule="evenodd" /></svg>
               Job Vacancies
             </a>
-            {CATEGORIES.map((cat) => (
+            <a href="/schools" className="flex items-center gap-2 rounded-md px-3 py-2 hover:bg-blue-50 hover:text-blue-700 transition-colors font-semibold text-blue-700">
+              <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5"><path d="M8.316 1.665a.75.75 0 0 0-.632 0l-6.5 3a.75.75 0 0 0 0 1.37L3.5 7.237V11a.75.75 0 0 0 .75.75h7.5a.75.75 0 0 0 .75-.75V7.237l1.684-.775V11.5a.75.75 0 0 0 1.5 0V6a.75.75 0 0 0-.434-.685l-6.934-3.65ZM4.5 9.5v-1.6l3.184 1.464a.75.75 0 0 0 .632 0L11.5 7.9v1.6h-7Z" /></svg>
+              Schools Directory
+            </a>
+            {CATEGORIES.filter(c => c !== "Schools").map((cat) => (
               <a
                 key={cat}
                 href={cat === "All" ? "/listings" : `/listings?category=${cat.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-")}`}
