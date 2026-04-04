@@ -132,3 +132,47 @@ export function savePreferences(prefs: UserPreferences): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(PREFERENCES_KEY, JSON.stringify(prefs));
 }
+
+// ─── OTP (mock — in production these would be server-side only) ───────────────
+
+const OTP_KEY = "zimconnect_otp";
+
+interface StoredOtp {
+  code: string;
+  contact: string; // email or phone
+  method: "email" | "phone";
+  expiresAt: number; // timestamp ms
+}
+
+export function generateAndStoreOtp(contact: string, method: "email" | "phone"): string {
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const entry: StoredOtp = { code, contact, method, expiresAt: Date.now() + 10 * 60 * 1000 }; // 10 min
+  if (typeof window !== "undefined") {
+    localStorage.setItem(OTP_KEY, JSON.stringify(entry));
+  }
+  return code;
+}
+
+export function verifyOtp(code: string): { valid: boolean; reason?: string } {
+  if (typeof window === "undefined") return { valid: false, reason: "unavailable" };
+  try {
+    const raw = localStorage.getItem(OTP_KEY);
+    if (!raw) return { valid: false, reason: "No code found. Please request a new one." };
+    const entry = JSON.parse(raw) as StoredOtp;
+    if (Date.now() > entry.expiresAt) {
+      localStorage.removeItem(OTP_KEY);
+      return { valid: false, reason: "Code has expired. Please request a new one." };
+    }
+    if (entry.code !== code.trim()) {
+      return { valid: false, reason: "Incorrect code. Please try again." };
+    }
+    localStorage.removeItem(OTP_KEY);
+    return { valid: true };
+  } catch {
+    return { valid: false, reason: "Something went wrong. Please try again." };
+  }
+}
+
+export function clearOtp(): void {
+  if (typeof window !== "undefined") localStorage.removeItem(OTP_KEY);
+}

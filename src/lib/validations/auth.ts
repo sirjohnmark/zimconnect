@@ -23,6 +23,12 @@ export const registerSchema = z.object({
     .string()
     .min(1, "Email is required")
     .email("Enter a valid email address"),
+  phone: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^(\+?263|0)[0-9]{9}$/.test(v.replace(/\s/g, "")), {
+      message: "Enter a valid Zimbabwean number (e.g. 0771234567)",
+    }),
   password: z
     .string()
     .min(1, "Password is required")
