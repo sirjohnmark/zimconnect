@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
-import { getMySchool, saveSchool, type SchoolProfile, type SchoolType, type SchoolLevel } from "@/lib/mock/schools";
+import { getMySchool, saveSchool, type SchoolProfile, type SchoolType, type SchoolLevel, type SchoolCurriculum } from "@/lib/mock/schools";
 import { cn } from "@/lib/utils";
 
 // ─── Image uploader (min 2, max 5) ───────────────────────────────────────────
@@ -143,8 +143,9 @@ export default function SchoolDashboardPage() {
   const [name, setName]         = useState("");
   const [tagline, setTagline]   = useState("");
   const [description, setDesc]  = useState("");
-  const [level, setLevel]       = useState<SchoolLevel>("secondary");
-  const [type, setType]         = useState<SchoolType>("day");
+  const [level, setLevel]           = useState<SchoolLevel>("secondary");
+  const [type, setType]             = useState<SchoolType>("day");
+  const [curriculum, setCurriculum] = useState<SchoolCurriculum | "">("");
   const [location, setLocation] = useState("");
   const [city, setCity]         = useState("");
   const [images, setImages]     = useState<string[]>([]);
@@ -179,6 +180,7 @@ export default function SchoolDashboardPage() {
       setDesc(profile.description);
       setLevel(profile.level);
       setType(profile.type);
+      setCurriculum(profile.curriculum ?? "");
       setLocation(profile.location);
       setCity(profile.city);
       setImages(profile.images);
@@ -209,7 +211,7 @@ export default function SchoolDashboardPage() {
     return Object.keys(errs).length === 0;
   }
 
-  function handleSave(e: React.FormEvent) {
+  function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!user || !validate()) return;
 
@@ -221,6 +223,7 @@ export default function SchoolDashboardPage() {
       description: description.trim(),
       level,
       type,
+      curriculum: (curriculum as SchoolCurriculum) || undefined,
       location: location.trim(),
       city: city.trim(),
       images,
@@ -318,6 +321,15 @@ export default function SchoolDashboardPage() {
               </select>
             </Field>
           </div>
+
+          <Field label="Curriculum" hint="Select the examination board(s) your school follows.">
+            <select value={curriculum} onChange={(e) => setCurriculum(e.target.value as SchoolCurriculum | "")} className={INPUT}>
+              <option value="">Not specified</option>
+              <option value="zimsec">ZIMSEC (O-Level / A-Level)</option>
+              <option value="cambridge">Cambridge (IGCSE / AS & A-Level)</option>
+              <option value="both">Both ZIMSEC & Cambridge</option>
+            </select>
+          </Field>
         </section>
 
         {/* ── Location ── */}

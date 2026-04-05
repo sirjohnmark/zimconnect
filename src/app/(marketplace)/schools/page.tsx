@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
-import { getSchools, type SchoolProfile, type SchoolType, type SchoolLevel } from "@/lib/mock/schools";
+import { getSchools, type SchoolProfile, type SchoolType, type SchoolLevel, type SchoolCurriculum } from "@/lib/mock/schools";
 import { cn } from "@/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -26,6 +26,18 @@ const LEVEL_LABEL: Record<SchoolLevel, string> = {
   secondary: "Secondary",
   combined:  "Combined",
   tertiary:  "Tertiary",
+};
+
+const CURRICULUM_LABEL: Record<SchoolCurriculum, string> = {
+  zimsec:   "ZIMSEC",
+  cambridge: "Cambridge",
+  both:     "ZIMSEC & Cambridge",
+};
+
+const CURRICULUM_COLOR: Record<SchoolCurriculum, string> = {
+  zimsec:   "bg-emerald-100 text-emerald-800 border border-emerald-200",
+  cambridge: "bg-blue-100 text-blue-800 border border-blue-200",
+  both:     "bg-violet-100 text-violet-800 border border-violet-200",
 };
 
 // ─── Image carousel ───────────────────────────────────────────────────────────
@@ -104,6 +116,16 @@ function SchoolCard({ school }: { school: SchoolProfile }) {
               <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600">
                 {LEVEL_LABEL[school.level]}
               </span>
+              {school.curriculum && (
+                <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold", CURRICULUM_COLOR[school.curriculum])}>
+                  {school.curriculum === "cambridge" || school.curriculum === "both" ? (
+                    <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3 shrink-0">
+                      <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1ZM5.78 8.75a9.64 9.64 0 0 0 1.363 4.177c.255.426.542.832.857 1.215.245-.296.551-.705.857-1.215A9.64 9.64 0 0 0 10.22 8.75Zm4.44-1.5a9.64 9.64 0 0 0-1.363-4.177c-.307-.51-.612-.919-.857-1.215a9.927 9.927 0 0 0-.857 1.215A9.64 9.64 0 0 0 5.78 7.25Zm-5.944 1.5H1.543a6.507 6.507 0 0 0 4.666 5.5 11.13 11.13 0 0 1-1.412-2.77 11.593 11.593 0 0 1-.561-2.73Zm-2.733-1.5h2.733a11.593 11.593 0 0 1 .56-2.73 11.13 11.13 0 0 1 1.413-2.77 6.507 6.507 0 0 0-4.706 5.5Zm10.181 1.5a11.593 11.593 0 0 1-.561 2.73 11.13 11.13 0 0 1-1.412 2.77 6.507 6.507 0 0 0 4.666-5.5Zm2.733-1.5a6.507 6.507 0 0 0-4.706-5.5c.54 1.337.56 2.73h2.733Z" />
+                    </svg>
+                  ) : null}
+                  {CURRICULUM_LABEL[school.curriculum]}
+                </span>
+              )}
               {school.verified && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                   <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
@@ -220,12 +242,13 @@ function SchoolCard({ school }: { school: SchoolProfile }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SchoolsPage() {
-  const [schools, setSchools]   = useState<SchoolProfile[]>([]);
-  const [search, setSearch]     = useState("");
-  const [typeFilter, setType]   = useState<"all" | SchoolType>("all");
-  const [levelFilter, setLevel] = useState<"all" | SchoolLevel>("all");
-  const [cityFilter, setCity]   = useState("all");
-  const [mounted, setMounted]   = useState(false);
+  const [schools, setSchools]         = useState<SchoolProfile[]>([]);
+  const [search, setSearch]           = useState("");
+  const [typeFilter, setType]         = useState<"all" | SchoolType>("all");
+  const [levelFilter, setLevel]       = useState<"all" | SchoolLevel>("all");
+  const [curriculumFilter, setCurric] = useState<"all" | SchoolCurriculum>("all");
+  const [cityFilter, setCity]         = useState("all");
+  const [mounted, setMounted]         = useState(false);
 
   useEffect(() => {
     setSchools(getSchools());
@@ -234,15 +257,36 @@ export default function SchoolsPage() {
 
   const cities = ["all", ...Array.from(new Set(schools.map((s) => s.city))).sort()];
 
-  const filtered = schools.filter((s) => {
-    const matchSearch = !search ||
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.location.toLowerCase().includes(search.toLowerCase());
-    const matchType  = typeFilter  === "all" || s.type  === typeFilter;
-    const matchLevel = levelFilter === "all" || s.level === levelFilter;
-    const matchCity  = cityFilter  === "all" || s.city  === cityFilter;
-    return matchSearch && matchType && matchLevel && matchCity;
-  });
+  // Fuzzy multi-keyword scoring — split query into words, match any field
+  function scoreSchool(s: SchoolProfile, words: string[]): number {
+    if (words.length === 0) return 1;
+    const haystack = [
+      s.name, s.tagline ?? "", s.description,
+      s.location, s.city,
+      s.curriculum ? CURRICULUM_LABEL[s.curriculum] : "",
+      s.type, s.level,
+    ].join(" ").toLowerCase();
+    return words.filter((w) => haystack.includes(w)).length;
+  }
+
+  const queryWords = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+  const filtered = schools
+    .map((s) => ({ s, score: scoreSchool(s, queryWords) }))
+    .filter(({ score, s }) => {
+      if (queryWords.length > 0 && score === 0) return false;
+      if (typeFilter !== "all" && s.type !== typeFilter) return false;
+      if (levelFilter !== "all" && s.level !== levelFilter) return false;
+      if (cityFilter !== "all" && s.city !== cityFilter) return false;
+      if (curriculumFilter !== "all") {
+        if (curriculumFilter === "cambridge") return s.curriculum === "cambridge" || s.curriculum === "both";
+        if (curriculumFilter === "zimsec")    return s.curriculum === "zimsec"    || s.curriculum === "both";
+        return s.curriculum === curriculumFilter;
+      }
+      return true;
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(({ s }) => s);
 
   return (
     <div className="space-y-5">
@@ -302,6 +346,31 @@ export default function SchoolsPage() {
               )}
             >
               {l === "all" ? "All Levels" : LEVEL_LABEL[l as SchoolLevel]}
+            </button>
+          ))}
+
+          <div className="w-px bg-gray-200 self-stretch mx-1" />
+
+          {/* Curriculum filter */}
+          {(["all", "zimsec", "cambridge", "both"] as const).map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCurric(c)}
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+                curriculumFilter === c
+                  ? c === "cambridge"
+                    ? "border-blue-600 bg-blue-700 text-white"
+                    : c === "zimsec"
+                    ? "border-emerald-600 bg-emerald-700 text-white"
+                    : c === "both"
+                    ? "border-violet-600 bg-violet-700 text-white"
+                    : "border-gray-500 bg-gray-700 text-white"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-400",
+              )}
+            >
+              {c === "all" ? "All Curricula" : c === "both" ? "ZIMSEC & Cambridge" : CURRICULUM_LABEL[c as SchoolCurriculum]}
             </button>
           ))}
 

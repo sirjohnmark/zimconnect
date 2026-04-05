@@ -11,16 +11,26 @@ export interface Employer {
   verificationDoc?: string; // base64 or filename
 }
 
+export type JobType = "full-time" | "part-time" | "contract" | "internship" | "remote";
+export type JobIndustry =
+  | "technology" | "finance" | "engineering" | "healthcare" | "education"
+  | "sales-marketing" | "logistics" | "construction" | "hospitality"
+  | "agriculture" | "legal" | "media" | "ngo" | "manufacturing" | "other";
+
 export interface JobListing {
   id: string;
   title: string;
   company: string;
   employerId: string;
   location: string;
-  type: "full-time" | "part-time" | "contract" | "internship" | "remote";
+  remote: boolean;
+  type: JobType;
+  industry?: JobIndustry;
   salary?: { min: number; max: number; currency: string };
   description: string;
   requirements: string[];
+  benefits?: string[];
+  howToApply?: string; // email or URL
   postedAt: string;
   deadline?: string;
   status: "open" | "closed" | "filled";
@@ -92,11 +102,14 @@ const SEED_JOBS: JobListing[] = [
     title: "Software Engineer (React / Node.js)",
     company: "TechZim Solutions",
     employerId: "emp1",
-    location: "Harare (Remote)",
+    location: "Harare",
+    remote: true,
     type: "full-time",
+    industry: "technology",
     salary: { min: 1200, max: 1800, currency: "USD" },
     description: "We are looking for a skilled Software Engineer to join our growing team. You will build and maintain web applications for local and international clients.",
     requirements: ["3+ years React", "Node.js / Express", "PostgreSQL", "REST APIs", "Git"],
+    howToApply: "careers@techzim.co.zw",
     postedAt: "2026-03-28T08:00:00Z",
     deadline: "2026-04-30T23:59:00Z",
     status: "open",
@@ -109,7 +122,9 @@ const SEED_JOBS: JobListing[] = [
     company: "Fin Eagle Zimbabwe",
     employerId: "emp2",
     location: "Bulawayo",
+    remote: false,
     type: "full-time",
+    industry: "finance",
     salary: { min: 800, max: 1100, currency: "USD" },
     description: "Manage client accounts, prepare financial reports, and liaise with auditors. CPA or ACCA qualification required.",
     requirements: ["CPA / ACCA", "5+ years finance", "Pastel / Sage", "Excel"],
@@ -125,7 +140,9 @@ const SEED_JOBS: JobListing[] = [
     company: "Vibe Media ZW",
     employerId: "emp3",
     location: "Harare",
+    remote: false,
     type: "internship",
+    industry: "sales-marketing",
     salary: { min: 200, max: 300, currency: "USD" },
     description: "Support the marketing team with social media content creation, scheduling, and analytics. Great opportunity for recent graduates.",
     requirements: ["Degree in Marketing / Comms", "Social media savvy", "Canva / Photoshop a plus"],
@@ -139,8 +156,10 @@ const SEED_JOBS: JobListing[] = [
     title: "Driver — Class 2 (6-tonne truck)",
     company: "Swift Logistics Zimbabwe",
     employerId: "emp4",
-    location: "Harare / Nationwide",
+    location: "Harare",
+    remote: false,
     type: "full-time",
+    industry: "logistics",
     salary: { min: 400, max: 600, currency: "USD" },
     description: "Experienced Class 2 driver needed for inter-city deliveries. Clean driving record required.",
     requirements: ["Class 2 licence", "3+ years driving", "Defensive driving certificate"],
@@ -155,7 +174,9 @@ const SEED_JOBS: JobListing[] = [
     company: "Zimbuilds Group",
     employerId: "emp5",
     location: "Mutare",
+    remote: false,
     type: "contract",
+    industry: "engineering",
     salary: { min: 1500, max: 2500, currency: "USD" },
     description: "6-month contract for road and bridge construction oversight. AutoCAD and project management experience required.",
     requirements: ["BSc Civil Engineering", "AutoCAD", "5+ years site experience", "Valid EIZ membership"],
@@ -266,6 +287,32 @@ export function getJob(id: string): JobListing | undefined {
 
 export function getEmployerJobs(employerId: string): JobListing[] {
   return getJobs().filter((j) => j.employerId === employerId);
+}
+
+export function postJob(job: Omit<JobListing, "id" | "postedAt" | "applicants">): JobListing {
+  const jobs = getJobs();
+  const newJob: JobListing = {
+    ...job,
+    id: `j-${Date.now()}`,
+    postedAt: new Date().toISOString(),
+    applicants: 0,
+  };
+  jobs.unshift(newJob);
+  write(JOBS_KEY, jobs);
+  return newJob;
+}
+
+export function updateJobStatus(jobId: string, status: JobListing["status"]): void {
+  const jobs = getJobs();
+  const idx = jobs.findIndex((j) => j.id === jobId);
+  if (idx < 0) return;
+  jobs[idx] = { ...jobs[idx], status };
+  write(JOBS_KEY, jobs);
+}
+
+export function deleteJob(jobId: string): void {
+  const jobs = getJobs().filter((j) => j.id !== jobId);
+  write(JOBS_KEY, jobs);
 }
 
 // ─── CVs API ─────────────────────────────────────────────────────────────────

@@ -8,10 +8,13 @@ import { ReportModal } from "@/components/jobs/ReportModal";
 import {
   getJobs,
   getCvs,
+  getEmployerJobs,
   getVerification,
   submitVerification,
   uploadCv,
   getMyCv,
+  updateJobStatus,
+  deleteJob,
   type JobListing,
   type CvProfile,
   type VerificationRequest,
@@ -37,7 +40,7 @@ function VerificationSection({ userId }: { userId: string }) {
     if (file) setFileName(file.name);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!fileName) return;
     setSubmitting(true);
@@ -179,7 +182,7 @@ function CvUploadSection({ userId, userName }: { userId: string; userName: strin
     if (file) setFileName(file.name);
   }
 
-  function handleSave(e: React.FormEvent) {
+  function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
@@ -363,7 +366,7 @@ export default function JobsDashboardPage() {
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-gray-900">My Job Postings</p>
               <Link
-                href="/listings?category=jobs"
+                href="/dashboard/jobs/post"
                 className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition-all"
               >
                 + Post a Job
@@ -373,9 +376,9 @@ export default function JobsDashboardPage() {
               <div className="space-y-2">
                 {[1, 2].map((n) => <div key={n} className="h-14 animate-pulse rounded-xl bg-gray-100" />)}
               </div>
-            ) : jobs.filter(j => j.employerId === "emp1").length > 0 ? (
+            ) : getEmployerJobs(user.id).length > 0 ? (
               <div className="space-y-2">
-                {jobs.filter(j => j.employerId === "emp1").map((job) => <MyJobCard key={job.id} job={job} />)}
+                {getEmployerJobs(user.id).map((job) => <MyJobCard key={job.id} job={job} />)}
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 py-8 text-center">

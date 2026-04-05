@@ -2,6 +2,7 @@
 
 export type SchoolType = "day" | "boarding" | "both";
 export type SchoolLevel = "primary" | "secondary" | "combined" | "tertiary";
+export type SchoolCurriculum = "zimsec" | "cambridge" | "both";
 
 export interface SchoolFees {
   termly?: number;
@@ -18,6 +19,7 @@ export interface SchoolProfile {
   description: string;
   level: SchoolLevel;
   type: SchoolType;
+  curriculum?: SchoolCurriculum;
   location: string;
   city: string;
   fees?: SchoolFees;
@@ -45,9 +47,10 @@ const SEED_SCHOOLS: SchoolProfile[] = [
     ownerId: "sys",
     name: "St. John's College",
     tagline: "Excellence in Education Since 1953",
-    description: "St. John's College is a leading Catholic boys' secondary school in Harare offering O-Level and A-Level programmes. We nurture academic excellence, character development, and sporting achievement in a disciplined and faith-filled environment.",
+    description: "St. John's College is a leading Catholic boys' secondary school in Harare offering O-Level and A-Level programmes under the ZIMSEC curriculum. We nurture academic excellence, character development, and sporting achievement in a disciplined and faith-filled environment.",
     level: "secondary",
     type: "boarding",
+    curriculum: "zimsec",
     location: "Borrowdale, Harare",
     city: "Harare",
     fees: { termly: 950, annually: 2850, currency: "USD", notes: "Boarding fees inclusive. Day scholar option available on request." },
@@ -66,9 +69,10 @@ const SEED_SCHOOLS: SchoolProfile[] = [
     ownerId: "sys",
     name: "Chisipite Senior School",
     tagline: "Girls' School — Empowering Young Women",
-    description: "Chisipite Senior School is a premier girls' secondary school providing quality education from Form 1 to Upper Sixth. Our holistic approach combines academic rigour with arts, sports, and leadership development.",
+    description: "Chisipite Senior School is a premier girls' secondary school providing quality education from Form 1 to Upper Sixth. We offer both the ZIMSEC O-Level / A-Level curriculum and Cambridge IGCSE, giving students flexibility in their academic pathway. Our holistic approach combines academic rigour with arts, sports, and leadership development.",
     level: "secondary",
     type: "both",
+    curriculum: "both",
     location: "Chisipite, Harare",
     city: "Harare",
     fees: { termly: 880, annually: 2640, currency: "USD", notes: "Day: $880/term. Boarding: $1,150/term." },
@@ -86,9 +90,10 @@ const SEED_SCHOOLS: SchoolProfile[] = [
     ownerId: "sys",
     name: "Mzilikazi Primary School",
     tagline: "Building Strong Foundations",
-    description: "A well-established government primary school in Bulawayo offering Grade 1–7 education. Strong focus on literacy, numeracy, and Zimbabwean cultural values. ECD programmes available.",
+    description: "A well-established government primary school in Bulawayo offering Grade 1–7 education under the ZIMSEC curriculum. Strong focus on literacy, numeracy, and Zimbabwean cultural values. ECD programmes available.",
     level: "primary",
     type: "day",
+    curriculum: "zimsec",
     location: "Mzilikazi, Bulawayo",
     city: "Bulawayo",
     fees: { termly: 45, annually: 135, currency: "USD" },
@@ -106,9 +111,10 @@ const SEED_SCHOOLS: SchoolProfile[] = [
     ownerId: "sys",
     name: "Mutare Boys High School",
     tagline: "Tradition · Discipline · Excellence",
-    description: "One of Zimbabwe's oldest secondary schools with a proud tradition of academic and sporting excellence. Fully equipped boarding facilities, science labs, and a dedicated library.",
+    description: "One of Zimbabwe's oldest secondary schools with a proud tradition of academic and sporting excellence under the ZIMSEC curriculum. Fully equipped boarding facilities, science labs, and a dedicated library. O-Level and A-Level results consistently rank among Zimbabwe's best.",
     level: "secondary",
     type: "both",
+    curriculum: "zimsec",
     location: "Mutare CBD",
     city: "Mutare",
     fees: { termly: 720, annually: 2160, currency: "USD", notes: "Boarding surcharge: $180/term. ZWL payment accepted at official rate." },
@@ -120,6 +126,49 @@ const SEED_SCHOOLS: SchoolProfile[] = [
     contacts: { phone: "0202 64321", whatsapp: "0783456789", email: "info@mutareboys.ac.zw" },
     createdAt: "2026-03-15T08:00:00Z",
     updatedAt: "2026-04-03T10:00:00Z",
+    verified: true,
+  },
+  {
+    id: "sch5",
+    ownerId: "sys",
+    name: "Harare International School",
+    tagline: "A Cambridge World School",
+    description: "Harare International School is a leading Cambridge International school offering the full Cambridge curriculum from Primary Checkpoint through IGCSE to Cambridge International AS & A-Levels. Accredited by Cambridge Assessment International Education, we serve both local and expatriate families seeking world-recognised qualifications.",
+    level: "combined",
+    type: "day",
+    curriculum: "cambridge",
+    location: "Mount Pleasant, Harare",
+    city: "Harare",
+    fees: { termly: 2400, annually: 7200, currency: "USD", notes: "Fees include tuition, resources, and ICT levy." },
+    images: [
+      "https://picsum.photos/seed/sch5a/800/500",
+      "https://picsum.photos/seed/sch5b/800/500",
+      "https://picsum.photos/seed/sch5c/800/500",
+    ],
+    contacts: { phone: "0242 335 901", email: "admissions@his.ac.zw", whatsapp: "0774567890", website: "www.his.ac.zw" },
+    createdAt: "2026-03-20T08:00:00Z",
+    updatedAt: "2026-04-04T08:00:00Z",
+    verified: true,
+  },
+  {
+    id: "sch6",
+    ownerId: "sys",
+    name: "Gateway Primary School",
+    tagline: "Cambridge IGCSE from the Start",
+    description: "Gateway Primary School follows the Cambridge Primary curriculum, preparing learners for Cambridge Checkpoint examinations at Grade 6. Our inquiry-based learning environment and small class sizes ensure every child thrives. Based in Bulawayo's suburbs.",
+    level: "primary",
+    type: "day",
+    curriculum: "cambridge",
+    location: "Suburbs, Bulawayo",
+    city: "Bulawayo",
+    fees: { termly: 680, annually: 2040, currency: "USD" },
+    images: [
+      "https://picsum.photos/seed/sch6a/800/500",
+      "https://picsum.photos/seed/sch6b/800/500",
+    ],
+    contacts: { phone: "0292 779 012", email: "info@gatewayschool.co.zw", whatsapp: "0785678901" },
+    createdAt: "2026-03-22T08:00:00Z",
+    updatedAt: "2026-04-04T09:00:00Z",
     verified: true,
   },
 ];
