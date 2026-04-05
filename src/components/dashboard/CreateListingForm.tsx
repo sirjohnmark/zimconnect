@@ -140,6 +140,8 @@ export function CreateListingForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [images, setImages] = useState<ImagePreview[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [deliveryAvailable, setDeliveryAvailable] = useState(false);
+  const [deliveryNote, setDeliveryNote] = useState("");
 
   const {
     register,
@@ -170,6 +172,7 @@ export function CreateListingForm() {
         price: Number(data.price),
         images: uploaded,
         seller: { phone: data.phone },
+        delivery: { available: deliveryAvailable, note: deliveryNote.trim() || undefined },
       });
 
       router.push("/dashboard/listings");
@@ -236,12 +239,21 @@ export function CreateListingForm() {
                 <Input
                   {...register("location")}
                   id="location"
-                  label="Location"
-                  placeholder="e.g. Harare"
+                  label="City / Town"
+                  placeholder="e.g. Harare, Mutare"
                   error={errors.location?.message}
                   required
                 />
               </div>
+
+              <Input
+                {...register("sublocation")}
+                id="sublocation"
+                label="Area / Suburb"
+                placeholder="e.g. CBD, Chikanga, Avondale, Hintonville"
+                hint="Helps buyers searching by neighbourhood"
+                error={errors.sublocation?.message}
+              />
             </div>
           </Card>
 
@@ -315,6 +327,52 @@ export function CreateListingForm() {
               error={errors.phone?.message}
               required
             />
+          </Card>
+
+          {/* Delivery */}
+          <Card padding="lg">
+            <Card.Header>
+              <Card.Title>Delivery</Card.Title>
+              <Card.Description>Let buyers know if you can deliver.</Card.Description>
+            </Card.Header>
+            <div className="space-y-3">
+              {/* Toggle */}
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-gray-700">
+                  {deliveryAvailable ? "Yes, I offer delivery" : "No delivery — collection only"}
+                </span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={deliveryAvailable}
+                  onClick={() => setDeliveryAvailable((v) => !v)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${deliveryAvailable ? "bg-emerald-600" : "bg-gray-200"}`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${deliveryAvailable ? "translate-x-5" : "translate-x-0"}`}
+                  />
+                </button>
+              </div>
+
+              {/* Note — only shown when delivery is on */}
+              {deliveryAvailable && (
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="deliveryNote" className="text-sm font-medium text-gray-700">
+                    Delivery note <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <textarea
+                    id="deliveryNote"
+                    value={deliveryNote}
+                    onChange={(e) => setDeliveryNote(e.target.value)}
+                    rows={2}
+                    maxLength={200}
+                    placeholder="e.g. Deliver within Harare only — $3 fee"
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 resize-none placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors"
+                  />
+                  <p className="text-right text-xs text-gray-400">{deliveryNote.length}/200</p>
+                </div>
+              )}
+            </div>
           </Card>
 
           {/* Publish */}

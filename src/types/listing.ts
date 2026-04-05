@@ -5,6 +5,7 @@ export type Listing = {
   title: string;
   price: number;
   location: string;
+  sublocation?: string; // e.g. "CBD", "Chikanga", "Highlands", "Hintonville"
   condition?: ListingCondition;
   category: string;
   currency?: string;
@@ -13,5 +14,9 @@ export type Listing = {
   seller?: {
     name?: string;
     phone?: string;
+  };
+  delivery?: {
+    available: boolean;
+    note?: string; // e.g. "Deliver within Harare only — $5 fee"
   };
 };

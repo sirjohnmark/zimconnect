@@ -34,6 +34,7 @@ export async function uploadImages(files: File[]): Promise<UploadedImage[]> {
 export interface GetListingsParams {
   q?: string;
   category?: string;
+  loc?: string; // filter by location or sublocation
   page?: number;
   limit?: number;
 }
@@ -49,11 +50,13 @@ export interface CreateListingBody {
   title: string;
   price: number;
   location: string;
+  sublocation?: string;
   condition: Listing["condition"];
   category: string;
   description?: string;
   images: { url: string }[];
   seller?: { name?: string; phone?: string };
+  delivery?: { available: boolean; note?: string };
 }
 
 // ─── Endpoints ────────────────────────────────────────────────────────────────

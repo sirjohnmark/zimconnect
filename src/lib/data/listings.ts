@@ -48,6 +48,7 @@ const SEED_LISTINGS: Listing[] = [
     title: "2-Bedroom Apartment — Avondale",
     price: 450,
     location: "Harare",
+    sublocation: "Avondale",
     category: "property",
     condition: "new",
     description: "Modern finishing, 24-hour security, all-inclusive.",
@@ -59,6 +60,7 @@ const SEED_LISTINGS: Listing[] = [
     title: "Honda Fit 2017 — 62,000km, Manual",
     price: 8500,
     location: "Mutare",
+    sublocation: "Chikanga",
     category: "vehicles",
     condition: "good",
     images: [{ url: "https://picsum.photos/seed/zc-5/600/400" }],
@@ -117,18 +119,20 @@ async function mockCreateListing(body: CreateListingBody): Promise<Listing> {
     title: body.title,
     price: body.price,
     location: body.location,
+    sublocation: body.sublocation,
     condition: body.condition,
     category: body.category,
     description: body.description,
     images: body.images,
     seller: body.seller,
+    delivery: body.delivery,
   };
   saveListingToStore(listing);
   return listing;
 }
 
 async function fromMock(params: GetListingsParams): Promise<PaginatedListings> {
-  const { q = "", category = "", page = 1, limit = 20 } = params;
+  const { q = "", category = "", loc = "", page = 1, limit = 20 } = params;
 
   // Merge user-created (from localStorage) with seed data, newest first
   const stored = getStoredListings();
@@ -145,7 +149,16 @@ async function fromMock(params: GetListingsParams): Promise<PaginatedListings> {
       (l) =>
         l.title.toLowerCase().includes(term) ||
         l.location.toLowerCase().includes(term) ||
+        l.sublocation?.toLowerCase().includes(term) ||
         l.description?.toLowerCase().includes(term),
+    );
+  }
+  if (loc.trim()) {
+    const locTerm = loc.trim().toLowerCase();
+    results = results.filter(
+      (l) =>
+        l.location.toLowerCase().includes(locTerm) ||
+        l.sublocation?.toLowerCase().includes(locTerm),
     );
   }
 

@@ -10,12 +10,16 @@ export const metadata: Metadata = { title: "Listings" };
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 
-function EmptyState({ query, category }: { query: string; category: string }) {
-  const reason = query
-    ? `No listings found for "${query}"`
-    : category
-      ? `No listings in this category yet`
-      : "No listings yet";
+function EmptyState({ query, category, loc }: { query: string; category: string; loc: string }) {
+  const reason = query && loc
+    ? `No listings found for "${query}" in "${loc}"`
+    : query
+      ? `No listings found for "${query}"`
+      : loc
+        ? `No listings found in "${loc}"`
+        : category
+          ? `No listings in this category yet`
+          : "No listings yet";
 
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 py-20 text-center">
@@ -44,15 +48,16 @@ function EmptyState({ query, category }: { query: string; category: string }) {
 // Search, category, and pagination all pass through to the API cleanly.
 
 interface ListingsPageProps {
-  searchParams: Promise<{ q?: string; category?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; loc?: string; page?: string }>;
 }
 
 export default async function ListingsPage({ searchParams }: ListingsPageProps) {
-  const { q = "", category = "", page = "1" } = await searchParams;
+  const { q = "", category = "", loc = "", page = "1" } = await searchParams;
 
   const { data: listings, total } = await getListings({
     q,
     category,
+    loc,
     page: Number(page),
   });
 
@@ -92,7 +97,7 @@ export default async function ListingsPage({ searchParams }: ListingsPageProps) 
 
       {/* Grid or empty state */}
       {listings.length === 0 ? (
-        <EmptyState query={q} category={category} />
+        <EmptyState query={q} category={category} loc={loc} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {listings.map((listing) => (

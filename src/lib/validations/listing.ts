@@ -35,6 +35,11 @@ export const createListingSchema = z.object({
     .string()
     .min(1, "Location is required"),
 
+  sublocation: z
+    .string()
+    .max(60, "Area/suburb must be under 60 characters")
+    .optional(),
+
   condition: z.enum(LISTING_CONDITIONS, { error: "Select a condition" }),
 
   category: z.enum(LISTING_CATEGORIES, { error: "Select a category" }),

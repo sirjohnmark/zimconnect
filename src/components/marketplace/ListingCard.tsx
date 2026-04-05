@@ -105,7 +105,7 @@ export function ListingCard({
   imageAspect = "4/3",
   className,
 }: ListingCardProps) {
-  const { id, title, price, currency = "$", location, condition, description, images, seller } = listing;
+  const { id, title, price, currency = "$", location, sublocation, condition, description, images, seller, delivery } = listing;
   const destination = href ?? `/listings/${id}`;
   const coverImage = images[0]?.url ?? null;
   const phone = seller?.phone;
@@ -164,9 +164,21 @@ export function ListingCard({
           <p className="text-lg font-bold text-emerald-600 leading-none">
             {currency}{price.toLocaleString()}
           </p>
-          <div className="flex items-center gap-1 text-xs text-gray-400 mt-auto pt-1.5">
-            <PinIcon />
-            <span className="truncate">{location}</span>
+          <div className="flex items-center justify-between gap-2 mt-auto pt-1.5">
+            <div className="flex items-center gap-1 text-xs text-gray-400 min-w-0">
+              <PinIcon />
+              <span className="truncate">
+                {location}{sublocation ? ` · ${sublocation}` : ""}
+              </span>
+            </div>
+            {delivery?.available && (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-100">
+                <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3" aria-hidden="true">
+                  <path d="M1.5 3.5A.5.5 0 0 1 2 3h8a.5.5 0 0 1 .5.5V5h1.2a.5.5 0 0 1 .4.2l1.8 2.4a.5.5 0 0 1 .1.3V10a.5.5 0 0 1-.5.5H13a2 2 0 0 1-4 0H5a2 2 0 0 1-4 0H.5A.5.5 0 0 1 0 10V4a.5.5 0 0 1 .5-.5h1v.5H1.5v-.5Zm1 7a1 1 0 1 0 2 0 1 1 0 0 0-2 0Zm7.5 0a1 1 0 1 0 2 0 1 1 0 0 0-2 0Z" />
+                </svg>
+                Delivery
+              </span>
+            )}
           </div>
         </div>
       </Link>

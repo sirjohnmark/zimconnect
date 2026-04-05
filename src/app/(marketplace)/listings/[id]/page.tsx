@@ -141,7 +141,7 @@ export default function ListingDetailPage() {
     );
   }
 
-  const { title, price, currency = "$", location, condition, description, images, seller, category } = listing;
+  const { title, price, currency = "$", location, sublocation, condition, description, images, seller, category, delivery } = listing;
 
   return (
     <div className="space-y-8">
@@ -172,7 +172,7 @@ export default function ListingDetailPage() {
               <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5 text-gray-400 shrink-0">
                 <path fillRule="evenodd" d="m7.539 14.841.003.003.002.002a.755.755 0 0 0 .912 0l.002-.002.003-.003.012-.009a5.57 5.57 0 0 0 .19-.153 15.173 15.173 0 0 0 2.046-2.082C11.81 13.235 13 11.255 13 9A5 5 0 0 0 3 9c0 2.255 1.19 4.235 2.292 5.597a15.173 15.173 0 0 0 2.046 2.082 8.994 8.994 0 0 0 .19.153l.012.009ZM8 10.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" clipRule="evenodd" />
               </svg>
-              {location}
+              {location}{sublocation ? ` · ${sublocation}` : ""}
             </div>
           </div>
 
@@ -181,6 +181,28 @@ export default function ListingDetailPage() {
             <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm space-y-2">
               <p className="text-sm font-bold text-gray-900">About this listing</p>
               <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{description}</p>
+            </div>
+          )}
+
+          {/* Delivery */}
+          {delivery !== undefined && (
+            <div className={cn(
+              "rounded-2xl border p-4 space-y-1",
+              delivery.available
+                ? "border-emerald-100 bg-emerald-50"
+                : "border-gray-100 bg-gray-50",
+            )}>
+              <div className="flex items-center gap-2">
+                <svg viewBox="0 0 20 20" fill="currentColor" className={cn("h-4 w-4 shrink-0", delivery.available ? "text-emerald-600" : "text-gray-400")}>
+                  <path d="M6.5 3A1.5 1.5 0 0 0 5 4.5v.75H3.5A1.5 1.5 0 0 0 2 6.75v7.5A1.5 1.5 0 0 0 3.5 15.75h13A1.5 1.5 0 0 0 18 14.25v-7.5a1.5 1.5 0 0 0-1.5-1.5H15V4.5A1.5 1.5 0 0 0 13.5 3h-7ZM6.5 4.5h7V5.25h-7V4.5ZM3.5 6.75h13v7.5h-13v-7.5Z" />
+                </svg>
+                <span className={cn("text-sm font-semibold", delivery.available ? "text-emerald-800" : "text-gray-600")}>
+                  {delivery.available ? "Delivery available" : "Collection only — no delivery"}
+                </span>
+              </div>
+              {delivery.available && delivery.note && (
+                <p className="text-xs text-emerald-700 pl-6">{delivery.note}</p>
+              )}
             </div>
           )}
 
