@@ -186,13 +186,13 @@ export default function PostJobPage() {
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!validate()) return;
+    if (!user || !validate()) return;
     setSubmitting(true);
 
     postJob({
       title:           title.trim(),
       company:         company.trim(),
-      employerId:      user.id,
+      employerId:      user!.id,
       location:        location.trim() || "Remote",
       remote:          isRemote,
       type:            jobType,

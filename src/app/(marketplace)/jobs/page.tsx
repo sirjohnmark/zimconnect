@@ -68,7 +68,7 @@ function JobCard({ job }: { job: JobListing }) {
       <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5 text-gray-400">
-            <path fillRule="evenodd" d="m7.539 14.841.003.003.002.002a.755.755 0 0 0 .912 0l.002-.002.003-.003.012-.009a5.57 5.57 0 0 0 .19-.153 15.173 15.173 0 0 0 2.046-2.082c1.101-1.362 2.291-3.342 2.291-5.597A5 5 0 0 0 3 8c0 2.255 1.19 4.235 2.292 5.597a15.173 15.173 0 0 0 2.046 2.082 8.scoreboard 8.994 8.994 0 0 0 .19.153l.012.009ZM8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" clipRule="evenodd" />
+            <path fillRule="evenodd" d="m7.539 14.841.003.003.002.002a.755.755 0 0 0 .912 0l.002-.002.003-.003.012-.009a5.57 5.57 0 0 0 .19-.153 15.173 15.173 0 0 0 2.046-2.082c1.101-1.362 2.291-3.342 2.291-5.597A5 5 0 0 0 3 8c0 2.255 1.19 4.235 2.292 5.597a15.173 15.173 0 0 0 2.046 2.082 8.994 8.994 0 0 0 .19.153l.012.009ZM8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" clipRule="evenodd" />
           </svg>
           {job.location}
         </span>
@@ -92,12 +92,23 @@ function JobCard({ job }: { job: JobListing }) {
       </div>
 
       <div className="mt-4 flex items-center gap-3">
-        <Link
-          href={`/listings?category=jobs`}
-          className="flex-1 rounded-xl bg-emerald-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all"
-        >
-          Apply Now
-        </Link>
+        {job.howToApply ? (
+          <a
+            href={job.howToApply.includes("@") ? `mailto:${job.howToApply}` : job.howToApply.startsWith("http") ? job.howToApply : `https://${job.howToApply}`}
+            target={job.howToApply.includes("@") ? undefined : "_blank"}
+            rel="noopener noreferrer"
+            className="flex-1 rounded-xl bg-emerald-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all"
+          >
+            Apply Now
+          </a>
+        ) : (
+          <Link
+            href="/dashboard/messages"
+            className="flex-1 rounded-xl bg-emerald-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all"
+          >
+            Apply Now
+          </Link>
+        )}
         <Link href="/dashboard/messages" className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
           Message
         </Link>
@@ -176,15 +187,40 @@ export default function JobsPage() {
     setMounted(true);
   }, []);
 
-  const filteredJobs = jobs.filter((j) => {
-    const matchSearch = !search || j.title.toLowerCase().includes(search.toLowerCase()) || j.company.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "all" || j.type === filter;
-    return matchSearch && matchFilter && j.status === "open";
-  });
+  const queryWords = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
-  const filteredCvs = cvs.filter((c) => {
-    return !search || c.title.toLowerCase().includes(search.toLowerCase()) || c.seekerName.toLowerCase().includes(search.toLowerCase());
-  });
+  function scoreJob(j: JobListing): number {
+    if (queryWords.length === 0) return 1;
+    const haystack = [
+      j.title, j.company, j.location,
+      j.description, j.industry ?? "",
+      j.type, j.requirements.join(" "),
+      j.benefits?.join(" ") ?? "",
+    ].join(" ").toLowerCase();
+    return queryWords.filter((w) => haystack.includes(w)).length;
+  }
+
+  function scoreCv(c: CvProfile): number {
+    if (queryWords.length === 0) return 1;
+    const haystack = [
+      c.title, c.seekerName, c.location,
+      c.summary, c.skills.join(" "), c.status,
+    ].join(" ").toLowerCase();
+    return queryWords.filter((w) => haystack.includes(w)).length;
+  }
+
+  const filteredJobs = jobs
+    .filter((j) => j.status === "open" && (filter === "all" || j.type === filter))
+    .map((j) => ({ j, score: scoreJob(j) }))
+    .filter(({ score }) => queryWords.length === 0 || score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(({ j }) => j);
+
+  const filteredCvs = cvs
+    .map((c) => ({ c, score: scoreCv(c) }))
+    .filter(({ score }) => queryWords.length === 0 || score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(({ c }) => c);
 
   return (
     <div className="space-y-5">
