@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -82,52 +82,85 @@ function Alert({ message, type = "error" }: { message: string; type?: "error" | 
 
 // ─── OTP digit input ──────────────────────────────────────────────────────────
 
-function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+type OtpStatus = "idle" | "error" | "success";
+
+function OtpInput({
+  digits,
+  onChange,
+  status = "idle",
+}: {
+  digits: string[]; // always length 6
+  onChange: (next: string[]) => void;
+  status?: OtpStatus;
+}) {
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
-  const digits = value.padEnd(6, "").split("").slice(0, 6);
 
   function handleChange(idx: number, e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/\D/g, "");
-    if (!raw) {
-      const next = digits.map((d, i) => (i === idx ? "" : d)).join("").trimEnd();
-      onChange(next);
-      return;
-    }
-    // handle paste
+    // Paste: fill from this position onward
     if (raw.length > 1) {
-      const pasted = raw.slice(0, 6);
-      onChange(pasted);
-      inputs.current[Math.min(pasted.length, 5)]?.focus();
+      const next = [...digits];
+      for (let i = 0; i < raw.length && idx + i < 6; i++) next[idx + i] = raw[i];
+      onChange(next);
+      const lastFilled = Math.min(idx + raw.length, 5);
+      inputs.current[lastFilled]?.focus();
       return;
     }
-    const next = digits.map((d, i) => (i === idx ? raw : d)).join("");
+    const next = [...digits];
+    next[idx] = raw;
     onChange(next);
-    if (idx < 5) inputs.current[idx + 1]?.focus();
+    if (raw && idx < 5) inputs.current[idx + 1]?.focus();
   }
 
   function handleKeyDown(idx: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Backspace" && !digits[idx] && idx > 0) {
+    if (e.key === "Backspace") {
+      if (digits[idx]) {
+        const next = [...digits];
+        next[idx] = "";
+        onChange(next);
+      } else if (idx > 0) {
+        const next = [...digits];
+        next[idx - 1] = "";
+        onChange(next);
+        inputs.current[idx - 1]?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && idx > 0) {
       inputs.current[idx - 1]?.focus();
+    } else if (e.key === "ArrowRight" && idx < 5) {
+      inputs.current[idx + 1]?.focus();
     }
   }
 
+  const boxStyle: Record<OtpStatus, string> = {
+    idle:    "border-gray-200 bg-white text-gray-800 focus:ring-emerald-500 focus:border-emerald-400",
+    error:   "border-red-400 bg-red-50 text-red-700 focus:ring-red-400 focus:border-red-400",
+    success: "border-emerald-500 bg-emerald-50 text-emerald-800 focus:ring-emerald-500 focus:border-emerald-500",
+  };
+  const filledStyle: Record<OtpStatus, string> = {
+    idle:    "border-emerald-400 bg-emerald-50 text-emerald-800",
+    error:   "border-red-400 bg-red-50 text-red-700",
+    success: "border-emerald-500 bg-emerald-100 text-emerald-800",
+  };
+
   return (
-    <div className="flex gap-2 justify-center">
-      {Array.from({ length: 6 }).map((_, i) => (
+    <div className={cn("flex gap-2 justify-center", status === "error" && "animate-[shake_0.35s_ease-in-out]")}>
+      {digits.map((d, i) => (
         <input
           key={i}
           ref={(el) => { inputs.current[i] = el; }}
           type="text"
           inputMode="numeric"
           maxLength={1}
-          value={digits[i] ?? ""}
+          value={d}
           onChange={(e) => handleChange(i, e)}
           onKeyDown={(e) => handleKeyDown(i, e)}
           onFocus={(e) => e.target.select()}
+          disabled={status === "success"}
           className={cn(
-            "h-12 w-11 rounded-xl border text-center text-xl font-bold tracking-widest",
-            "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors",
-            digits[i] ? "border-emerald-400 bg-emerald-50 text-emerald-800" : "border-gray-200 bg-white text-gray-800",
+            "h-12 w-11 rounded-xl border text-center text-xl font-bold tracking-widest transition-all duration-150",
+            "focus:outline-none focus:ring-2",
+            d ? filledStyle[status] : boxStyle[status],
+            status === "success" && "cursor-default",
           )}
         />
       ))}
@@ -147,25 +180,33 @@ export function RegisterForm() {
   const [step, setStep]             = useState<1 | 2 | 3>(1);
   const [formData, setFormData]     = useState<RegisterInput | null>(null);
   const [verifyMethod, setMethod]   = useState<"email" | "phone">("email");
-  const [otpCode, setOtpCode]       = useState("");
-  const [sentCode, setSentCode]     = useState<string | null>(null); // mock: show user the code
+  const [otpDigits, setOtpDigits]   = useState<string[]>(Array(6).fill(""));
+  const [otpStatus, setOtpStatus]   = useState<OtpStatus>("idle");
+  const [sentCode, setSentCode]     = useState<string | null>(null);
   const [otpError, setOtpError]     = useState<string | null>(null);
   const [formError, setFormError]   = useState<string | null>(null);
   const [sending, setSending]       = useState(false);
   const [verifying, setVerifying]   = useState(false);
   const [resendCooldown, setCooldown] = useState(0);
 
+  const otpCode = otpDigits.join("");
+  const otpComplete = otpDigits.every((d) => d !== "");
+
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
   });
 
-  const watchedPhone = watch("phone");
-  const watchedEmail = watch("email");
+  // Auto-verify the moment all 6 digits are filled
+  useEffect(() => {
+    if (step === 3 && otpComplete && !verifying && otpStatus === "idle") {
+      handleVerifyAndRegister();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otpComplete, step]);
 
   // ── Step 1: collect details ───────────────────────────────────────────────
 
@@ -214,7 +255,8 @@ export function RegisterForm() {
     const contact = verifyMethod === "email" ? formData.email : (formData.phone ?? "");
     const code    = generateAndStoreOtp(contact, verifyMethod);
     setSentCode(code);
-    setOtpCode("");
+    setOtpDigits(Array(6).fill(""));
+    setOtpStatus("idle");
     setOtpError(null);
     setCooldown(60);
     const interval = setInterval(() => {
@@ -228,22 +270,36 @@ export function RegisterForm() {
   // ── Step 3: verify OTP + create account ──────────────────────────────────
 
   async function handleVerifyAndRegister() {
-    if (!formData || otpCode.length < 6) return;
+    if (!formData || !otpComplete) return;
     setVerifying(true);
     setOtpError(null);
 
     const result = verifyOtp(otpCode);
+
     if (!result.valid) {
-      setOtpError(result.reason ?? "Invalid code.");
+      setOtpStatus("error");
+      setOtpError(result.reason ?? "Incorrect code. Please try again.");
       setVerifying(false);
+      // Reset digits after short delay so user can re-enter
+      setTimeout(() => {
+        setOtpDigits(Array(6).fill(""));
+        setOtpStatus("idle");
+      }, 1000);
       return;
     }
 
+    // Code accepted — show success state, then create account
+    setOtpStatus("success");
+    setOtpError(null);
+
     try {
       await registerAuth(formData);
+      // Brief pause so user sees the green success state
+      await new Promise((r) => setTimeout(r, 600));
       router.push(redirectTo);
       router.refresh();
     } catch (err) {
+      setOtpStatus("idle");
       if (err instanceof ApiError && err.status === 409) {
         setFormError("An account with this email already exists.");
         setStep(1);
@@ -419,39 +475,56 @@ export function RegisterForm() {
       {/* ── Step 3: Enter OTP ── */}
       {step === 3 && formData && (
         <div className="space-y-5">
-          <p className="text-sm text-gray-600 text-center">
-            Enter the 6-digit code sent to{" "}
-            <span className="font-semibold text-gray-900">
-              {verifyMethod === "email" ? formData.email : formData.phone}
-            </span>
-          </p>
 
-          {/* Dev helper — shows the mock OTP code */}
-          {sentCode && (
-            <Alert
-              type="info"
-              message={`Demo mode: your verification code is ${sentCode}. In production this would be sent by ${verifyMethod === "email" ? "email" : "SMS"}.`}
-            />
+          {/* Success banner */}
+          {otpStatus === "success" ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-emerald-600">
+                  <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                </svg>
+              </span>
+              <p className="text-sm font-semibold text-emerald-700">Verified! Creating your account…</p>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-gray-600 text-center">
+                Enter the 6-digit code sent to{" "}
+                <span className="font-semibold text-gray-900">
+                  {verifyMethod === "email" ? formData.email : formData.phone}
+                </span>
+              </p>
+
+              {/* Dev helper — shows the mock OTP code */}
+              {sentCode && (
+                <Alert
+                  type="info"
+                  message={`Demo mode: your code is ${sentCode}. In production this is sent by ${verifyMethod === "email" ? "email" : "SMS"}.`}
+                />
+              )}
+            </>
           )}
 
-          <OtpInput value={otpCode} onChange={setOtpCode} />
+          <OtpInput digits={otpDigits} onChange={setOtpDigits} status={otpStatus} />
 
           {otpError && <Alert message={otpError} />}
 
-          <Button
-            type="button"
-            fullWidth
-            loading={verifying}
-            onClick={handleVerifyAndRegister}
-            disabled={otpCode.length < 6}
-          >
-            {verifying ? "Verifying…" : "Verify & Create Account"}
-          </Button>
+          {otpStatus !== "success" && (
+            <Button
+              type="button"
+              fullWidth
+              loading={verifying}
+              onClick={handleVerifyAndRegister}
+              disabled={!otpComplete || verifying}
+            >
+              {verifying ? "Verifying…" : "Verify & Create Account"}
+            </Button>
+          )}
 
           <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
             <button
               type="button"
-              onClick={() => { setStep(2); setOtpCode(""); setOtpError(null); }}
+              onClick={() => { setStep(2); setOtpDigits(Array(6).fill("")); setOtpStatus("idle"); setOtpError(null); }}
               className="hover:text-gray-700 hover:underline"
             >
               ← Change method
