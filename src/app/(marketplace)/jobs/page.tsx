@@ -190,7 +190,7 @@ export default function JobsPage() {
   const queryWords = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
   function scoreJob(j: JobListing): number {
-    if (queryWords.length === 0) return 1;
+    if (queryWords.length === 0) return queryWords.length || 1;
     const haystack = [
       j.title, j.company, j.location,
       j.description, j.industry ?? "",
@@ -209,18 +209,24 @@ export default function JobsPage() {
     return queryWords.filter((w) => haystack.includes(w)).length;
   }
 
-  const filteredJobs = jobs
+  const jobPool = jobs
     .filter((j) => j.status === "open" && (filter === "all" || j.type === filter))
-    .map((j) => ({ j, score: scoreJob(j) }))
-    .filter(({ score }) => queryWords.length === 0 || score > 0)
-    .sort((a, b) => b.score - a.score)
-    .map(({ j }) => j);
+    .map((j) => ({ j, score: scoreJob(j) }));
 
-  const filteredCvs = cvs
-    .map((c) => ({ c, score: scoreCv(c) }))
-    .filter(({ score }) => queryWords.length === 0 || score > 0)
-    .sort((a, b) => b.score - a.score)
-    .map(({ c }) => c);
+  const exactJobs = jobPool.filter(({ score }) => queryWords.length === 0 || score === queryWords.length);
+  const jobsFallback = exactJobs.length === 0 && queryWords.length > 0;
+  const filteredJobs = (jobsFallback
+    ? jobPool.filter(({ score }) => score > 0)
+    : exactJobs
+  ).sort((a, b) => b.score - a.score).map(({ j }) => j);
+
+  const cvPool = cvs.map((c) => ({ c, score: scoreCv(c) }));
+  const exactCvs = cvPool.filter(({ score }) => queryWords.length === 0 || score === queryWords.length);
+  const cvsFallback = exactCvs.length === 0 && queryWords.length > 0;
+  const filteredCvs = (cvsFallback
+    ? cvPool.filter(({ score }) => score > 0)
+    : exactCvs
+  ).sort((a, b) => b.score - a.score).map(({ c }) => c);
 
   return (
     <div className="space-y-5">
@@ -284,6 +290,16 @@ export default function JobsPage() {
           {tab === "jobs" ? "Post a Job" : "Upload My CV"}
         </Link>
       </div>
+
+      {/* Fallback notice */}
+      {search && ((tab === "jobs" && jobsFallback) || (tab === "cvs" && cvsFallback)) && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 mt-0.5 text-amber-500">
+            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+          </svg>
+          <span>No exact match for <strong>&ldquo;{search}&rdquo;</strong> — showing nearest results.</span>
+        </div>
+      )}
 
       {/* Content */}
       {!mounted ? (

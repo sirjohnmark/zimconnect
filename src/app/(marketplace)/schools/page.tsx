@@ -271,22 +271,25 @@ export default function SchoolsPage() {
 
   const queryWords = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
-  const filtered = schools
-    .map((s) => ({ s, score: scoreSchool(s, queryWords) }))
-    .filter(({ score, s }) => {
-      if (queryWords.length > 0 && score === 0) return false;
-      if (typeFilter !== "all" && s.type !== typeFilter) return false;
-      if (levelFilter !== "all" && s.level !== levelFilter) return false;
-      if (cityFilter !== "all" && s.city !== cityFilter) return false;
-      if (curriculumFilter !== "all") {
-        if (curriculumFilter === "cambridge") return s.curriculum === "cambridge" || s.curriculum === "both";
-        if (curriculumFilter === "zimsec")    return s.curriculum === "zimsec"    || s.curriculum === "both";
-        return s.curriculum === curriculumFilter;
-      }
-      return true;
-    })
-    .sort((a, b) => b.score - a.score)
-    .map(({ s }) => s);
+  function passesFilters(s: SchoolProfile): boolean {
+    if (typeFilter !== "all" && s.type !== typeFilter) return false;
+    if (levelFilter !== "all" && s.level !== levelFilter) return false;
+    if (cityFilter !== "all" && s.city !== cityFilter) return false;
+    if (curriculumFilter !== "all") {
+      if (curriculumFilter === "cambridge") return s.curriculum === "cambridge" || s.curriculum === "both";
+      if (curriculumFilter === "zimsec")    return s.curriculum === "zimsec"    || s.curriculum === "both";
+      return s.curriculum === curriculumFilter;
+    }
+    return true;
+  }
+
+  const pool = schools.filter(passesFilters).map((s) => ({ s, score: scoreSchool(s, queryWords) }));
+  const exactMatches = pool.filter(({ score }) => queryWords.length === 0 || score === queryWords.length);
+  const schoolsFallback = exactMatches.length === 0 && queryWords.length > 0;
+  const filtered = (schoolsFallback
+    ? pool.filter(({ score }) => score > 0)
+    : exactMatches
+  ).sort((a, b) => b.score - a.score).map(({ s }) => s);
 
   return (
     <div className="space-y-5">
@@ -402,6 +405,16 @@ export default function SchoolsPage() {
           List My School
         </Link>
       </div>
+
+      {/* Fallback notice */}
+      {schoolsFallback && search && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 mt-0.5 text-amber-500">
+            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+          </svg>
+          <span>No exact match for <strong>&ldquo;{search}&rdquo;</strong> — showing nearest results.</span>
+        </div>
+      )}
 
       {/* Grid */}
       {!mounted ? (

@@ -61,40 +61,58 @@ async function mockCreateListing(body: CreateListingBody): Promise<Listing> {
   return listing;
 }
 
-/** All listings: user-created first, then seeds. Filters applied synchronously. */
-export function getAllListingsSync(params: GetListingsParams = {}): PaginatedListings {
+/** Score a listing against query words — counts how many words appear in the haystack. */
+function scoreListingMatch(l: Listing, words: string[]): number {
+  if (words.length === 0) return 1;
+  const hay = [l.title, l.location, l.sublocation ?? "", l.description ?? "", l.category ?? ""]
+    .join(" ").toLowerCase();
+  return words.filter((w) => hay.includes(w)).length;
+}
+
+/** All listings: user-created first, then seeds. Filters applied synchronously.
+ *  When an exact search yields 0 results, falls back to nearest partial matches. */
+export function getAllListingsSync(
+  params: GetListingsParams = {},
+): PaginatedListings & { isFallback?: boolean } {
   const { q = "", category = "", loc = "", page = 1, limit = 60 } = params;
 
   const stored = getStoredListings();
   const seedIds = new Set(MOCK_LISTINGS.map((l) => l.id));
   const userListings = stored.filter((l) => !seedIds.has(l.id));
-  let results = [...userListings, ...MOCK_LISTINGS];
+  let pool = [...userListings, ...MOCK_LISTINGS];
 
-  if (category) {
-    results = results.filter((l) => l.category === category);
-  }
-  if (q.trim()) {
-    const term = q.trim().toLowerCase();
-    results = results.filter(
-      (l) =>
-        l.title.toLowerCase().includes(term) ||
-        l.location.toLowerCase().includes(term) ||
-        l.sublocation?.toLowerCase().includes(term) ||
-        l.description?.toLowerCase().includes(term),
-    );
-  }
+  // Category filter always hard
+  if (category) pool = pool.filter((l) => l.category === category);
+
+  // Location filter always hard
   if (loc.trim()) {
     const locTerm = loc.trim().toLowerCase();
-    results = results.filter(
+    pool = pool.filter(
       (l) =>
         l.location.toLowerCase().includes(locTerm) ||
         l.sublocation?.toLowerCase().includes(locTerm),
     );
   }
 
-  const total = results.length;
+  const qWords = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+  // Score all items
+  const scored = pool.map((l) => ({ l, score: scoreListingMatch(l, qWords) }));
+
+  // Exact matches: every word must appear somewhere
+  let results = scored.filter(({ score }) => qWords.length === 0 || score === qWords.length);
+  let isFallback = false;
+
+  // Fallback: partial word matches, sorted by score desc
+  if (results.length === 0 && qWords.length > 0) {
+    results = scored.filter(({ score }) => score > 0).sort((a, b) => b.score - a.score);
+    isFallback = true;
+  }
+
+  const data = results.map(({ l }) => l);
+  const total = data.length;
   const start = (page - 1) * limit;
-  return { data: results.slice(start, start + limit), total, page, limit };
+  return { data: data.slice(start, start + limit), total, page, limit, isFallback };
 }
 
 async function fromMock(params: GetListingsParams): Promise<PaginatedListings> {

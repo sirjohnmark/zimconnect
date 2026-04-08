@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
-import { MOCK_WHOLESALE, getWholesaleListings } from "@/lib/mock/wholesale";
+import { getWholesaleListings } from "@/lib/mock/wholesale";
 import type { WholesaleListing, WholesaleCategory } from "@/types/wholesale";
 import { cn } from "@/lib/utils";
 
@@ -185,7 +185,7 @@ export default function WholesalePage() {
   const [category, setCategory] = useState<WholesaleCategory | "">("");
   const [submitted, setSubmitted] = useState({ q: "", loc: "", category: "" as WholesaleCategory | "" });
 
-  const listings = useMemo(
+  const { listings, isFallback } = useMemo(
     () => getWholesaleListings({ q: submitted.q, loc: submitted.loc, category: submitted.category }),
     [submitted],
   );
@@ -298,6 +298,16 @@ export default function WholesalePage() {
         </Link>
       </div>
 
+      {/* Fallback notice */}
+      {isFallback && submitted.q && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 mt-0.5 text-amber-500">
+            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+          </svg>
+          <span>No exact match for <strong>&ldquo;{submitted.q}&rdquo;</strong> — showing nearest results.</span>
+        </div>
+      )}
+
       {/* Grid */}
       {listings.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 py-20 text-center">
@@ -309,7 +319,7 @@ export default function WholesalePage() {
         </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {listings.map((listing) => (
+          {listings.map((listing: WholesaleListing) => (
             <WholesaleCard key={listing.id} listing={listing} />
           ))}
         </div>

@@ -160,37 +160,47 @@ export interface GetWholesaleParams {
   category?: string;
 }
 
-export function getWholesaleListings(params: GetWholesaleParams = {}): WholesaleListing[] {
+export interface WholesaleResult {
+  listings: WholesaleListing[];
+  isFallback: boolean;
+}
+
+export function getWholesaleListings(params: GetWholesaleParams = {}): WholesaleResult {
   const { q = "", loc = "", category = "" } = params;
 
   const stored = getStoredListings();
   const seedIds = new Set(MOCK_WHOLESALE.map((l) => l.id));
   const userListings = stored.filter((l) => !seedIds.has(l.id));
-  let results = [...userListings, ...MOCK_WHOLESALE];
+  let pool = [...userListings, ...MOCK_WHOLESALE];
 
-  if (category) {
-    results = results.filter((l) => l.category === category);
-  }
-  if (q.trim()) {
-    const term = q.trim().toLowerCase();
-    results = results.filter(
-      (l) =>
-        l.title.toLowerCase().includes(term) ||
-        l.description?.toLowerCase().includes(term) ||
-        l.location.toLowerCase().includes(term) ||
-        l.sublocation?.toLowerCase().includes(term),
-    );
-  }
+  // Hard filters
+  if (category) pool = pool.filter((l) => l.category === category);
   if (loc.trim()) {
     const locTerm = loc.trim().toLowerCase();
-    results = results.filter(
+    pool = pool.filter(
       (l) =>
         l.location.toLowerCase().includes(locTerm) ||
         l.sublocation?.toLowerCase().includes(locTerm),
     );
   }
 
-  return results;
+  const qWords = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+  function score(l: WholesaleListing): number {
+    if (qWords.length === 0) return 1;
+    const hay = [l.title, l.description ?? "", l.location, l.sublocation ?? "", l.category ?? ""]
+      .join(" ").toLowerCase();
+    return qWords.filter((w) => hay.includes(w)).length;
+  }
+
+  const scored = pool.map((l) => ({ l, s: score(l) }));
+  const exact = scored.filter(({ s }) => qWords.length === 0 || s === qWords.length);
+  const isFallback = exact.length === 0 && qWords.length > 0;
+  const results = (isFallback ? scored.filter(({ s }) => s > 0) : exact)
+    .sort((a, b) => b.s - a.s)
+    .map(({ l }) => l);
+
+  return { listings: results, isFallback };
 }
 
 export function getWholesaleListing(id: string): WholesaleListing | undefined {

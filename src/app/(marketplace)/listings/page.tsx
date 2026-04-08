@@ -74,7 +74,7 @@ export default function ListingsPage() {
   useEffect(() => { setDraftLoc(urlLoc); }, [urlLoc]);
 
   // ── Instant client-side filtering ──────────────────────────────────────────
-  const { data: listings, total } = useMemo(
+  const { data: listings, total, isFallback } = useMemo(
     () => getAllListingsSync({ q: urlQ, loc: urlLoc, category: urlCategory }),
     [urlQ, urlLoc, urlCategory],
   );
@@ -199,6 +199,16 @@ export default function ListingsPage() {
           </div>
         )}
       </form>
+
+      {/* Fallback notice */}
+      {isFallback && urlQ && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 mt-0.5 text-amber-500">
+            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+          </svg>
+          <span>No exact match for <strong>&ldquo;{urlQ}&rdquo;</strong> — showing nearest results.</span>
+        </div>
+      )}
 
       {/* Grid or empty state */}
       {listings.length === 0 ? (
