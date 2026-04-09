@@ -2,6 +2,23 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
+/**
+ * Safety check — called before any real API request.
+ * Throws immediately in production when no real API URL is configured,
+ * so callers can catch and fall back to mock data without a network timeout.
+ */
+function assertApiAvailable() {
+  const isProduction = process.env.NODE_ENV === "production";
+  const hasRealApi =
+    !!process.env.NEXT_PUBLIC_API_URL &&
+    !process.env.NEXT_PUBLIC_API_URL.includes("localhost");
+  if (isProduction && !hasRealApi) {
+    throw new NetworkError(
+      "No backend API configured. Set NEXT_PUBLIC_API_URL to enable live data.",
+    );
+  }
+}
+
 // ─── Error types ─────────────────────────────────────────────────────────────
 
 export class ApiError extends Error {
@@ -44,6 +61,7 @@ export interface RequestOptions extends Omit<RequestInit, "body"> {
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  assertApiAvailable();
   const { params, body, next, headers: extraHeaders, ...rest } = options;
 
   // Build URL

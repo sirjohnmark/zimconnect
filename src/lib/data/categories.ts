@@ -1,20 +1,24 @@
 import type { Category } from "@/types/category";
+import { USE_MOCK } from "./use-mock";
 
-// ── Switch ────────────────────────────────────────────────────────────────────
-// Defaults to mock. Set NEXT_PUBLIC_USE_MOCK=false to use the real API.
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
-
-// ── Lazy imports keep bundle clean — only one path is ever evaluated ──────────
+// ── Mock implementation ───────────────────────────────────────────────────────
 
 async function fromMock(): Promise<Category[]> {
   const { MOCK_CATEGORIES } = await import("@/lib/mock/categories");
   return MOCK_CATEGORIES;
 }
 
+// ── API implementation (with mock fallback on failure) ────────────────────────
+
 async function fromApi(params: { includeCount?: boolean }): Promise<Category[]> {
-  const { getCategories } = await import("@/lib/api/categories");
-  return getCategories(params);
+  try {
+    const { getCategories } = await import("@/lib/api/categories");
+    return await getCategories(params);
+  } catch {
+    // API unreachable — fall back to mock so the build never crashes
+    const { MOCK_CATEGORIES } = await import("@/lib/mock/categories");
+    return MOCK_CATEGORIES;
+  }
 }
 
 // ── Public function ───────────────────────────────────────────────────────────

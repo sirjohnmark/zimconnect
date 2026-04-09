@@ -1,10 +1,7 @@
 import type { Listing } from "@/types/listing";
 import type { PaginatedListings, GetListingsParams, CreateListingBody, UploadedImage } from "@/lib/api/listings";
 import { MOCK_LISTINGS } from "@/lib/mock/listings";
-
-// ── Switch ────────────────────────────────────────────────────────────────────
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
+import { USE_MOCK } from "./use-mock";
 
 // ── Mock listings store (localStorage) ───────────────────────────────────────
 
@@ -123,42 +120,65 @@ async function fromMock(params: GetListingsParams): Promise<PaginatedListings> {
 
 export async function getListings(params: GetListingsParams = {}): Promise<PaginatedListings> {
   if (USE_MOCK) return fromMock(params);
-  const { getListings: apiGetListings } = await import("@/lib/api/listings");
-  return apiGetListings(params);
+  try {
+    const { getListings: apiGetListings } = await import("@/lib/api/listings");
+    return await apiGetListings(params);
+  } catch {
+    return fromMock(params);
+  }
 }
 
 export async function getListingById(id: string): Promise<Listing> {
+  const all = [...getStoredListings(), ...MOCK_LISTINGS];
   if (USE_MOCK) {
-    const all = [...getStoredListings(), ...MOCK_LISTINGS];
     const listing = all.find((l) => l.id === id);
     if (!listing) throw new Error(`Listing "${id}" not found`);
     return listing;
   }
-  const { getListing } = await import("@/lib/api/listings");
-  return getListing(id);
+  try {
+    const { getListing } = await import("@/lib/api/listings");
+    return await getListing(id);
+  } catch {
+    const listing = all.find((l) => l.id === id);
+    if (!listing) throw new Error(`Listing "${id}" not found`);
+    return listing;
+  }
 }
 
 export async function getListingBySlug(slug: string): Promise<Listing> {
+  const all = [...getStoredListings(), ...MOCK_LISTINGS];
+  const mockMatch = all.find(
+    (l) => l.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug,
+  );
   if (USE_MOCK) {
-    const all = [...getStoredListings(), ...MOCK_LISTINGS];
-    const listing = all.find(
-      (l) => l.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug,
-    );
-    if (!listing) throw new Error(`Listing with slug "${slug}" not found`);
-    return listing;
+    if (!mockMatch) throw new Error(`Listing with slug "${slug}" not found`);
+    return mockMatch;
   }
-  const { getListingBySlug: apiGetBySlug } = await import("@/lib/api/listings");
-  return apiGetBySlug(slug);
+  try {
+    const { getListingBySlug: apiGetBySlug } = await import("@/lib/api/listings");
+    return await apiGetBySlug(slug);
+  } catch {
+    if (!mockMatch) throw new Error(`Listing with slug "${slug}" not found`);
+    return mockMatch;
+  }
 }
 
 export async function createListing(body: CreateListingBody): Promise<Listing> {
   if (USE_MOCK) return mockCreateListing(body);
-  const { createListing: apiCreate } = await import("@/lib/api/listings");
-  return apiCreate(body);
+  try {
+    const { createListing: apiCreate } = await import("@/lib/api/listings");
+    return await apiCreate(body);
+  } catch {
+    return mockCreateListing(body);
+  }
 }
 
 export async function uploadImages(files: File[]): Promise<UploadedImage[]> {
   if (USE_MOCK) return mockUploadImages(files);
-  const { uploadImages: apiUpload } = await import("@/lib/api/listings");
-  return apiUpload(files);
+  try {
+    const { uploadImages: apiUpload } = await import("@/lib/api/listings");
+    return await apiUpload(files);
+  } catch {
+    return mockUploadImages(files);
+  }
 }
