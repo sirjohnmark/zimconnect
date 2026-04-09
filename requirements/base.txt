@@ -1,0 +1,18 @@
+# Base requirements — shared across all environments
+Django>=5.2,<5.3
+djangorestframework>=3.15,<4
+djangorestframework-simplejwt>=5.4,<6
+psycopg[binary]>=3.2,<4
+django-redis>=5.4,<6
+django-storages[s3]>=1.14,<2
+Pillow>=11,<12
+celery>=5.4,<6
+django-celery-beat>=2.7,<3
+redis>=5.2,<6
+django-cors-headers>=4.6,<5
+bleach>=6.2,<7
+gunicorn>=23,<24
+sentry-sdk[django]>=2,<3
+python-decouple>=3.8,<4
+dj-database-url>=2.3,<3
+drf-spectacular>=0.28,<1
