@@ -15,6 +15,7 @@ from apps.common.exceptions import NotFoundError, PermissionDeniedError
 from apps.common.pagination import StandardResultsSetPagination
 from apps.listings import selectors, services
 from apps.listings.permissions import IsOwnerOrReadOnly
+from apps.common.throttling import ImageUploadThrottle, ListingCreateThrottle
 from apps.listings.serializers import (
     ListingCreateSerializer,
     ListingDetailSerializer,
@@ -51,6 +52,11 @@ class ListingListCreateView(APIView):
         if self.request.method == "POST":
             return [IsAuthenticated()]
         return [IsAuthenticatedOrReadOnly()]
+
+    def get_throttles(self):
+        if self.request.method == "POST":
+            return [ListingCreateThrottle()]
+        return []
 
     @extend_schema(
         tags=["Listings"],
@@ -143,7 +149,12 @@ class ListingDetailView(APIView):
     )
     def get(self, request: Request, listing_id: int) -> Response:
         listing = selectors.get_listing_by_id(listing_id)
-        listing.increment_views()
+
+        # Accumulate view in Redis; flushed to DB every 5 minutes by Celery
+        from apps.listings.tasks import increment_view_count
+
+        increment_view_count(listing_id)
+
         serializer = ListingDetailSerializer(listing)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -245,6 +256,7 @@ class ListingImageUploadView(APIView):
     """POST /api/listings/{id}/images/ — add images to a listing (owner only)."""
 
     permission_classes = (IsAuthenticated,)
+    throttle_classes = (ImageUploadThrottle,)
 
     @extend_schema(
         tags=["Listings"],

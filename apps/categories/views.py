@@ -2,8 +2,7 @@
 Category views — tree, list, detail.
 """
 
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -18,6 +17,7 @@ from apps.categories.serializers import (
     CategoryListSerializer,
     CategoryTreeSerializer,
 )
+from apps.common.cache import CacheKeys, TTL_CATEGORY_TREE
 from apps.common.pagination import StandardResultsSetPagination
 from apps.common.permissions import IsAdminOrReadOnly
 
@@ -36,11 +36,13 @@ class CategoryTreeView(APIView):
             200: OpenApiResponse(response=CategoryTreeSerializer(many=True), description="Nested category tree"),
         },
     )
-    @method_decorator(cache_page(60 * 60))
     def get(self, request: Request) -> Response:
-        qs = selectors.get_category_tree()
-        serializer = CategoryTreeSerializer(qs, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        data = cache.get(CacheKeys.CATEGORY_TREE)
+        if data is None:
+            qs = selectors.get_category_tree()
+            data = CategoryTreeSerializer(qs, many=True).data
+            cache.set(CacheKeys.CATEGORY_TREE, data, TTL_CATEGORY_TREE)
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class CategoryListView(APIView):

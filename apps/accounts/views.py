@@ -14,13 +14,21 @@ from apps.accounts.serializers import (
     LoginResponseSerializer,
     LogoutRequestSerializer,
     MessageResponseSerializer,
+    OTPVerifySerializer,
     TokenResponseSerializer,
     UserLoginSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
     UserUpdateSerializer,
 )
-from apps.common.throttling import LoginRateThrottle, RegisterRateThrottle
+from apps.common.throttling import (
+    EmailOTPSendThrottle,
+    EmailOTPVerifyThrottle,
+    LoginRateThrottle,
+    OTPSendThrottle,
+    OTPVerifyThrottle,
+    RegisterRateThrottle,
+)
 
 
 class RegisterView(APIView):
@@ -54,8 +62,16 @@ class RegisterView(APIView):
             role=data["role"],
             first_name=data.get("first_name", ""),
             last_name=data.get("last_name", ""),
-            phone=data.get("phone", ""),
+            phone=data["phone"],
         )
+
+        # Fire OTP tasks in the background so registration stays fast
+        from apps.accounts.tasks import send_email_otp_task, send_otp_task
+
+        if user.phone:
+            send_otp_task.delay(user.pk)
+        send_email_otp_task.delay(user.pk)
+
         profile = UserProfileSerializer(user).data
         return Response(profile, status=status.HTTP_201_CREATED)
 
@@ -189,3 +205,208 @@ class UserProfileView(APIView):
 
         user = services.update_user_profile(request.user, **serializer.validated_data)
         return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
+
+
+# ──────────────────────────────────────────────
+# Phone OTP verification
+# ──────────────────────────────────────────────
+
+_OTP_FLOW_DESCRIPTION = (
+    "### OTP verification flow\n\n"
+    "1. **POST /api/auth/phone/send-otp/** — sends a 6-digit code via SMS\n"
+    "2. **POST /api/auth/phone/verify/** — submit the code to verify\n"
+    "3. **POST /api/auth/phone/resend/** — resend (60 s cooldown)\n\n"
+    "OTPs expire after 10 minutes. Stored as SHA-256 hashes — never in plaintext."
+)
+
+
+class SendOTPView(APIView):
+    """POST /api/auth/phone/send-otp — send OTP to user's phone."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (OTPSendThrottle,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_phone_send_otp",
+        summary="Send phone OTP",
+        description=f"Send a 6-digit OTP via SMS to the authenticated user's phone number. "
+        f"Rate-limited to 3 requests/hour.\n\n{_OTP_FLOW_DESCRIPTION}",
+        request=None,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="OTP sent"),
+            400: OpenApiResponse(description="No phone number on file"),
+            401: OpenApiResponse(description="Not authenticated"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        services.send_phone_otp(request.user)
+        return Response(
+            {"message": "Verification code sent to your phone."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class VerifyOTPView(APIView):
+    """POST /api/auth/phone/verify — verify the OTP code."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (OTPVerifyThrottle,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_phone_verify",
+        summary="Verify phone OTP",
+        description="Submit the 6-digit code received via SMS. On success, `phone_verified` becomes `true`. "
+        "Rate-limited to 10 attempts/hour to prevent brute force.",
+        request=OTPVerifySerializer,
+        responses={
+            200: OpenApiResponse(response=UserProfileSerializer, description="Phone verified — updated profile"),
+            400: OpenApiResponse(description="Invalid OTP code"),
+            401: OpenApiResponse(description="Not authenticated"),
+            422: OpenApiResponse(description="OTP expired"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = OTPVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        services.verify_phone_otp(request.user, serializer.validated_data["otp"])
+        request.user.refresh_from_db()
+        return Response(
+            UserProfileSerializer(request.user).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResendOTPView(APIView):
+    """POST /api/auth/phone/resend — resend OTP (60 s cooldown)."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (OTPSendThrottle,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_phone_resend",
+        summary="Resend phone OTP",
+        description="Resend the OTP code. Enforces a 60-second cooldown between sends. "
+        "Rate-limited to 3 requests/hour.",
+        request=None,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="OTP resent"),
+            400: OpenApiResponse(description="Cooldown not elapsed or no phone on file"),
+            401: OpenApiResponse(description="Not authenticated"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        services.resend_otp(request.user)
+        return Response(
+            {"message": "Verification code resent to your phone."},
+            status=status.HTTP_200_OK,
+        )
+
+
+# ──────────────────────────────────────────────
+# Email OTP verification
+# ──────────────────────────────────────────────
+
+_EMAIL_OTP_FLOW_DESCRIPTION = (
+    "### Dual-verification flow\n\n"
+    "Users can verify via **phone** (SMS) or **email** — at least one must be verified "
+    "before posting listings. Diaspora users without a Zimbabwean phone can use email.\n\n"
+    "1. **POST /api/auth/email/send-otp/** — sends a 6-digit code via email\n"
+    "2. **POST /api/auth/email/verify/** — submit the code to verify\n"
+    "3. **POST /api/auth/email/resend/** — resend (60 s cooldown)\n\n"
+    "Email OTPs expire after 30 minutes. Stored as SHA-256 hashes — never in plaintext."
+)
+
+
+class SendEmailOTPView(APIView):
+    """POST /api/auth/email/send-otp — send OTP to user's email."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (EmailOTPSendThrottle,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_email_send_otp",
+        summary="Send email OTP",
+        description=f"Send a 6-digit OTP to the authenticated user's email address. "
+        f"Rate-limited to 3 requests/hour.\n\n{_EMAIL_OTP_FLOW_DESCRIPTION}",
+        request=None,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="OTP sent"),
+            401: OpenApiResponse(description="Not authenticated"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        services.send_email_otp(request.user)
+        return Response(
+            {"message": "Verification code sent to your email."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class VerifyEmailOTPView(APIView):
+    """POST /api/auth/email/verify — verify the email OTP code."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (EmailOTPVerifyThrottle,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_email_verify",
+        summary="Verify email OTP",
+        description="Submit the 6-digit code received via email. On success, `email_verified` becomes `true`. "
+        "Rate-limited to 10 attempts/hour to prevent brute force.",
+        request=OTPVerifySerializer,
+        responses={
+            200: OpenApiResponse(response=UserProfileSerializer, description="Email verified — updated profile"),
+            400: OpenApiResponse(description="Invalid OTP code"),
+            401: OpenApiResponse(description="Not authenticated"),
+            422: OpenApiResponse(description="OTP expired"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = OTPVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        services.verify_email_otp(request.user, serializer.validated_data["otp"])
+        request.user.refresh_from_db()
+        return Response(
+            UserProfileSerializer(request.user).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResendEmailOTPView(APIView):
+    """POST /api/auth/email/resend — resend email OTP (60 s cooldown)."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (EmailOTPSendThrottle,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_email_resend",
+        summary="Resend email OTP",
+        description="Resend the email OTP code. Enforces a 60-second cooldown between sends. "
+        "Rate-limited to 3 requests/hour.",
+        request=None,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="OTP resent"),
+            400: OpenApiResponse(description="Cooldown not elapsed"),
+            401: OpenApiResponse(description="Not authenticated"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        services.resend_email_otp(request.user)
+        return Response(
+            {"message": "Verification code resent to your email."},
+            status=status.HTTP_200_OK,
+        )

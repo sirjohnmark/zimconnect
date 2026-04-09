@@ -16,7 +16,7 @@ from __future__ import annotations
 from typing import Any
 
 from rest_framework import status
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, Throttled
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
@@ -108,11 +108,27 @@ def custom_exception_handler(exc: Exception, context: dict) -> Response | None:
     Wrap all DRF exceptions into a consistent envelope:
 
         {"error": {"code": "...", "message": "...", "details": {...}}}
+
+    Throttled exceptions get a dedicated ``RATE_LIMIT_EXCEEDED`` code with
+    a ``retry_after`` hint so clients can back off gracefully.
     """
     response = drf_exception_handler(exc, context)
     if response is None:
         return None
 
+    # ── Throttled / 429 ───────────────────────
+    if isinstance(exc, Throttled):
+        retry_after = int(exc.wait) if exc.wait else 0
+        response.data = {
+            "error": {
+                "code": "RATE_LIMIT_EXCEEDED",
+                "message": f"Too many requests. Try again in {retry_after} seconds.",
+                "details": {"retry_after": retry_after},
+            },
+        }
+        return response
+
+    # ── All other DRF exceptions ──────────────
     code = getattr(exc, "default_code", "error")
     message, details = _normalise_detail(response.data)
 

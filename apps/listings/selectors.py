@@ -6,8 +6,10 @@ Views call selectors for reads and services for writes.
 
 from __future__ import annotations
 
+from django.core.cache import cache
 from django.db.models import Q, QuerySet
 
+from apps.common.cache import CacheKeys, TTL_LISTING_DETAIL, make_cache_key
 from apps.common.constants import ListingStatus
 from apps.common.exceptions import NotFoundError
 
@@ -18,10 +20,15 @@ def get_listing_by_id(listing_id: int) -> Listing:
     """
     Return a listing with related owner, category, and prefetched images.
 
-    Raises NotFoundError if not found.
+    Cached for 5 minutes. Raises NotFoundError if not found.
     """
+    cache_key = make_cache_key(CacheKeys.LISTING_DETAIL_PREFIX, listing_id)
+    listing = cache.get(cache_key)
+    if listing is not None:
+        return listing
+
     try:
-        return (
+        listing = (
             Listing.objects
             .select_related("owner", "category")
             .prefetch_related("images")
@@ -29,6 +36,9 @@ def get_listing_by_id(listing_id: int) -> Listing:
         )
     except Listing.DoesNotExist:
         raise NotFoundError(f"Listing with id {listing_id} not found.")
+
+    cache.set(cache_key, listing, TTL_LISTING_DETAIL)
+    return listing
 
 
 def get_active_listings(filters: dict | None = None) -> QuerySet:

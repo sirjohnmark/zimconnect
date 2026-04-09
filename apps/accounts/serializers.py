@@ -23,7 +23,7 @@ class UserRegistrationSerializer(serializers.Serializer):
         choices=[UserRole.BUYER, UserRole.SELLER],
         default=UserRole.BUYER,
     )
-    phone = serializers.CharField(max_length=15, required=False, default="")
+    phone = serializers.CharField(max_length=15)
 
     def validate_email(self, value: str) -> str:
         email = value.lower().strip()
@@ -56,6 +56,8 @@ class UserLoginSerializer(serializers.Serializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     """Read-only representation of a user profile."""
 
+    is_verified = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -69,11 +71,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "profile_picture",
             "bio",
             "location",
+            "phone_verified",
+            "email_verified",
+            "is_verified",
             "is_active",
             "created_at",
             "updated_at",
         )
         read_only_fields = fields
+
+    def get_is_verified(self, obj) -> bool:
+        """True if at least one verification channel (email or phone) is confirmed."""
+        return obj.email_verified or obj.phone_verified
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -122,3 +131,12 @@ class MessageResponseSerializer(serializers.Serializer):
     """Generic message response."""
 
     message = serializers.CharField()
+
+
+class OTPVerifySerializer(serializers.Serializer):
+    """Validate OTP input for phone or email verification."""
+
+    otp = serializers.RegexField(
+        regex=r"^\d{6}$",
+        help_text="6-digit verification code sent via SMS or email.",
+    )

@@ -7,9 +7,11 @@ Aggregates data from User, Listing, and Conversation models.
 from __future__ import annotations
 
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
 
+from apps.common.cache import CacheKeys, TTL_DASHBOARD_STATS
 from apps.common.constants import ListingStatus
 from apps.common.exceptions import NotFoundError
 from apps.inbox.models import Conversation
@@ -19,7 +21,11 @@ User = get_user_model()
 
 
 def get_dashboard_stats() -> dict:
-    """Aggregate key metrics for the admin dashboard."""
+    """Aggregate key metrics for the admin dashboard. Cached for 10 minutes."""
+    data = cache.get(CacheKeys.DASHBOARD_STATS)
+    if data is not None:
+        return data
+
     today = timezone.now().date()
 
     total_users = User.objects.count()
@@ -31,7 +37,7 @@ def get_dashboard_stats() -> dict:
 
     total_conversations = Conversation.objects.count()
 
-    return {
+    data = {
         "total_users": total_users,
         "total_listings": total_listings_active,
         "total_listings_pending": total_listings_pending,
@@ -39,6 +45,8 @@ def get_dashboard_stats() -> dict:
         "new_listings_today": new_listings_today,
         "total_conversations": total_conversations,
     }
+    cache.set(CacheKeys.DASHBOARD_STATS, data, TTL_DASHBOARD_STATS)
+    return data
 
 
 def get_all_users(filters: dict | None = None) -> QuerySet:

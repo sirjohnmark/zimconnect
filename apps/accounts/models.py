@@ -90,6 +90,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
+    # Phone OTP verification
+    phone_verified = models.BooleanField(default=False)
+    phone_otp = models.CharField(max_length=128, blank=True, default="")
+    phone_otp_expires_at = models.DateTimeField(null=True, blank=True)
+
+    # Email OTP verification
+    email_verified = models.BooleanField(default=False)
+    email_otp = models.CharField(max_length=128, blank=True, default="")
+    email_otp_expires_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

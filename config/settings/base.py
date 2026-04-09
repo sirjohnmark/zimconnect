@@ -24,6 +24,13 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=Csv())
 
 # ──────────────────────────────────────────────
+# Africa's Talking SMS (OTP)
+# ──────────────────────────────────────────────
+AT_USERNAME = config("AT_USERNAME", default="sandbox")
+AT_API_KEY = config("AT_API_KEY", default="")
+AT_SENDER_ID = config("AT_SENDER_ID", default="")
+
+# ──────────────────────────────────────────────
 # Application definition
 # ──────────────────────────────────────────────
 DJANGO_APPS = [
@@ -68,6 +75,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.common.middleware.RequestLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -156,7 +164,14 @@ REST_FRAMEWORK = {
         "user": "120/minute",
         "login": "10/hour",
         "register": "5/hour",
+        "listing_create": "20/day",
+        "image_upload": "30/day",
         "message": "60/hour",
+        "password_reset": "3/hour",
+        "otp_send": "3/hour",
+        "otp_verify": "10/hour",
+        "email_otp_send": "3/hour",
+        "email_otp_verify": "10/hour",
     },
     "DEFAULT_RENDERER_CLASSES": (
         "rest_framework.renderers.JSONRenderer",
@@ -237,6 +252,8 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": REDIS_URL,
+        "TIMEOUT": 300,
+        "KEY_PREFIX": "zimconnect",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -273,3 +290,57 @@ CORS_ALLOW_CREDENTIALS = True
 # ──────────────────────────────────────────────
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@tradlink.co.zw")
+
+# ──────────────────────────────────────────────
+# Security headers
+# ──────────────────────────────────────────────
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+SECURE_BROWSER_XSS_FILTER = True
+
+# ──────────────────────────────────────────────
+# Logging
+# ──────────────────────────────────────────────
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "request_id": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda record: setattr(
+                record, "request_id",
+                __import__("apps.common.middleware", fromlist=["get_request_id"]).get_request_id() or "-",
+            ) or True,
+        },
+    },
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} {levelname} {name} [rid={request_id}] {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+            "filters": ["request_id"],
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "apps": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "zimconnect.requests": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}

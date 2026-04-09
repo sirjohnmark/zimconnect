@@ -14,4 +14,4 @@ class CategoryAdmin(admin.ModelAdmin):
 
     @admin.display(description="Children")
     def children_count(self, obj: Category) -> int:
-        return obj.children_count
+        return obj.get_children_count()

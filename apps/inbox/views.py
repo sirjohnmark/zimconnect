@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 
 from apps.common.exceptions import NotFoundError
 from apps.common.pagination import StandardResultsSetPagination
-from apps.common.throttling import MessageRateThrottle
+from apps.common.throttling import MessageSendThrottle
 from apps.inbox import selectors, services
 from apps.inbox.models import Message
 from apps.inbox.serializers import (
@@ -132,7 +132,7 @@ class ConversationSendMessageView(APIView):
     """POST /api/inbox/{id}/messages/ — send a message."""
 
     permission_classes = (IsAuthenticated,)
-    throttle_classes = (MessageRateThrottle,)
+    throttle_classes = (MessageSendThrottle,)
 
     @extend_schema(
         tags=["Inbox"],

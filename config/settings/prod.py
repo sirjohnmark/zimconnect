@@ -85,12 +85,30 @@ EMAIL_USE_TLS = True
 SENTRY_DSN = require_env("SENTRY_DSN")
 
 import sentry_sdk  # noqa: E402
+from sentry_sdk.integrations.django import DjangoIntegration  # noqa: E402
+
+
+def _before_send(event, hint):
+    """Filter out noisy 404 and 429 errors from Sentry."""
+    if "exc_info" in hint:
+        exc_type = hint["exc_info"][0]
+        # django.http.Http404
+        if getattr(exc_type, "__name__", "") == "Http404":
+            return None
+        # DRF Throttled → 429
+        exc_name = getattr(exc_type, "__name__", "")
+        if exc_name == "Throttled":
+            return None
+    return event
+
 
 sentry_sdk.init(
     dsn=SENTRY_DSN,
+    integrations=[DjangoIntegration()],
     traces_sample_rate=0.1,
     profiles_sample_rate=0.1,
     send_default_pii=False,
+    before_send=_before_send,
 )
 
 # ──────────────────────────────────────────────
@@ -102,21 +120,33 @@ CORS_ALLOWED_ORIGINS = config(
 )
 
 # ──────────────────────────────────────────────
-# Logging
+# Logging — structured JSON
 # ──────────────────────────────────────────────
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "filters": {
+        "request_id": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": lambda record: setattr(
+                record, "request_id",
+                __import__("apps.common.middleware", fromlist=["get_request_id"]).get_request_id() or "-",
+            ) or True,
+        },
+    },
     "formatters": {
-        "verbose": {
-            "format": "[{asctime}] {levelname} {name} {message}",
-            "style": "{",
+        "json": {
+            "()": "pythonjsonlogger.json.JsonFormatter",
+            "fmt": "%(asctime)s %(levelname)s %(name)s %(message)s",
+            "rename_fields": {"asctime": "timestamp", "levelname": "level", "name": "logger"},
+            "static_fields": {"environment": "production"},
         },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "verbose",
+            "formatter": "json",
+            "filters": ["request_id"],
         },
     },
     "root": {
@@ -127,6 +157,16 @@ LOGGING = {
         "django": {
             "handlers": ["console"],
             "level": "ERROR",
+            "propagate": False,
+        },
+        "apps": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "zimconnect.requests": {
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": False,
         },
     },

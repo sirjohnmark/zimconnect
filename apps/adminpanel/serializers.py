@@ -54,6 +54,7 @@ class AdminUserListSerializer(serializers.ModelSerializer):
     """Compact user representation for admin list views."""
 
     listings_count = serializers.IntegerField(read_only=True)
+    is_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -63,10 +64,16 @@ class AdminUserListSerializer(serializers.ModelSerializer):
             "username",
             "role",
             "is_active",
+            "email_verified",
+            "phone_verified",
+            "is_verified",
             "listings_count",
             "created_at",
         )
         read_only_fields = fields
+
+    def get_is_verified(self, obj) -> bool:
+        return obj.email_verified or obj.phone_verified
 
 
 class AdminUserDetailSerializer(serializers.ModelSerializer):
@@ -74,6 +81,7 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
 
     listings_count = serializers.IntegerField(read_only=True)
     conversations_count = serializers.IntegerField(read_only=True)
+    is_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -90,6 +98,9 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
             "location",
             "is_active",
             "is_staff",
+            "email_verified",
+            "phone_verified",
+            "is_verified",
             "listings_count",
             "conversations_count",
             "last_login",
@@ -97,6 +108,9 @@ class AdminUserDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         )
         read_only_fields = fields
+
+    def get_is_verified(self, obj) -> bool:
+        return obj.email_verified or obj.phone_verified
 
 
 class AdminUserUpdateSerializer(serializers.Serializer):

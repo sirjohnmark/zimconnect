@@ -6,15 +6,20 @@ All mutations go through here — views never touch the ORM directly.
 
 from __future__ import annotations
 
+import logging
+
 from django.db import transaction
 from django.utils import timezone
 
 from apps.categories.models import Category
+from apps.common.cache import invalidate_dashboard_stats, invalidate_listing_detail
 from apps.common.constants import ListingStatus, UserRole
 from apps.common.exceptions import NotFoundError, PermissionDeniedError, ServiceError
 from apps.common.sanitizers import sanitize_plain
 
 from .models import Listing, ListingImage
+
+logger = logging.getLogger(__name__)
 
 MAX_IMAGES_PER_LISTING = 10
 
@@ -38,6 +43,11 @@ def create_listing(
     Validates category is active, sanitizes text inputs,
     and processes images if provided (first image set as primary).
     """
+    if not (owner.email_verified or owner.phone_verified):
+        raise PermissionDeniedError(
+            "Please verify your email or phone number before posting a listing.",
+        )
+
     try:
         category = Category.objects.get(pk=category_id, is_active=True)
     except Category.DoesNotExist:
@@ -58,6 +68,15 @@ def create_listing(
     if images:
         _process_images(listing, images, is_initial=True)
 
+    # Process images in the background (resize, WebP conversion, thumbnails)
+    from apps.listings.tasks import process_listing_images
+
+    process_listing_images.delay(listing.id)
+
+    logger.info(
+        "listing_created id=%d owner=%d category=%s",
+        listing.pk, owner.pk, category.slug,
+    )
     return listing
 
 
@@ -88,6 +107,7 @@ def update_listing(listing: Listing, user, **kwargs) -> Listing:
     listing.full_clean()
     listing.save(update_fields=[*kwargs.keys(), "updated_at"])
     listing.refresh_from_db()
+    invalidate_listing_detail(listing.pk)
     return listing
 
 
@@ -102,13 +122,20 @@ def publish_listing(listing: Listing, user) -> Listing:
     listing.published_at = timezone.now()
     listing.save(update_fields=["status", "published_at", "updated_at"])
     listing.refresh_from_db()
+    invalidate_listing_detail(listing.pk)
+    invalidate_dashboard_stats()
+    logger.info("listing_published id=%d owner=%d", listing.pk, user.pk)
     return listing
 
 
 def delete_listing(listing: Listing, user) -> None:
     """Delete a listing. Only the owner or an admin may do this."""
     _assert_owner_or_admin(listing, user)
+    listing_id = listing.pk
     listing.delete()
+    invalidate_listing_detail(listing_id)
+    invalidate_dashboard_stats()
+    logger.info("listing_deleted id=%d by_user=%d", listing_id, user.pk)
 
 
 @transaction.atomic

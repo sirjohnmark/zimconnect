@@ -70,9 +70,8 @@ class Category(models.Model):
         """True if this is a top-level category."""
         return self.parent_id is None
 
-    @property
-    def children_count(self) -> int:
-        """Number of direct children."""
+    def get_children_count(self) -> int:
+        """Number of direct children (use when queryset is *not* annotated)."""
         return self.children.count()
 
     # ── Methods ───────────────────────────────

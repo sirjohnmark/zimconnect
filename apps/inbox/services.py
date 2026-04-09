@@ -6,6 +6,8 @@ All mutations go through here — views never touch the ORM directly.
 
 from __future__ import annotations
 
+import logging
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
@@ -16,6 +18,8 @@ from apps.common.sanitizers import sanitize_plain
 from .models import Conversation, Message
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 
 @transaction.atomic
@@ -42,6 +46,11 @@ def get_or_create_conversation(sender, recipient, listing=None) -> tuple[Convers
 
     conversation = Conversation.objects.create(listing=listing)
     conversation.participants.add(sender, recipient)
+    logger.info(
+        "conversation_created id=%d sender=%d recipient=%d listing=%s",
+        conversation.pk, sender.pk, recipient.pk,
+        listing.pk if listing else "none",
+    )
     return conversation, True
 
 
@@ -69,6 +78,10 @@ def send_message(conversation: Conversation, sender, content: str) -> Message:
     # Bump updated_at so the conversation floats to the top
     Conversation.objects.filter(pk=conversation.pk).update(updated_at=timezone.now())
 
+    logger.info(
+        "message_sent conversation=%d sender=%d",
+        conversation.pk, sender.pk,
+    )
     return message
 
 

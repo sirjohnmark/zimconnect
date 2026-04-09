@@ -8,5 +8,6 @@ Faker==33.*
 coverage==7.*
 pytest==8.*
 pytest-django==4.9.*
+pytest-mock==3.*
 pytest-cov==6.*
 ruff==0.8.*

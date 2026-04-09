@@ -57,3 +57,17 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
+
+# ──────────────────────────────────────────────
+# Sessions — use DB instead of cache so admin
+# sessions survive dev-server auto-reloads
+# ──────────────────────────────────────────────
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
+# ──────────────────────────────────────────────
+# CSRF — trust localhost origins (Django 4+ requirement)
+# ──────────────────────────────────────────────
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]

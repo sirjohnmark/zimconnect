@@ -6,12 +6,17 @@ Moderation actions and user management.
 
 from __future__ import annotations
 
+import logging
+
 from django.utils import timezone
 
+from apps.common.cache import invalidate_dashboard_stats, invalidate_listing_detail
 from apps.common.constants import ListingStatus, UserRole
 from apps.common.exceptions import PermissionDeniedError, ServiceError
 from apps.common.sanitizers import sanitize_plain
 from apps.listings.models import Listing
+
+logger = logging.getLogger(__name__)
 
 
 def approve_listing(listing: Listing, admin_user) -> Listing:
@@ -26,6 +31,9 @@ def approve_listing(listing: Listing, admin_user) -> Listing:
     listing.rejection_reason = None
     listing.save(update_fields=["status", "published_at", "rejection_reason", "updated_at"])
     listing.refresh_from_db()
+    invalidate_listing_detail(listing.pk)
+    invalidate_dashboard_stats()
+    logger.info("listing_approved id=%d admin=%d", listing.pk, admin_user.pk)
     return listing
 
 
@@ -44,6 +52,12 @@ def reject_listing(listing: Listing, admin_user, reason: str) -> Listing:
     listing.rejection_reason = reason
     listing.save(update_fields=["status", "rejection_reason", "updated_at"])
     listing.refresh_from_db()
+    invalidate_listing_detail(listing.pk)
+    invalidate_dashboard_stats()
+    logger.info(
+        "listing_rejected id=%d admin=%d reason=%s",
+        listing.pk, admin_user.pk, reason[:80],
+    )
     return listing
 
 
@@ -57,6 +71,8 @@ def deactivate_user(user, admin_user) -> object:
     user.is_active = False
     user.save(update_fields=["is_active", "updated_at"])
     user.refresh_from_db()
+    invalidate_dashboard_stats()
+    logger.info("user_deactivated user_id=%d admin=%d", user.pk, admin_user.pk)
     return user
 
 
@@ -67,6 +83,7 @@ def activate_user(user, admin_user) -> object:
     user.is_active = True
     user.save(update_fields=["is_active", "updated_at"])
     user.refresh_from_db()
+    invalidate_dashboard_stats()
     return user
 
 
@@ -80,9 +97,14 @@ def change_user_role(user, admin_user, new_role: str) -> object:
     if new_role not in {choice[0] for choice in UserRole.choices}:
         raise ServiceError(f"Invalid role: {new_role}")
 
+    old_role = user.role
     user.role = new_role
     user.save(update_fields=["role", "updated_at"])
     user.refresh_from_db()
+    logger.info(
+        "user_role_changed user_id=%d old=%s new=%s admin=%d",
+        user.pk, old_role, new_role, admin_user.pk,
+    )
     return user
 
 

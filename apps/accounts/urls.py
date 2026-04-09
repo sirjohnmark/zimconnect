@@ -16,4 +16,12 @@ urlpatterns = [
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("token/refresh/", views.TokenRefreshView.as_view(), name="token-refresh"),
     path("profile/", views.UserProfileView.as_view(), name="profile"),
+    # Phone OTP verification
+    path("phone/send-otp/", views.SendOTPView.as_view(), name="phone-send-otp"),
+    path("phone/verify/", views.VerifyOTPView.as_view(), name="phone-verify"),
+    path("phone/resend/", views.ResendOTPView.as_view(), name="phone-resend"),
+    # Email OTP verification
+    path("email/send-otp/", views.SendEmailOTPView.as_view(), name="email-send-otp"),
+    path("email/verify/", views.VerifyEmailOTPView.as_view(), name="email-verify"),
+    path("email/resend/", views.ResendEmailOTPView.as_view(), name="email-resend"),
 ]

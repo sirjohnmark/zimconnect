@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from django.db import transaction
 
+from apps.common.cache import invalidate_category_tree
 from apps.common.sanitizers import sanitize_plain
 
 from .models import Category
@@ -22,7 +23,9 @@ def create_category(name: str, parent_id: int | None = None, **kwargs) -> Catego
     if "description" in kwargs and kwargs["description"]:
         kwargs["description"] = sanitize_plain(kwargs["description"])
 
-    return Category.objects.create(name=name, parent=parent, **kwargs)
+    category = Category.objects.create(name=name, parent=parent, **kwargs)
+    invalidate_category_tree()
+    return category
 
 
 @transaction.atomic
@@ -39,6 +42,7 @@ def update_category(category: Category, **kwargs) -> Category:
     category.full_clean()
     category.save(update_fields=[*kwargs.keys(), "updated_at"])
     category.refresh_from_db()
+    invalidate_category_tree()
     return category
 
 
@@ -48,4 +52,5 @@ def toggle_category_active(category: Category) -> Category:
     category.is_active = not category.is_active
     category.save(update_fields=["is_active", "updated_at"])
     category.refresh_from_db()
+    invalidate_category_tree()
     return category
