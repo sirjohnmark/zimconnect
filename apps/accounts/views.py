@@ -2,6 +2,7 @@
 Account views — registration, login, logout, token refresh, profile.
 """
 
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -10,6 +11,9 @@ from rest_framework.views import APIView
 
 from apps.accounts import services
 from apps.accounts.serializers import (
+    LoginResponseSerializer,
+    LogoutRequestSerializer,
+    MessageResponseSerializer,
     TokenResponseSerializer,
     UserLoginSerializer,
     UserProfileSerializer,
@@ -25,6 +29,18 @@ class RegisterView(APIView):
     permission_classes = (AllowAny,)
     throttle_classes = (RegisterRateThrottle,)
 
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_register",
+        summary="Register a new user",
+        description="Create a new BUYER or SELLER account. Rate-limited to 5 requests/hour.",
+        request=UserRegistrationSerializer,
+        responses={
+            201: OpenApiResponse(response=UserProfileSerializer, description="User created"),
+            400: OpenApiResponse(description="Validation error (duplicate email/username, password mismatch)"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
     def post(self, request: Request) -> Response:
         serializer = UserRegistrationSerializer(data=request.data)
         serializer.validate_email = serializer.validate_email  # keeps IDE happy
@@ -50,6 +66,18 @@ class LoginView(APIView):
     permission_classes = (AllowAny,)
     throttle_classes = (LoginRateThrottle,)
 
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_login",
+        summary="Login",
+        description="Authenticate with email + password. Returns JWT pair and user profile. Rate-limited to 10 requests/hour.",
+        request=UserLoginSerializer,
+        responses={
+            200: OpenApiResponse(response=LoginResponseSerializer, description="JWT tokens + user profile"),
+            401: OpenApiResponse(description="Invalid credentials"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
     def post(self, request: Request) -> Response:
         serializer = UserLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -73,6 +101,18 @@ class LogoutView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_logout",
+        summary="Logout",
+        description="Blacklist the given refresh token. Requires authentication.",
+        request=LogoutRequestSerializer,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="Successfully logged out"),
+            400: OpenApiResponse(description="Missing refresh token"),
+            401: OpenApiResponse(description="Not authenticated"),
+        },
+    )
     def post(self, request: Request) -> Response:
         refresh_token = request.data.get("refresh")
         if not refresh_token:
@@ -90,6 +130,17 @@ class TokenRefreshView(APIView):
 
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_token_refresh",
+        summary="Refresh JWT tokens",
+        description="Rotate a refresh token and receive a new access + refresh pair.",
+        request=LogoutRequestSerializer,
+        responses={
+            200: OpenApiResponse(response=TokenResponseSerializer, description="New token pair"),
+            400: OpenApiResponse(description="Missing or invalid refresh token"),
+        },
+    )
     def post(self, request: Request) -> Response:
         refresh_token = request.data.get("refresh")
         if not refresh_token:
@@ -107,9 +158,31 @@ class UserProfileView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_profile_read",
+        summary="Get my profile",
+        description="Return the authenticated user's profile.",
+        responses={
+            200: OpenApiResponse(response=UserProfileSerializer, description="User profile"),
+            401: OpenApiResponse(description="Not authenticated"),
+        },
+    )
     def get(self, request: Request) -> Response:
         return Response(UserProfileSerializer(request.user).data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_profile_update",
+        summary="Update my profile",
+        description="Partially update the authenticated user's profile fields.",
+        request=UserUpdateSerializer,
+        responses={
+            200: OpenApiResponse(response=UserProfileSerializer, description="Updated profile"),
+            400: OpenApiResponse(description="Validation error"),
+            401: OpenApiResponse(description="Not authenticated"),
+        },
+    )
     def patch(self, request: Request) -> Response:
         serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)

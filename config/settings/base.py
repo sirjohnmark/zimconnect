@@ -49,6 +49,9 @@ LOCAL_APPS: list[str] = [
     "apps.common",
     "apps.accounts",
     "apps.categories",
+    "apps.listings",
+    "apps.inbox",
+    "apps.adminpanel",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -166,12 +169,49 @@ REST_FRAMEWORK = {
 # drf-spectacular (OpenAPI / Swagger)
 # ──────────────────────────────────────────────
 SPECTACULAR_SETTINGS = {
-    "TITLE": "TRADLINKAPI",
-    "DESCRIPTION": "Zimbabwe classifieds & marketplace REST API",
+    "TITLE": "ZimConnect API",
+    "DESCRIPTION": (
+        "Zimbabwe classifieds & marketplace REST API.\n\n"
+        "## Authentication\n"
+        "All authenticated endpoints require a JWT Bearer token in the "
+        "`Authorization` header:\n\n"
+        "```\nAuthorization: Bearer <access_token>\n```\n\n"
+        "Obtain tokens via **POST /api/auth/login/**. "
+        "Refresh via **POST /api/auth/token/refresh/**.\n\n"
+        "## Roles\n"
+        "- **BUYER** — browse & message sellers\n"
+        "- **SELLER** — create & manage listings\n"
+        "- **MODERATOR** — approve / reject listings\n"
+        "- **ADMIN** — full platform access\n"
+    ),
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SCHEMA_PATH_PREFIX": r"/api/",
+    "TAGS": [
+        {"name": "Auth", "description": "Registration, login, logout, token refresh, profile"},
+        {"name": "Categories", "description": "Category tree, lists, and CRUD (admin)"},
+        {"name": "Listings", "description": "Marketplace listings CRUD, images, publishing"},
+        {"name": "Inbox", "description": "Conversations and messaging between users"},
+        {"name": "Admin", "description": "Dashboard, user management, listing moderation"},
+    ],
+    "SECURITY": [{"jwtAuth": []}],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "jwtAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            },
+        },
+    },
+    "ENUM_NAME_OVERRIDES": {
+        "UserRoleEnum": "apps.common.constants.UserRole",
+        "ListingStatusEnum": "apps.common.constants.ListingStatus",
+        "ListingConditionEnum": "apps.common.constants.ListingCondition",
+        "CurrencyEnum": "apps.common.constants.Currency",
+        "ZimbabweCityEnum": "apps.common.constants.ZimbabweCity",
+    },
 }
 
 # ──────────────────────────────────────────────

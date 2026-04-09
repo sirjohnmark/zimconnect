@@ -103,3 +103,22 @@ class TokenResponseSerializer(serializers.Serializer):
 
     access = serializers.CharField()
     refresh = serializers.CharField()
+
+
+class LoginResponseSerializer(serializers.Serializer):
+    """Combined response for login endpoint."""
+
+    tokens = TokenResponseSerializer()
+    user = UserProfileSerializer()
+
+
+class LogoutRequestSerializer(serializers.Serializer):
+    """Request body for logout and token refresh."""
+
+    refresh = serializers.CharField(help_text="The refresh token to blacklist or rotate.")
+
+
+class MessageResponseSerializer(serializers.Serializer):
+    """Generic message response."""
+
+    message = serializers.CharField()

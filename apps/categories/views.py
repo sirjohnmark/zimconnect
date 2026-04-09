@@ -4,6 +4,7 @@ Category views — tree, list, detail.
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
@@ -26,6 +27,15 @@ class CategoryTreeView(APIView):
 
     permission_classes = (AllowAny,)
 
+    @extend_schema(
+        tags=["Categories"],
+        operation_id="categories_tree",
+        summary="Get category tree",
+        description="Full nested category tree. Cached for 1 hour. Public endpoint.",
+        responses={
+            200: OpenApiResponse(response=CategoryTreeSerializer(many=True), description="Nested category tree"),
+        },
+    )
     @method_decorator(cache_page(60 * 60))
     def get(self, request: Request) -> Response:
         qs = selectors.get_category_tree()
@@ -41,6 +51,13 @@ class CategoryListView(APIView):
 
     permission_classes = (IsAdminOrReadOnly,)
 
+    @extend_schema(
+        tags=["Categories"],
+        operation_id="categories_list",
+        summary="List categories",
+        description="Paginated flat list of active categories. Public endpoint.",
+        responses={200: CategoryListSerializer(many=True)},
+    )
     def get(self, request: Request) -> Response:
         qs = selectors.get_active_categories()
         paginator = StandardResultsSetPagination()
@@ -48,6 +65,18 @@ class CategoryListView(APIView):
         serializer = CategoryListSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
+    @extend_schema(
+        tags=["Categories"],
+        operation_id="categories_create",
+        summary="Create a category",
+        description="Create a new category. **Admin only.**",
+        request=CategoryCreateUpdateSerializer,
+        responses={
+            201: OpenApiResponse(response=CategoryDetailSerializer, description="Category created"),
+            400: OpenApiResponse(description="Validation error"),
+            403: OpenApiResponse(description="Not an admin"),
+        },
+    )
     def post(self, request: Request) -> Response:
         serializer = CategoryCreateUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -75,11 +104,34 @@ class CategoryDetailView(APIView):
 
     permission_classes = (IsAdminOrReadOnly,)
 
+    @extend_schema(
+        tags=["Categories"],
+        operation_id="categories_detail",
+        summary="Get category detail",
+        description="Category detail including direct children. Public endpoint.",
+        responses={
+            200: OpenApiResponse(response=CategoryDetailSerializer, description="Category detail"),
+            404: OpenApiResponse(description="Category not found"),
+        },
+    )
     def get(self, request: Request, category_id: int) -> Response:
         category = selectors.get_category_by_id(category_id)
         serializer = CategoryDetailSerializer(category)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["Categories"],
+        operation_id="categories_update",
+        summary="Update a category",
+        description="Partially update a category. **Admin only.**",
+        request=CategoryCreateUpdateSerializer,
+        responses={
+            200: OpenApiResponse(response=CategoryDetailSerializer, description="Updated category"),
+            400: OpenApiResponse(description="Validation error"),
+            403: OpenApiResponse(description="Not an admin"),
+            404: OpenApiResponse(description="Category not found"),
+        },
+    )
     def patch(self, request: Request, category_id: int) -> Response:
         category = selectors.get_category_by_id(category_id)
         serializer = CategoryCreateUpdateSerializer(

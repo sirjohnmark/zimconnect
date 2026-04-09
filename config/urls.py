@@ -15,12 +15,17 @@ from drf_spectacular.views import (
 
 def api_root(request):
     return JsonResponse({
-        "name": "TRADLINKAPI",
+        "name": "ZimConnect API",
         "version": "1.0.0",
         "endpoints": {
             "auth": "/api/auth/",
             "categories": "/api/categories/",
-            "admin": "/admin/",
+            "listings": "/api/listings/",
+            "inbox": "/api/inbox/",
+            "admin_panel": "/api/admin/",
+            "docs": "/api/docs/",
+            "redoc": "/api/redoc/",
+            "schema": "/api/schema/",
         },
     })
 
@@ -30,6 +35,9 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("apps.accounts.urls")),
     path("api/categories/", include("apps.categories.urls")),
+    path("api/listings/", include("apps.listings.urls")),
+    path("api/inbox/", include("apps.inbox.urls")),
+    path("api/admin/", include("apps.adminpanel.urls")),
     # OpenAPI schema + docs
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
