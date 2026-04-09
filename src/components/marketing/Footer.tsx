@@ -26,7 +26,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
             <Link href="/home" className="text-lg font-bold text-emerald-600">
-              Zim<span className="text-gray-900">Connect</span>
+              San<span className="text-gray-900">ganai</span>
             </Link>
             <p className="mt-3 text-sm text-gray-500 leading-relaxed">
               Zimbabwe&apos;s trusted marketplace for buying and selling anything.

@@ -25,7 +25,7 @@ export function Navbar() {
 
           {/* Logo */}
           <Link href="/home" className="text-xl font-bold text-emerald-600 shrink-0">
-            Zim<span className="text-gray-900">Connect</span>
+            San<span className="text-gray-900">ganai</span>
           </Link>
 
           {/* Desktop nav */}

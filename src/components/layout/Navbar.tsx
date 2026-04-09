@@ -260,7 +260,7 @@ export function Navbar() {
 
             {/* Logo */}
             <Link href="/home" onClick={close} className="shrink-0 text-xl font-bold tracking-tight" aria-label="Sanganai home">
-              Zim<span className="text-emerald-600">Connect</span>
+              San<span className="text-emerald-600">ganai</span>
             </Link>
 
             {/* Desktop nav links */}
