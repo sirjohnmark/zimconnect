@@ -1,10 +1,9 @@
 import type { Category } from "@/types/category";
 
 // ── Switch ────────────────────────────────────────────────────────────────────
-// Set NEXT_PUBLIC_USE_MOCK=true in .env.local to use mock data.
-// Remove or set to false to use the real Django API.
+// Defaults to mock. Set NEXT_PUBLIC_USE_MOCK=false to use the real API.
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
 // ── Lazy imports keep bundle clean — only one path is ever evaluated ──────────
 
