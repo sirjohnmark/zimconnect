@@ -13,7 +13,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
           <Link href="/home" className="text-xl font-bold text-blue-600">
-            ZimConnect
+            Sanganai
           </Link>
           <Link href="/listings" className="text-sm font-medium text-gray-600 hover:text-gray-900">
             Browse listings

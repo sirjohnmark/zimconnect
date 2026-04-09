@@ -16,7 +16,7 @@ export interface Review {
 
 // ─── Storage key ──────────────────────────────────────────────────────────────
 
-const REVIEWS_KEY = "zimconnect_reviews";
+const REVIEWS_KEY = "sanganai_reviews";
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 

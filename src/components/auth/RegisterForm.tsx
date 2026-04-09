@@ -317,7 +317,7 @@ export function RegisterForm() {
     <Card padding="lg" shadow="sm">
       <Card.Header>
         <Card.Title>Create an account</Card.Title>
-        <Card.Description>Join ZimConnect today — it&apos;s free</Card.Description>
+        <Card.Description>Join Sanganai today — it&apos;s free</Card.Description>
       </Card.Header>
 
       <Steps current={step} />

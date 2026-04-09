@@ -77,7 +77,7 @@ export function LoginForm() {
     <Card padding="lg" shadow="sm">
       <Card.Header>
         <Card.Title>Sign in</Card.Title>
-        <Card.Description>Welcome back to ZimConnect</Card.Description>
+        <Card.Description>Welcome back to Sanganai</Card.Description>
       </Card.Header>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">

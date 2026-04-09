@@ -6,7 +6,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import type { Listing } from "@/types/listing";
 
-const STORAGE_KEY = "zimconnect_listings";
+const STORAGE_KEY = "sanganai_listings";
 
 function getMyListings(): Listing[] {
   if (typeof window === "undefined") return [];

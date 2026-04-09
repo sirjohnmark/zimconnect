@@ -166,7 +166,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-gray-100 px-5">
         <Link href="/home" className="text-lg font-bold text-emerald-600">
-          ZimConnect
+          Sanganai
         </Link>
       </div>
 

@@ -37,7 +37,7 @@ export interface SchoolProfile {
 
 // ─── Storage key ──────────────────────────────────────────────────────────────
 
-const SCHOOLS_KEY = "zimconnect_schools";
+const SCHOOLS_KEY = "sanganai_schools";
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 

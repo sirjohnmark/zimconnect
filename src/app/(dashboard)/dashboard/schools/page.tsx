@@ -267,7 +267,7 @@ export default function SchoolDashboardPage() {
             </h1>
             <p className="mt-1 text-sm text-gray-500">
               {existing
-                ? "Update your school's listing on ZimConnect."
+                ? "Update your school's listing on Sanganai."
                 : "Create a public profile so parents and students can find your school."}
             </p>
           </div>

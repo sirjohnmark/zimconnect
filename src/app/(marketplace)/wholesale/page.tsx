@@ -28,7 +28,7 @@ const CATEGORIES: { value: WholesaleCategory | ""; label: string }[] = [
 function toWhatsAppHref(phone: string, title: string) {
   const digits = phone.replace(/\D/g, "");
   const intl = digits.startsWith("263") ? digits : `263${digits.replace(/^0/, "")}`;
-  return `https://wa.me/${intl}?text=${encodeURIComponent(`Hi, I'm interested in your wholesale listing on ZimConnect: "${title}". Please send more details.`)}`;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(`Hi, I'm interested in your wholesale listing on Sanganai: "${title}". Please send more details.`)}`;
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────

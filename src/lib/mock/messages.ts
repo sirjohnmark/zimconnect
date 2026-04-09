@@ -1,6 +1,6 @@
 /**
  * Messages data layer.
- * Persists to localStorage under "zimconnect_conversations".
+ * Persists to localStorage under "sanganai_conversations".
  * Shape: Conversation[] — each has a messages[] array.
  *
  * Seed data is merged with any user-created conversations on first load.
@@ -30,7 +30,7 @@ export interface Conversation {
   updatedAt: string;
 }
 
-const STORAGE_KEY = "zimconnect_conversations";
+const STORAGE_KEY = "sanganai_conversations";
 
 // ─── Seed conversations ───────────────────────────────────────────────────────
 

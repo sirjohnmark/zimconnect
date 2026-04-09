@@ -7,7 +7,7 @@ import { TrustSection }       from "@/components/marketing/TrustSection";
 import { CtaSection }         from "@/components/marketing/CtaSection";
 
 export const metadata: Metadata = {
-  title: "ZimConnect — Buy and Sell Anything in Zimbabwe",
+  title: "Sanganai — Buy and Sell Anything in Zimbabwe",
   description: "Zimbabwe's #1 marketplace. Find electronics, vehicles, property, jobs and more.",
 };
 

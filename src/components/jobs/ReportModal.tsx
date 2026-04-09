@@ -73,7 +73,7 @@ export function ReportModal({ targetId, targetType, reporterRole, label = "Repor
                   </svg>
                 </span>
                 <p className="text-sm font-semibold text-gray-900">Report submitted</p>
-                <p className="text-xs text-gray-500 text-center">Our team will review your report within 24 hours. Thank you for keeping ZimConnect safe.</p>
+                <p className="text-xs text-gray-500 text-center">Our team will review your report within 24 hours. Thank you for keeping Sanganai safe.</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="p-5 space-y-4">

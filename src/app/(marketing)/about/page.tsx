@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "About Us",
-  description: "Learn about ZimConnect — Zimbabwe's trusted marketplace connecting buyers and sellers across the country.",
+  description: "Learn about Sanganai — Zimbabwe's trusted marketplace connecting buyers and sellers across the country.",
 };
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ const TEAM = [
 ];
 
 const MILESTONES = [
-  { year: "2022", event: "ZimConnect founded in Harare with a vision to digitise Zimbabwe's informal markets." },
+  { year: "2022", event: "Sanganai founded in Harare with a vision to digitise Zimbabwe's informal markets." },
   { year: "2023", event: "Launched beta with 500 listings. Expanded to Bulawayo and Mutare within 6 months." },
   { year: "2024", event: "Crossed 10,000 active listings. Introduced verified seller badges and WhatsApp integration." },
   { year: "2025", event: "Reached 50,000 listings across 10+ cities. Launched mobile app and in-app messaging." },
@@ -90,7 +90,7 @@ export default function AboutPage() {
             Connecting Zimbabwe,<br className="hidden sm:block" /> one listing at a time
           </h1>
           <p className="mt-5 text-lg text-gray-500 leading-relaxed max-w-2xl mx-auto">
-            ZimConnect is Zimbabwe&apos;s trusted marketplace where anyone can buy, sell, and discover — from a phone in Mbare to a laptop in Borrowdale.
+            Sanganai is Zimbabwe&apos;s trusted marketplace where anyone can buy, sell, and discover — from a phone in Mbare to a laptop in Borrowdale.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link href="/listings" className="rounded-xl bg-emerald-600 px-7 py-3 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all">
@@ -127,10 +127,10 @@ export default function AboutPage() {
                 Making commerce accessible to every Zimbabwean
               </h2>
               <p className="mt-4 text-gray-500 leading-relaxed">
-                We believe every Zimbabwean deserves a fair, simple, and safe way to trade. Whether you&apos;re a small business owner in Mutare, a student in Gweru selling a laptop, or a family in Harare looking for affordable furniture — ZimConnect is for you.
+                We believe every Zimbabwean deserves a fair, simple, and safe way to trade. Whether you&apos;re a small business owner in Mutare, a student in Gweru selling a laptop, or a family in Harare looking for affordable furniture — Sanganai is for you.
               </p>
               <p className="mt-4 text-gray-500 leading-relaxed">
-                We built ZimConnect because we saw how much buying and selling was happening on scattered WhatsApp groups and Facebook pages, with no safety net and no search. We wanted to fix that.
+                We built Sanganai because we saw how much buying and selling was happening on scattered WhatsApp groups and Facebook pages, with no safety net and no search. We wanted to fix that.
               </p>
             </div>
             {/* Visual placeholder */}
@@ -221,7 +221,7 @@ export default function AboutPage() {
       {/* ── CTA ── */}
       <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">Ready to join ZimConnect?</h2>
+          <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">Ready to join Sanganai?</h2>
           <p className="mt-4 text-gray-500">Whether you&apos;re buying or selling, it&apos;s free and takes less than 2 minutes to get started.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link href="/register" className="rounded-xl bg-emerald-600 px-7 py-3 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all shadow-sm">

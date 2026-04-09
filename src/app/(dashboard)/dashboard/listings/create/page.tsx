@@ -19,7 +19,7 @@ export default function CreateListingPage() {
         </Link>
         <h1 className="text-xl font-semibold text-gray-900">Create Listing</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Your listing will be live on ZimConnect once published.
+          Your listing will be live on Sanganai once published.
         </p>
       </div>
       <CreateListingForm />

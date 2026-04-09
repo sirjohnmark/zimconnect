@@ -15,8 +15,8 @@ const CHANNELS = [
       </svg>
     ),
     label: "Email Us",
-    value: "hello@zimconnect.co.zw",
-    href: "mailto:hello@zimconnect.co.zw",
+    value: "hello@sanganai.co.zw",
+    href: "mailto:hello@sanganai.co.zw",
     color: "bg-blue-50 text-blue-600",
     description: "We reply within 24 hours on business days.",
   },
@@ -28,7 +28,7 @@ const CHANNELS = [
     ),
     label: "WhatsApp",
     value: "+263 77 123 4567",
-    href: "https://wa.me/263771234567?text=Hi%20ZimConnect%2C%20I%20need%20help%20with...",
+    href: "https://wa.me/263771234567?text=Hi%20Sanganai%2C%20I%20need%20help%20with...",
     color: "bg-green-50 text-green-600",
     description: "Chat with us directly. Mon–Sat, 8am–6pm.",
   },
@@ -65,7 +65,7 @@ const FAQS = [
     a: "Create a free account, then click 'Post a Listing' from your dashboard. Add photos, a description, and your price — it takes less than 2 minutes.",
   },
   {
-    q: "Is it free to list on ZimConnect?",
+    q: "Is it free to list on Sanganai?",
     a: "Yes, listing is completely free. We may introduce premium features in the future, but basic listings will always be free.",
   },
   {
@@ -74,14 +74,14 @@ const FAQS = [
   },
   {
     q: "How do I report a suspicious listing?",
-    a: "Use the 'Report' button on any listing page or email us at safety@zimconnect.co.zw. We investigate all reports within 24 hours.",
+    a: "Use the 'Report' button on any listing page or email us at safety@sanganai.co.zw. We investigate all reports within 24 hours.",
   },
   {
     q: "Which cities do you cover?",
-    a: "ZimConnect is available nationwide — Harare, Bulawayo, Mutare, Gweru, Kwekwe, Masvingo, and more. Any Zimbabwean can list or buy.",
+    a: "Sanganai is available nationwide — Harare, Bulawayo, Mutare, Gweru, Kwekwe, Masvingo, and more. Any Zimbabwean can list or buy.",
   },
   {
-    q: "Can businesses list on ZimConnect?",
+    q: "Can businesses list on Sanganai?",
     a: "Absolutely. We welcome both individual sellers and registered businesses. Business accounts get a verified badge on their listings.",
   },
 ];
@@ -311,7 +311,7 @@ export default function ContactPage() {
               </div>
               <p className="mt-4 text-sm text-gray-500">
                 Still stuck?{" "}
-                <a href="mailto:hello@zimconnect.co.zw" className="font-semibold text-emerald-600 hover:underline">
+                <a href="mailto:hello@sanganai.co.zw" className="font-semibold text-emerald-600 hover:underline">
                   Email us directly
                 </a>{" "}
                 and we&apos;ll sort it out.
@@ -338,7 +338,7 @@ export default function ContactPage() {
             {/* Office details */}
             <div className="bg-white px-6 py-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-gray-900">ZimConnect Head Office</p>
+                <p className="text-sm font-semibold text-gray-900">Sanganai Head Office</p>
                 <p className="text-sm text-gray-500">4th Floor, Joina City, Corner Jason Moyo Ave & 1st St, Harare, Zimbabwe</p>
               </div>
               <a

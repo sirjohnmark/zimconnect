@@ -53,7 +53,7 @@ export function Footer() {
         </div>
 
         <div className="mt-10 border-t border-gray-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
-          <p>© {new Date().getFullYear()} ZimConnect. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Sanganai. All rights reserved.</p>
           <p>Made with care in Zimbabwe 🇿🇼</p>
         </div>
       </div>

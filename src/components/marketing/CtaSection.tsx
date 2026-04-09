@@ -15,7 +15,7 @@ export function CtaSection() {
             Start selling today
           </h2>
           <p className="mt-4 text-lg text-emerald-100 max-w-xl mx-auto">
-            Join thousands of sellers already earning on ZimConnect.
+            Join thousands of sellers already earning on Sanganai.
             Post your first listing in under 2 minutes — no fees, no hassle.
           </p>
 

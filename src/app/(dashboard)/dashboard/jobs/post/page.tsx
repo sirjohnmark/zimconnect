@@ -428,7 +428,7 @@ export default function PostJobPage() {
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Application Details</h2>
 
           <Field label="How to Apply"
-            hint="Enter an email address or a URL. Leave blank to use your ZimConnect inbox.">
+            hint="Enter an email address or a URL. Leave blank to use your Sanganai inbox.">
             <input
               type="text"
               value={howToApply}

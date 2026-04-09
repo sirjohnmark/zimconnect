@@ -1,9 +1,9 @@
 /**
  * Saved (bookmarked) listings — localStorage backed.
- * Key: "zimconnect_saved"  →  string[]  (listing IDs)
+ * Key: "sanganai_saved"  →  string[]  (listing IDs)
  */
 
-const STORAGE_KEY = "zimconnect_saved";
+const STORAGE_KEY = "sanganai_saved";
 
 function load(): string[] {
   if (typeof window === "undefined") return [];

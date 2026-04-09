@@ -78,7 +78,7 @@ function toWhatsAppHref(phone: string, title: string): string {
   // Normalise to international format: strip non-digits, remove leading 0, prepend 263
   const digits = phone.replace(/\D/g, "");
   const intl = digits.startsWith("263") ? digits : `263${digits.replace(/^0/, "")}`;
-  const text = encodeURIComponent(`Hi, I'm interested in your listing on ZimConnect: "${title}". Is it still available?`);
+  const text = encodeURIComponent(`Hi, I'm interested in your listing on Sanganai: "${title}". Is it still available?`);
   return `https://wa.me/${intl}?text=${text}`;
 }
 

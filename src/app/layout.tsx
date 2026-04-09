@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "ZimConnect", template: "%s | ZimConnect" },
+  title: { default: "Sanganai", template: "%s | Sanganai" },
   description: "Zimbabwe's premier marketplace connecting buyers and sellers.",
 };
 

@@ -5,7 +5,7 @@ import { USE_MOCK } from "./use-mock";
 
 // ── Mock listings store (localStorage) ───────────────────────────────────────
 
-const STORAGE_KEY = "zimconnect_listings";
+const STORAGE_KEY = "sanganai_listings";
 
 export function getStoredListings(): Listing[] {
   if (typeof window === "undefined") return [];

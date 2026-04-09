@@ -259,7 +259,7 @@ export function Navbar() {
           <div className="flex h-16 items-center justify-between gap-8">
 
             {/* Logo */}
-            <Link href="/home" onClick={close} className="shrink-0 text-xl font-bold tracking-tight" aria-label="ZimConnect home">
+            <Link href="/home" onClick={close} className="shrink-0 text-xl font-bold tracking-tight" aria-label="Sanganai home">
               Zim<span className="text-emerald-600">Connect</span>
             </Link>
 

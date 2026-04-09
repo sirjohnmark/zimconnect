@@ -1,6 +1,6 @@
 import type { WholesaleListing } from "@/types/wholesale";
 
-const STORAGE_KEY = "zimconnect_wholesale";
+const STORAGE_KEY = "sanganai_wholesale";
 
 export const MOCK_WHOLESALE: WholesaleListing[] = [
   {

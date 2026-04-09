@@ -66,7 +66,7 @@ export function HeroSection() {
 
         {/* Sub-headline */}
         <p className="mt-5 max-w-2xl mx-auto text-lg text-gray-500 leading-relaxed">
-          From electronics to property — ZimConnect connects buyers and sellers
+          From electronics to property — Sanganai connects buyers and sellers
           across Zimbabwe. Free to list, fast to sell.
         </p>
 

@@ -28,7 +28,7 @@ const CONDITION_LABEL: Record<string, string> = {
 function toWhatsAppHref(phone: string, title: string) {
   const digits = phone.replace(/\D/g, "");
   const intl   = digits.startsWith("263") ? digits : `263${digits.replace(/^0/, "")}`;
-  return `https://wa.me/${intl}?text=${encodeURIComponent(`Hi, I'm interested in your listing on ZimConnect: "${title}". Is it still available?`)}`;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(`Hi, I'm interested in your listing on Sanganai: "${title}". Is it still available?`)}`;
 }
 
 // ─── Image gallery ────────────────────────────────────────────────────────────
@@ -106,7 +106,7 @@ export default function ListingDetailPage() {
     // Try localStorage first, fallback to mock
     let found: Listing | undefined;
     try {
-      const raw = localStorage.getItem("zimconnect_listings");
+      const raw = localStorage.getItem("sanganai_listings");
       if (raw) {
         const stored = JSON.parse(raw) as Listing[];
         found = stored.find((l) => l.id === id);
@@ -226,7 +226,7 @@ export default function ListingDetailPage() {
                 </span>
                 <div>
                   <p className="text-sm font-bold text-gray-900">{seller.name}</p>
-                  <p className="text-xs text-gray-400">Seller on ZimConnect</p>
+                  <p className="text-xs text-gray-400">Seller on Sanganai</p>
                 </div>
               </div>
 

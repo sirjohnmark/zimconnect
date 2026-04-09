@@ -2,8 +2,8 @@
  * localStorage auth store.
  *
  * Two separate keys:
- *   zimconnect_accounts — registered accounts (array of stored users + hashed passwords)
- *   zimconnect_user     — the currently logged-in user session
+ *   sanganai_accounts — registered accounts (array of stored users + hashed passwords)
+ *   sanganai_user     — the currently logged-in user session
  *
  * This is the ONLY place that touches localStorage.
  * Swap this file out to move to cookies / HTTP-only tokens later.
@@ -11,9 +11,9 @@
 
 import type { AuthUser } from "@/lib/api/auth";
 
-const SESSION_KEY      = "zimconnect_user";
-const ACCOUNTS_KEY     = "zimconnect_accounts";
-const PREFERENCES_KEY  = "zimconnect_prefs";
+const SESSION_KEY      = "sanganai_user";
+const ACCOUNTS_KEY     = "sanganai_accounts";
+const PREFERENCES_KEY  = "sanganai_prefs";
 
 // ─── Stored account shape (includes password for mock validation) ─────────────
 
@@ -135,7 +135,7 @@ export function savePreferences(prefs: UserPreferences): void {
 
 // ─── OTP (mock — in production these would be server-side only) ───────────────
 
-const OTP_KEY = "zimconnect_otp";
+const OTP_KEY = "sanganai_otp";
 
 interface StoredOtp {
   code: string;

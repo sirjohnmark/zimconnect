@@ -88,11 +88,11 @@ export interface VerificationRequest {
 
 // ─── Storage keys ─────────────────────────────────────────────────────────────
 
-const JOBS_KEY       = "zimconnect_jobs";
-const CVS_KEY        = "zimconnect_cvs";
-const STATUSES_KEY   = "zimconnect_job_statuses";
-const REPORTS_KEY    = "zimconnect_reports";
-const VERIFY_KEY     = "zimconnect_verifications";
+const JOBS_KEY       = "sanganai_jobs";
+const CVS_KEY        = "sanganai_cvs";
+const STATUSES_KEY   = "sanganai_job_statuses";
+const REPORTS_KEY    = "sanganai_reports";
+const VERIFY_KEY     = "sanganai_verifications";
 
 // ─── Seed data ────────────────────────────────────────────────────────────────
 

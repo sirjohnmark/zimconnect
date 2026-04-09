@@ -43,10 +43,10 @@ export function TrustSection() {
 
         {/* Header */}
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-2">Why ZimConnect</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-2">Why Sanganai</p>
           <h2 className="text-2xl font-bold text-white sm:text-3xl">Built for Zimbabweans</h2>
           <p className="mt-3 text-emerald-100 max-w-xl mx-auto">
-            Thousands of Zimbabweans trust ZimConnect every day to buy, sell, and connect.
+            Thousands of Zimbabweans trust Sanganai every day to buy, sell, and connect.
           </p>
         </div>
 

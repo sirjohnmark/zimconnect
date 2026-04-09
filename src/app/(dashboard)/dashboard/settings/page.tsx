@@ -287,7 +287,7 @@ function PreferencesSection({ prefs, onChange }: { prefs: UserPreferences; onCha
   }
 
   return (
-    <SectionCard title="Preferences" description="Personalise your ZimConnect experience.">
+    <SectionCard title="Preferences" description="Personalise your Sanganai experience.">
       <FieldRow label="Currency" hint="Used to display listing prices.">
         <select
           value={prefs.currency}

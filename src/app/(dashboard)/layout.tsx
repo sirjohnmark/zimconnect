@@ -37,7 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Mobile header */}
         <header className="flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:hidden">
           <MenuButton onClick={() => setSidebarOpen(true)} />
-          <span className="text-base font-bold text-emerald-600">ZimConnect</span>
+          <span className="text-base font-bold text-emerald-600">Sanganai</span>
         </header>
 
         {/* Scrollable page content */}

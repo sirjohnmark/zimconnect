@@ -46,7 +46,7 @@ export function HowItWorks() {
           <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-2">Simple process</p>
           <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">How It Works</h2>
           <p className="mt-3 text-gray-500 max-w-xl mx-auto">
-            Buying and selling on ZimConnect is simple, fast, and free to start.
+            Buying and selling on Sanganai is simple, fast, and free to start.
           </p>
         </div>
 
