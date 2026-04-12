@@ -87,9 +87,15 @@ CHANNEL_LAYERS = {
 }
 
 # ──────────────────────────────────────────────
-# Email — console for now (swap to SMTP later)
+# Email — Anymail/SendGrid if key present, else console
 # ──────────────────────────────────────────────
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+SENDGRID_API_KEY = config("SENDGRID_API_KEY", default="")
+
+if SENDGRID_API_KEY:
+    EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
+    ANYMAIL = {"SENDGRID_API_KEY": SENDGRID_API_KEY}
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # ──────────────────────────────────────────────
 # Sentry (optional — skip if DSN not set)

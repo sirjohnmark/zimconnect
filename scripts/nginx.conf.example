@@ -1,0 +1,61 @@
+# ── Nginx reverse-proxy config for ZimoraAPI (VPS) ──────────────────────────
+# Place at /etc/nginx/sites-available/zimoraapi and symlink to sites-enabled/
+# Replace <YOUR_DOMAIN> with your actual domain, e.g. api.tradlink.co.zw
+# SSL certificates are managed by Certbot (Let's Encrypt).
+# ─────────────────────────────────────────────────────────────────────────────
+
+server {
+    listen 80;
+    server_name <YOUR_DOMAIN>;
+
+    # Redirect all plain HTTP to HTTPS (one redirect, then Django sees https)
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name <YOUR_DOMAIN>;
+
+    # --- SSL (managed by Certbot) ---
+    ssl_certificate     /etc/letsencrypt/live/<YOUR_DOMAIN>/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/<YOUR_DOMAIN>/privkey.pem;
+    include             /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam         /etc/letsencrypt/ssl-dhparams.pem;
+
+    # --- Security headers (complement Django's) ---
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+
+    # --- Static / media served directly from Docker volumes ---
+    location /static/ {
+        alias /var/lib/docker/volumes/zimoraapi_static_data/_data/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /media/ {
+        alias /var/lib/docker/volumes/zimoraapi_media_data/_data/;
+        expires 7d;
+    }
+
+    # --- Proxy to Daphne (HTTP + WebSocket) ---
+    location / {
+        proxy_pass         http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+
+        # CRITICAL: These headers prevent the redirect loop
+        proxy_set_header   Host               $host;
+        proxy_set_header   X-Real-IP          $remote_addr;
+        proxy_set_header   X-Forwarded-For    $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto  $scheme;
+
+        # WebSocket support
+        proxy_set_header   Upgrade            $http_upgrade;
+        proxy_set_header   Connection         "upgrade";
+
+        proxy_read_timeout  300s;
+        proxy_send_timeout  300s;
+        client_max_body_size 20M;
+    }
+}

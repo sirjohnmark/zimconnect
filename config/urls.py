@@ -68,8 +68,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # v1 API
     path("api/v1/", include((v1_patterns, "v1"))),
-    # Deprecated /api/ redirect (must come after /api/v1/ to avoid shadowing)
-    re_path(r"^api/(?P<rest_of_path>.*)$", _deprecated_api_redirect, name="api-deprecated-redirect"),
+    # Deprecated /api/ redirect — explicitly excludes /api/v1/ to prevent infinite loop
+    re_path(r"^api/(?!v1/)(?P<rest_of_path>.*)$", _deprecated_api_redirect, name="api-deprecated-redirect"),
 ]
 
 # Debug toolbar URLs (dev only)
