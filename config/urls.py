@@ -37,7 +37,7 @@ def api_root(request):
     })
 
 
-# ── Versioned API routes ─────────────────────
+# ── Versioned API routes done ─────────────────────
 v1_patterns = [
     path("auth/", include("apps.accounts.urls")),
     path("categories/", include("apps.categories.urls")),
