@@ -34,6 +34,7 @@ AT_SENDER_ID = config("AT_SENDER_ID", default="")
 # Application definition
 # ──────────────────────────────────────────────
 DJANGO_APPS = [
+    "daphne",  # Must be before django.contrib.staticfiles for ASGI
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -43,6 +44,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "channels",
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
@@ -76,6 +78,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.common.middleware.RequestLoggingMiddleware",
+    "apps.common.middleware.VersionHeaderMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -97,6 +100,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
 
 # ──────────────────────────────────────────────
 # Database  (dj-database-url from DATABASE_URL)
@@ -184,15 +188,15 @@ REST_FRAMEWORK = {
 # drf-spectacular (OpenAPI / Swagger)
 # ──────────────────────────────────────────────
 SPECTACULAR_SETTINGS = {
-    "TITLE": "ZimConnect API",
+    "TITLE": "Sanganai API",
     "DESCRIPTION": (
         "Zimbabwe classifieds & marketplace REST API.\n\n"
         "## Authentication\n"
         "All authenticated endpoints require a JWT Bearer token in the "
         "`Authorization` header:\n\n"
         "```\nAuthorization: Bearer <access_token>\n```\n\n"
-        "Obtain tokens via **POST /api/auth/login/**. "
-        "Refresh via **POST /api/auth/token/refresh/**.\n\n"
+        "Obtain tokens via **POST /api/v1/auth/login/**. "
+        "Refresh via **POST /api/v1/auth/token/refresh/**.\n\n"
         "## Roles\n"
         "- **BUYER** — browse & message sellers\n"
         "- **SELLER** — create & manage listings\n"
@@ -202,13 +206,27 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
-    "SCHEMA_PATH_PREFIX": r"/api/",
+    "SCHEMA_PATH_PREFIX": r"/api/v1/",
     "TAGS": [
         {"name": "Auth", "description": "Registration, login, logout, token refresh, profile"},
         {"name": "Categories", "description": "Category tree, lists, and CRUD (admin)"},
         {"name": "Listings", "description": "Marketplace listings CRUD, images, publishing"},
         {"name": "Inbox", "description": "Conversations and messaging between users"},
         {"name": "Admin", "description": "Dashboard, user management, listing moderation"},
+        {"name": "Real-time", "description": (
+            "WebSocket endpoint for real-time chat messaging.\n\n"
+            "**Connect:** `ws://host/ws/chat/{conversation_id}/?token=<JWT>`\n\n"
+            "**Auth:** Pass a valid JWT access token as the `token` query parameter.\n\n"
+            "**Client → Server messages (JSON):**\n"
+            "- `{\"type\": \"message\", \"content\": \"Hello!\"}` — send a chat message\n"
+            "- `{\"type\": \"mark_read\", \"message_id\": 42}` — mark a message as read\n\n"
+            "**Server → Client messages (JSON):**\n"
+            "- `{\"type\": \"history\", \"messages\": [...]}` — last 20 messages on connect\n"
+            "- `{\"type\": \"chat_message\", \"message\": {...}}` — new message broadcast\n"
+            "- `{\"type\": \"messages_read\", \"message_id\": N, \"reader\": \"username\"}` — read receipt\n"
+            "- `{\"type\": \"error\", \"message\": \"...\"}` — error responses\n\n"
+            "**Close codes:** 4001 = unauthenticated, 4003 = not a participant."
+        )},
     ],
     "SECURITY": [{"jwtAuth": []}],
     "APPEND_COMPONENTS": {
@@ -253,7 +271,7 @@ CACHES = {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": REDIS_URL,
         "TIMEOUT": 300,
-        "KEY_PREFIX": "zimconnect",
+        "KEY_PREFIX": "Sanganai",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -274,6 +292,18 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# ──────────────────────────────────────────────
+# Django Channels (WebSocket)
+# ──────────────────────────────────────────────
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
 
 # ──────────────────────────────────────────────
 # CORS
@@ -337,7 +367,7 @@ LOGGING = {
             "level": "DEBUG",
             "propagate": False,
         },
-        "zimconnect.requests": {
+        "Sanganai.requests": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,

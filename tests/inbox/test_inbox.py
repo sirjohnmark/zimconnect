@@ -8,20 +8,20 @@ from rest_framework import status
 from apps.common.constants import ListingStatus
 from tests.conftest import ConversationFactory, ListingFactory, MessageFactory, UserFactory
 
-INBOX_URL = "/api/inbox/"
-UNREAD_URL = "/api/inbox/unread-count/"
+INBOX_URL = "/api/v1/inbox/"
+UNREAD_URL = "/api/v1/inbox/unread-count/"
 
 
 def _detail_url(conversation_id):
-    return f"/api/inbox/{conversation_id}/"
+    return f"/api/v1/inbox/{conversation_id}/"
 
 
 def _messages_url(conversation_id):
-    return f"/api/inbox/{conversation_id}/messages/"
+    return f"/api/v1/inbox/{conversation_id}/messages/"
 
 
 def _mark_read_url(message_id):
-    return f"/api/inbox/messages/{message_id}/mark-read/"
+    return f"/api/v1/inbox/messages/{message_id}/mark-read/"
 
 
 @pytest.mark.django_db

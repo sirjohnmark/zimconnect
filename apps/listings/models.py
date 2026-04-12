@@ -5,16 +5,19 @@ Listing and ListingImage models for the marketplace.
 from __future__ import annotations
 
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.db import models
 from django.db.models import F
 from django.utils import timezone
 from django.utils.text import slugify
 
 from apps.common.constants import Currency, ListingCondition, ListingStatus, ZimbabweCity
+from apps.common.models import SoftDeleteModel
 from apps.common.validators import ImageContentTypeValidator, ImageSizeValidator
 
 
-class Listing(models.Model):
+class Listing(SoftDeleteModel):
     """
     A marketplace listing posted by a user.
 
@@ -56,6 +59,7 @@ class Listing(models.Model):
     is_featured = models.BooleanField(default=False)
     views_count = models.PositiveIntegerField(default=0)
     rejection_reason = models.TextField(null=True, blank=True)
+    search_vector = SearchVectorField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -70,6 +74,7 @@ class Listing(models.Model):
             models.Index(fields=["owner", "status"], name="idx_listing_owner_status"),
             models.Index(fields=["location", "status"], name="idx_listing_loc_status"),
             models.Index(fields=["is_featured", "status"], name="idx_listing_feat_status"),
+            GinIndex(fields=["search_vector"], name="listing_search_vector_idx"),
         ]
 
     def __str__(self) -> str:
@@ -82,7 +87,7 @@ class Listing(models.Model):
 
     def increment_views(self) -> None:
         """Atomically increment the view counter using F() to avoid race conditions."""
-        Listing.objects.filter(pk=self.pk).update(views_count=F("views_count") + 1)
+        Listing.all_objects.filter(pk=self.pk).update(views_count=F("views_count") + 1)
 
     # ── Internal ──────────────────────────────
 
@@ -91,7 +96,7 @@ class Listing(models.Model):
         base_slug = slugify(self.title)[:200]
         slug = base_slug
         counter = 1
-        while Listing.objects.filter(slug=slug).exists():
+        while Listing.all_objects.filter(slug=slug).exists():
             slug = f"{base_slug}-{counter}"
             counter += 1
         return slug

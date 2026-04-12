@@ -209,7 +209,7 @@ def send_phone_otp(user) -> None:
     user.phone_otp_expires_at = timezone.now() + timezone.timedelta(minutes=OTP_EXPIRY_MINUTES)
     user.save(update_fields=["phone_otp", "phone_otp_expires_at", "updated_at"])
 
-    message = f"Your ZimConnect verification code is: {otp}. Valid for 10 minutes."
+    message = f"Your Sanganai verification code is: {otp}. Valid for 10 minutes."
     _send_sms(user.phone, message)
 
 
@@ -273,7 +273,7 @@ def _send_email(user, otp: str) -> None:
     text_body = render_to_string("accounts/email/otp_verification.txt", context)
 
     send_mail(
-        subject="ZimConnect — Email Verification Code",
+        subject="Sanganai — Email Verification Code",
         message=text_body,
         from_email=None,  # uses DEFAULT_FROM_EMAIL
         recipient_list=[user.email],

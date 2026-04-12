@@ -121,3 +121,35 @@ def _assert_moderator(user) -> None:
     """Raise PermissionDeniedError if user is not ADMIN or MODERATOR."""
     if getattr(user, "role", None) not in {UserRole.ADMIN, UserRole.MODERATOR}:
         raise PermissionDeniedError("Moderator access required.")
+
+
+def delete_user(user, admin_user) -> object:
+    """Soft-delete a user account."""
+    _assert_admin(admin_user)
+
+    if user.pk == admin_user.pk:
+        raise ServiceError("You cannot delete your own account.")
+
+    user.is_active = False
+    user.save(update_fields=["is_active", "updated_at"])
+    user.soft_delete(admin_user)
+    invalidate_dashboard_stats()
+    logger.info("user_soft_deleted user_id=%d admin=%d", user.pk, admin_user.pk)
+    return user
+
+
+def restore_listing(listing: Listing, admin_user) -> Listing:
+    """Restore a soft-deleted listing and reset to DRAFT status."""
+    _assert_admin(admin_user)
+
+    if not listing.is_deleted:
+        raise ServiceError("Listing is not deleted.")
+
+    listing.restore()
+    listing.status = ListingStatus.DRAFT
+    listing.save(update_fields=["status", "updated_at"])
+    listing.refresh_from_db()
+    invalidate_listing_detail(listing.pk)
+    invalidate_dashboard_stats()
+    logger.info("listing_restored id=%d admin=%d", listing.pk, admin_user.pk)
+    return listing

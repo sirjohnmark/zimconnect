@@ -1,5 +1,5 @@
-"""
-Listing views — CRUD, publish, images.
+﻿"""
+Listing views â€” CRUD, publish, images.
 """
 
 from drf_spectacular.types import OpenApiTypes
@@ -32,7 +32,13 @@ _LISTING_FILTER_PARAMS = [
     OpenApiParameter("min_price", OpenApiTypes.DECIMAL, description="Minimum price"),
     OpenApiParameter("max_price", OpenApiTypes.DECIMAL, description="Maximum price"),
     OpenApiParameter("condition", OpenApiTypes.STR, description="NEW or USED"),
-    OpenApiParameter("search", OpenApiTypes.STR, description="Full-text search in title/description"),
+    OpenApiParameter("search", OpenApiTypes.STR, description=(
+        "Full-text search across title (weight A), description (weight B), "
+        "and location (weight C) using PostgreSQL ts_vector. "
+        "Results are ranked by relevance then recency. "
+        "Falls back to trigram similarity on title for typo-tolerant matching "
+        "when full-text search returns no results."
+    )),
     OpenApiParameter("featured", OpenApiTypes.BOOL, description="Filter featured listings only"),
     OpenApiParameter(
         "ordering",
@@ -44,8 +50,8 @@ _LISTING_FILTER_PARAMS = [
 
 class ListingListCreateView(APIView):
     """
-    GET  /api/listings/ — paginated active listings with filters.
-    POST /api/listings/ — create a new listing (seller role required).
+    GET  /api/v1/listings/ â€” paginated active listings with filters.
+    POST /api/v1/listings/ â€” create a new listing (seller role required).
     """
 
     def get_permissions(self):
@@ -62,7 +68,14 @@ class ListingListCreateView(APIView):
         tags=["Listings"],
         operation_id="listings_list",
         summary="List active listings",
-        description="Paginated, filterable list of active marketplace listings. Public endpoint.",
+        description=(
+            "Paginated, filterable list of active marketplace listings. Public endpoint.\n\n"
+            "**Search behaviour:** When the `search` parameter is provided, results are "
+            "ranked using PostgreSQL full-text search (ts_vector) across title (A), "
+            "description (B), and location (C). If full-text search returns no results, "
+            "a trigram similarity fallback (`pg_trgm`) runs against the title to handle "
+            "typos and partial matches."
+        ),
         parameters=_LISTING_FILTER_PARAMS,
         responses={200: ListingListSerializer(many=True)},
     )
@@ -81,6 +94,11 @@ class ListingListCreateView(APIView):
         filters = {k: v for k, v in filters.items() if v is not None}
 
         qs = selectors.get_active_listings(filters or None)
+
+        # Trigram similarity fallback when FTS returns no results
+        if filters.get("search") and not qs.exists():
+            qs = selectors.search_listings_trigram(filters["search"], filters)
+
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(qs, request)
         serializer = ListingListSerializer(page, many=True)
@@ -127,9 +145,9 @@ class ListingListCreateView(APIView):
 
 class ListingDetailView(APIView):
     """
-    GET    /api/listings/{id}/ — public detail, increments views_count.
-    PATCH  /api/listings/{id}/ — owner only.
-    DELETE /api/listings/{id}/ — owner or admin.
+    GET    /api/v1/listings/{id}/ â€” public detail, increments views_count.
+    PATCH  /api/v1/listings/{id}/ â€” owner only.
+    DELETE /api/v1/listings/{id}/ â€” owner or admin.
     """
 
     def get_permissions(self):
@@ -187,7 +205,7 @@ class ListingDetailView(APIView):
         tags=["Listings"],
         operation_id="listings_delete",
         summary="Delete a listing",
-        description="Permanently delete a listing. **Owner or admin.**",
+        description="Soft-delete a listing. The record is flagged as deleted but not removed from the database. **Owner or admin.**",
         responses={
             204: OpenApiResponse(description="Listing deleted"),
             403: OpenApiResponse(description="Not the owner or admin"),
@@ -201,7 +219,7 @@ class ListingDetailView(APIView):
 
 
 class MyListingsView(APIView):
-    """GET /api/listings/my-listings/ — authenticated user's own listings."""
+    """GET /api/v1/listings/my-listings/ â€” authenticated user's own listings."""
 
     permission_classes = (IsAuthenticated,)
 
@@ -225,7 +243,7 @@ class MyListingsView(APIView):
 
 
 class ListingPublishView(APIView):
-    """POST /api/listings/{id}/publish/ — owner publishes a draft listing."""
+    """POST /api/v1/listings/{id}/publish/ â€” owner publishes a draft listing."""
 
     permission_classes = (IsAuthenticated,)
 
@@ -253,7 +271,7 @@ class ListingPublishView(APIView):
 
 
 class ListingImageUploadView(APIView):
-    """POST /api/listings/{id}/images/ — add images to a listing (owner only)."""
+    """POST /api/v1/listings/{id}/images/ â€” add images to a listing (owner only)."""
 
     permission_classes = (IsAuthenticated,)
     throttle_classes = (ImageUploadThrottle,)
@@ -262,7 +280,7 @@ class ListingImageUploadView(APIView):
         tags=["Listings"],
         operation_id="listings_images_upload",
         summary="Upload listing images",
-        description="Upload 1–10 images to a listing. **Owner only.** Max 10 images per listing total. Multipart form-data.",
+        description="Upload 1â€“10 images to a listing. **Owner only.** Max 10 images per listing total. Multipart form-data.",
         request=ListingImageUploadSerializer,
         responses={
             201: OpenApiResponse(response=ListingImageSerializer(many=True), description="Uploaded images"),
@@ -288,7 +306,7 @@ class ListingImageUploadView(APIView):
 
 
 class ListingImageDeleteView(APIView):
-    """DELETE /api/listings/images/{image_id}/ — delete an image (owner or admin)."""
+    """DELETE /api/v1/listings/images/{image_id}/ â€” delete an image (owner or admin)."""
 
     permission_classes = (IsAuthenticated,)
 

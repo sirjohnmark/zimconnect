@@ -162,3 +162,63 @@ class ModerationActionSerializer(serializers.Serializer):
     """Input for approve/reject moderation actions."""
 
     reason = serializers.CharField(max_length=1000, required=False, allow_blank=True, default="")
+
+
+# ──────────────────────────────────────────────
+# Soft-delete views
+# ──────────────────────────────────────────────
+
+
+class _AdminDeletedByInlineSerializer(serializers.Serializer):
+    """Minimal info about the user who performed a soft-delete."""
+
+    id = serializers.IntegerField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+    username = serializers.CharField(read_only=True)
+
+
+class AdminDeletedListingSerializer(serializers.ModelSerializer):
+    """Listing representation for the deleted-listings admin view."""
+
+    owner = _AdminOwnerInlineSerializer(read_only=True)
+    category = _AdminCategoryInlineSerializer(read_only=True)
+    deleted_by = _AdminDeletedByInlineSerializer(read_only=True)
+
+    class Meta:
+        model = Listing
+        fields = (
+            "id",
+            "title",
+            "owner",
+            "category",
+            "location",
+            "price",
+            "currency",
+            "status",
+            "is_deleted",
+            "deleted_at",
+            "deleted_by",
+            "created_at",
+        )
+        read_only_fields = fields
+
+
+class AdminDeletedUserSerializer(serializers.ModelSerializer):
+    """User representation for the deleted-users admin view."""
+
+    listings_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "email",
+            "username",
+            "role",
+            "is_active",
+            "is_deleted",
+            "deleted_at",
+            "listings_count",
+            "created_at",
+        )
+        read_only_fields = fields

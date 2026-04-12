@@ -1,5 +1,5 @@
 """
-Shared factories and fixtures for the ZimConnect API test suite.
+Shared factories and fixtures for the Sanganai API test suite.
 
 Uses factory-boy for model factories and pytest fixtures for
 reusable test objects (users with JWT tokens, categories, listings, etc.).

@@ -96,3 +96,37 @@ def get_listing_moderation_detail(listing_id: int) -> Listing:
         )
     except Listing.DoesNotExist:
         raise NotFoundError(f"Listing with id {listing_id} not found.")
+
+
+def get_deleted_listings() -> QuerySet:
+    """Return soft-deleted listings for admin restore view."""
+    return (
+        Listing.all_objects
+        .filter(is_deleted=True)
+        .select_related("owner", "category", "deleted_by")
+        .prefetch_related("images")
+        .order_by("-deleted_at")
+    )
+
+
+def get_deleted_listing_by_id(listing_id: int) -> Listing:
+    """Return a single soft-deleted listing. Raises NotFoundError if not found."""
+    try:
+        return (
+            Listing.all_objects
+            .select_related("owner", "category", "deleted_by")
+            .prefetch_related("images")
+            .get(pk=listing_id, is_deleted=True)
+        )
+    except Listing.DoesNotExist:
+        raise NotFoundError(f"Deleted listing with id {listing_id} not found.")
+
+
+def get_deleted_users() -> QuerySet:
+    """Return soft-deleted users for admin view."""
+    return (
+        User.all_objects
+        .filter(is_deleted=True)
+        .annotate(listings_count=Count("listings"))
+        .order_by("-deleted_at")
+    )

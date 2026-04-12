@@ -6,18 +6,19 @@ import pytest
 from rest_framework import status
 
 from apps.common.constants import ListingCondition, ListingStatus, ZimbabweCity
+from apps.listings.models import Listing
 from tests.conftest import CategoryFactory, ListingFactory, UserFactory
 
-LIST_URL = "/api/listings/"
-MY_LISTINGS_URL = "/api/listings/my-listings/"
+LIST_URL = "/api/v1/listings/"
+MY_LISTINGS_URL = "/api/v1/listings/my-listings/"
 
 
 def _detail_url(listing_id):
-    return f"/api/listings/{listing_id}/"
+    return f"/api/v1/listings/{listing_id}/"
 
 
 def _publish_url(listing_id):
-    return f"/api/listings/{listing_id}/publish/"
+    return f"/api/v1/listings/{listing_id}/publish/"
 
 
 # ──────────────────────────────────────────────
@@ -78,7 +79,7 @@ class TestListingCreate:
         }
 
     def test_create_listing_as_seller(self, seller_client, sample_category, mocker):
-        mocker.patch("apps.listings.services.process_listing_images")
+        mocker.patch("apps.listings.tasks.process_listing_images")
         resp = seller_client.post(
             LIST_URL, self._payload(sample_category.pk), format="json"
         )
@@ -107,7 +108,7 @@ class TestListingCreate:
 @pytest.mark.django_db
 class TestListingDetail:
     def test_get_listing_detail(self, api_client, sample_listing, mocker):
-        mocker.patch("apps.listings.views.increment_view_count")
+        mocker.patch("apps.listings.tasks.increment_view_count")
         resp = api_client.get(_detail_url(sample_listing.pk))
         assert resp.status_code == status.HTTP_200_OK
         assert resp.data["id"] == sample_listing.pk
@@ -132,10 +133,23 @@ class TestListingDetail:
     def test_delete_own_listing(self, seller_client, sample_listing):
         resp = seller_client.delete(_detail_url(sample_listing.pk))
         assert resp.status_code == status.HTTP_204_NO_CONTENT
+        # Soft-deleted: still in DB but flagged
+        listing = Listing.all_objects.get(pk=sample_listing.pk)
+        assert listing.is_deleted is True
+        assert listing.deleted_at is not None
 
     def test_delete_admin_can_delete_any(self, admin_client, sample_listing):
         resp = admin_client.delete(_detail_url(sample_listing.pk))
         assert resp.status_code == status.HTTP_204_NO_CONTENT
+        listing = Listing.all_objects.get(pk=sample_listing.pk)
+        assert listing.is_deleted is True
+
+    def test_deleted_listing_hidden_from_public(self, seller_client, api_client, sample_listing):
+        """Soft-deleted listing should not appear in the public listing list."""
+        seller_client.delete(_detail_url(sample_listing.pk))
+        resp = api_client.get(LIST_URL)
+        ids = [item["id"] for item in resp.data["results"]]
+        assert sample_listing.pk not in ids
 
 
 # ──────────────────────────────────────────────
@@ -160,6 +174,6 @@ class TestListingPublish:
         assert len(resp.data["results"]) >= 2
 
     def test_increment_views_count(self, api_client, sample_listing, mocker):
-        mock_incr = mocker.patch("apps.listings.views.increment_view_count")
+        mock_incr = mocker.patch("apps.listings.tasks.increment_view_count")
         api_client.get(_detail_url(sample_listing.pk))
         mock_incr.assert_called_once_with(sample_listing.pk)

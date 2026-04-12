@@ -1,6 +1,6 @@
 Hi {{ username }},
 
-Welcome to ZimConnect — Zimbabwe's marketplace for buying and selling!
+Welcome to Sanganai — Zimbabwe's marketplace for buying and selling!
 
 Here's what you can do next:
 
@@ -10,4 +10,4 @@ Here's what you can do next:
 
 If you did not create this account, please ignore this email.
 
-— ZimConnect
+— Sanganai

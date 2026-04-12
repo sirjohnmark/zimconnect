@@ -1,5 +1,5 @@
-"""
-Account views — registration, login, logout, token refresh, profile.
+﻿"""
+Account views â€” registration, login, logout, token refresh, profile.
 """
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -32,7 +32,7 @@ from apps.common.throttling import (
 
 
 class RegisterView(APIView):
-    """POST /api/auth/register — create a new user account."""
+    """POST /api/v1/auth/register â€” create a new user account."""
 
     permission_classes = (AllowAny,)
     throttle_classes = (RegisterRateThrottle,)
@@ -77,7 +77,7 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
-    """POST /api/auth/login — authenticate and return JWT pair + profile."""
+    """POST /api/v1/auth/login â€” authenticate and return JWT pair + profile."""
 
     permission_classes = (AllowAny,)
     throttle_classes = (LoginRateThrottle,)
@@ -113,7 +113,7 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    """POST /api/auth/logout — blacklist the refresh token."""
+    """POST /api/v1/auth/logout â€” blacklist the refresh token."""
 
     permission_classes = (IsAuthenticated,)
 
@@ -142,7 +142,7 @@ class LogoutView(APIView):
 
 
 class TokenRefreshView(APIView):
-    """POST /api/auth/token/refresh — rotate refresh token."""
+    """POST /api/v1/auth/token/refresh â€” rotate refresh token."""
 
     permission_classes = (AllowAny,)
 
@@ -170,7 +170,7 @@ class TokenRefreshView(APIView):
 
 
 class UserProfileView(APIView):
-    """GET/PATCH /api/auth/profile — read or update your own profile."""
+    """GET/PATCH /api/v1/auth/profile â€” read or update your own profile."""
 
     permission_classes = (IsAuthenticated,)
 
@@ -207,21 +207,21 @@ class UserProfileView(APIView):
         return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
 
 
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Phone OTP verification
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _OTP_FLOW_DESCRIPTION = (
     "### OTP verification flow\n\n"
-    "1. **POST /api/auth/phone/send-otp/** — sends a 6-digit code via SMS\n"
-    "2. **POST /api/auth/phone/verify/** — submit the code to verify\n"
-    "3. **POST /api/auth/phone/resend/** — resend (60 s cooldown)\n\n"
-    "OTPs expire after 10 minutes. Stored as SHA-256 hashes — never in plaintext."
+    "1. **POST /api/v1/auth/phone/send-otp/** â€” sends a 6-digit code via SMS\n"
+    "2. **POST /api/v1/auth/phone/verify/** â€” submit the code to verify\n"
+    "3. **POST /api/v1/auth/phone/resend/** â€” resend (60 s cooldown)\n\n"
+    "OTPs expire after 10 minutes. Stored as SHA-256 hashes â€” never in plaintext."
 )
 
 
 class SendOTPView(APIView):
-    """POST /api/auth/phone/send-otp — send OTP to user's phone."""
+    """POST /api/v1/auth/phone/send-otp â€” send OTP to user's phone."""
 
     permission_classes = (IsAuthenticated,)
     throttle_classes = (OTPSendThrottle,)
@@ -249,7 +249,7 @@ class SendOTPView(APIView):
 
 
 class VerifyOTPView(APIView):
-    """POST /api/auth/phone/verify — verify the OTP code."""
+    """POST /api/v1/auth/phone/verify â€” verify the OTP code."""
 
     permission_classes = (IsAuthenticated,)
     throttle_classes = (OTPVerifyThrottle,)
@@ -262,7 +262,7 @@ class VerifyOTPView(APIView):
         "Rate-limited to 10 attempts/hour to prevent brute force.",
         request=OTPVerifySerializer,
         responses={
-            200: OpenApiResponse(response=UserProfileSerializer, description="Phone verified — updated profile"),
+            200: OpenApiResponse(response=UserProfileSerializer, description="Phone verified â€” updated profile"),
             400: OpenApiResponse(description="Invalid OTP code"),
             401: OpenApiResponse(description="Not authenticated"),
             422: OpenApiResponse(description="OTP expired"),
@@ -282,7 +282,7 @@ class VerifyOTPView(APIView):
 
 
 class ResendOTPView(APIView):
-    """POST /api/auth/phone/resend — resend OTP (60 s cooldown)."""
+    """POST /api/v1/auth/phone/resend â€” resend OTP (60 s cooldown)."""
 
     permission_classes = (IsAuthenticated,)
     throttle_classes = (OTPSendThrottle,)
@@ -309,23 +309,23 @@ class ResendOTPView(APIView):
         )
 
 
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Email OTP verification
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _EMAIL_OTP_FLOW_DESCRIPTION = (
     "### Dual-verification flow\n\n"
-    "Users can verify via **phone** (SMS) or **email** — at least one must be verified "
+    "Users can verify via **phone** (SMS) or **email** â€” at least one must be verified "
     "before posting listings. Diaspora users without a Zimbabwean phone can use email.\n\n"
-    "1. **POST /api/auth/email/send-otp/** — sends a 6-digit code via email\n"
-    "2. **POST /api/auth/email/verify/** — submit the code to verify\n"
-    "3. **POST /api/auth/email/resend/** — resend (60 s cooldown)\n\n"
-    "Email OTPs expire after 30 minutes. Stored as SHA-256 hashes — never in plaintext."
+    "1. **POST /api/v1/auth/email/send-otp/** â€” sends a 6-digit code via email\n"
+    "2. **POST /api/v1/auth/email/verify/** â€” submit the code to verify\n"
+    "3. **POST /api/v1/auth/email/resend/** â€” resend (60 s cooldown)\n\n"
+    "Email OTPs expire after 30 minutes. Stored as SHA-256 hashes â€” never in plaintext."
 )
 
 
 class SendEmailOTPView(APIView):
-    """POST /api/auth/email/send-otp — send OTP to user's email."""
+    """POST /api/v1/auth/email/send-otp â€” send OTP to user's email."""
 
     permission_classes = (IsAuthenticated,)
     throttle_classes = (EmailOTPSendThrottle,)
@@ -352,7 +352,7 @@ class SendEmailOTPView(APIView):
 
 
 class VerifyEmailOTPView(APIView):
-    """POST /api/auth/email/verify — verify the email OTP code."""
+    """POST /api/v1/auth/email/verify â€” verify the email OTP code."""
 
     permission_classes = (IsAuthenticated,)
     throttle_classes = (EmailOTPVerifyThrottle,)
@@ -365,7 +365,7 @@ class VerifyEmailOTPView(APIView):
         "Rate-limited to 10 attempts/hour to prevent brute force.",
         request=OTPVerifySerializer,
         responses={
-            200: OpenApiResponse(response=UserProfileSerializer, description="Email verified — updated profile"),
+            200: OpenApiResponse(response=UserProfileSerializer, description="Email verified â€” updated profile"),
             400: OpenApiResponse(description="Invalid OTP code"),
             401: OpenApiResponse(description="Not authenticated"),
             422: OpenApiResponse(description="OTP expired"),
@@ -385,7 +385,7 @@ class VerifyEmailOTPView(APIView):
 
 
 class ResendEmailOTPView(APIView):
-    """POST /api/auth/email/resend — resend email OTP (60 s cooldown)."""
+    """POST /api/v1/auth/email/resend â€” resend email OTP (60 s cooldown)."""
 
     permission_classes = (IsAuthenticated,)
     throttle_classes = (EmailOTPSendThrottle,)

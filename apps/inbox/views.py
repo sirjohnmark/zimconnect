@@ -1,5 +1,5 @@
-"""
-Inbox views — conversations, messages, read status.
+﻿"""
+Inbox views â€” conversations, messages, read status.
 """
 
 from django.contrib.auth import get_user_model
@@ -29,8 +29,8 @@ User = get_user_model()
 
 class ConversationListCreateView(APIView):
     """
-    GET  /api/inbox/ — list user's conversations.
-    POST /api/inbox/ — start a new conversation (or reuse existing).
+    GET  /api/v1/inbox/ â€” list user's conversations.
+    POST /api/v1/inbox/ â€” start a new conversation (or reuse existing).
     """
 
     permission_classes = (IsAuthenticated,)
@@ -102,8 +102,8 @@ class ConversationListCreateView(APIView):
 
 class ConversationDetailView(APIView):
     """
-    GET  /api/inbox/{id}/ — conversation messages (marks all read on load).
-    POST /api/inbox/{id}/messages/ — send a message in this conversation.
+    GET  /api/v1/inbox/{id}/ â€” conversation messages (marks all read on load).
+    POST /api/v1/inbox/{id}/messages/ â€” send a message in this conversation.
     """
 
     permission_classes = (IsAuthenticated,)
@@ -129,7 +129,7 @@ class ConversationDetailView(APIView):
 
 
 class ConversationSendMessageView(APIView):
-    """POST /api/inbox/{id}/messages/ — send a message."""
+    """POST /api/v1/inbox/{id}/messages/ â€” send a message."""
 
     permission_classes = (IsAuthenticated,)
     throttle_classes = (MessageSendThrottle,)
@@ -166,7 +166,7 @@ class ConversationSendMessageView(APIView):
 
 
 class MarkReadView(APIView):
-    """POST /api/inbox/messages/{id}/mark-read/ — mark a single message as read."""
+    """POST /api/v1/inbox/messages/{id}/mark-read/ â€” mark a single message as read."""
 
     permission_classes = (IsAuthenticated,)
 
@@ -193,7 +193,7 @@ class MarkReadView(APIView):
 
 
 class UnreadCountView(APIView):
-    """GET /api/inbox/unread-count/ — total unread messages for the user."""
+    """GET /api/v1/inbox/unread-count/ â€” total unread messages for the user."""
 
     permission_classes = (IsAuthenticated,)
 

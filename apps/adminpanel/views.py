@@ -1,5 +1,5 @@
-"""
-Admin panel views — dashboard, user management, listing moderation.
+﻿"""
+Admin panel views â€” dashboard, user management, listing moderation.
 """
 
 from django.contrib.auth import get_user_model
@@ -18,6 +18,8 @@ from apps.common.permissions import IsAdmin, IsModerator
 from apps.adminpanel import selectors, services
 from apps.adminpanel.serializers import (
     AdminDashboardSerializer,
+    AdminDeletedListingSerializer,
+    AdminDeletedUserSerializer,
     AdminListingModerationSerializer,
     AdminUserDetailSerializer,
     AdminUserListSerializer,
@@ -28,13 +30,13 @@ from apps.adminpanel.serializers import (
 User = get_user_model()
 
 
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Dashboard
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class DashboardView(APIView):
-    """GET /api/admin/dashboard/ — aggregate stats (admin only)."""
+    """GET /api/v1/admin/dashboard/ â€” aggregate stats (admin only)."""
 
     permission_classes = (IsAdmin,)
 
@@ -54,13 +56,13 @@ class DashboardView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # User management
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class AdminUserListView(APIView):
-    """GET /api/admin/users/ — paginated user list (admin only)."""
+    """GET /api/v1/admin/users/ â€” paginated user list (admin only)."""
 
     permission_classes = (IsAdmin,)
 
@@ -97,8 +99,8 @@ class AdminUserListView(APIView):
 
 class AdminUserDetailView(APIView):
     """
-    GET   /api/admin/users/{id}/ — user detail with counts.
-    PATCH /api/admin/users/{id}/ — update is_active or role.
+    GET   /api/v1/admin/users/{id}/ â€” user detail with counts.
+    PATCH /api/v1/admin/users/{id}/ â€” update is_active or role.
     """
 
     permission_classes = (IsAdmin,)
@@ -175,13 +177,13 @@ class AdminUserDetailView(APIView):
         )
 
 
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Listing moderation
-# ──────────────────────────────────────────────
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 class ModerationListView(APIView):
-    """GET /api/admin/listings/moderation/ — draft listings for review."""
+    """GET /api/v1/admin/listings/moderation/ â€” draft listings for review."""
 
     permission_classes = (IsModerator,)
 
@@ -201,7 +203,7 @@ class ModerationListView(APIView):
 
 
 class ModerationDetailView(APIView):
-    """GET /api/admin/listings/moderation/{id}/ — single listing detail for review."""
+    """GET /api/v1/admin/listings/moderation/{id}/ â€” single listing detail for review."""
 
     permission_classes = (IsModerator,)
 
@@ -222,7 +224,7 @@ class ModerationDetailView(APIView):
 
 
 class ApproveListingView(APIView):
-    """POST /api/admin/listings/moderation/{id}/approve/ — approve a draft listing."""
+    """POST /api/v1/admin/listings/moderation/{id}/approve/ â€” approve a draft listing."""
 
     permission_classes = (IsModerator,)
 
@@ -246,7 +248,7 @@ class ApproveListingView(APIView):
 
 
 class RejectListingView(APIView):
-    """POST /api/admin/listings/moderation/{id}/reject/ — reject a listing with reason."""
+    """POST /api/v1/admin/listings/moderation/{id}/reject/ â€” reject a listing with reason."""
 
     permission_classes = (IsModerator,)
 
@@ -276,3 +278,77 @@ class RejectListingView(APIView):
             AdminListingModerationSerializer(rejected).data,
             status=status.HTTP_200_OK,
         )
+
+
+# ──────────────────────────────────────────────
+# Soft-deleted listings
+# ──────────────────────────────────────────────
+
+
+class DeletedListingsView(APIView):
+    """GET /api/v1/admin/listings/deleted/ — list soft-deleted listings (admin only)."""
+
+    permission_classes = (IsAdmin,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_deleted_listings",
+        summary="List deleted listings",
+        description="Paginated list of soft-deleted listings. **Admin only.**",
+        responses={200: AdminDeletedListingSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        qs = selectors.get_deleted_listings()
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = AdminDeletedListingSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class RestoreListingView(APIView):
+    """POST /api/v1/admin/listings/{id}/restore/ — restore a soft-deleted listing."""
+
+    permission_classes = (IsAdmin,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_restore_listing",
+        summary="Restore deleted listing",
+        description="Restore a soft-deleted listing to DRAFT status. **Admin only.**",
+        request=None,
+        responses={
+            200: OpenApiResponse(response=AdminDeletedListingSerializer, description="Restored listing"),
+            400: OpenApiResponse(description="Listing is not deleted"),
+            404: OpenApiResponse(description="Deleted listing not found"),
+        },
+    )
+    def post(self, request: Request, listing_id: int) -> Response:
+        listing = selectors.get_deleted_listing_by_id(listing_id)
+        restored = services.restore_listing(listing, request.user)
+        serializer = AdminDeletedListingSerializer(restored)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ──────────────────────────────────────────────
+# Soft-deleted users
+# ──────────────────────────────────────────────
+
+
+class DeletedUsersView(APIView):
+    """GET /api/v1/admin/users/deleted/ — list soft-deleted users (admin only)."""
+
+    permission_classes = (IsAdmin,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_deleted_users",
+        summary="List deleted users",
+        description="Paginated list of soft-deleted users. **Admin only.**",
+        responses={200: AdminDeletedUserSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        qs = selectors.get_deleted_users()
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = AdminDeletedUserSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)

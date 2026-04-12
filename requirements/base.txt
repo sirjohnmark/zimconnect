@@ -18,3 +18,6 @@ dj-database-url>=2.3,<3
 drf-spectacular>=0.28,<1
 python-json-logger>=3,<5
 africastalking>=2.0,<3
+channels>=4.2,<5
+daphne>=4.1,<5
+channels-redis>=4.2,<5

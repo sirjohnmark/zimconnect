@@ -95,7 +95,7 @@ def send_welcome_email(self, user_id: int) -> None:
         text_body = render_to_string("accounts/email/welcome.txt", context)
 
         send_mail(
-            subject="Welcome to ZimConnect!",
+            subject="Welcome to Sanganai!",
             message=text_body,
             from_email=None,  # uses DEFAULT_FROM_EMAIL
             recipient_list=[user.email],
@@ -139,7 +139,7 @@ def send_password_reset_email(self, user_id: int, reset_token: str) -> None:
         text_body = render_to_string("accounts/email/password_reset.txt", context)
 
         send_mail(
-            subject="ZimConnect — Password Reset",
+            subject="Sanganai — Password Reset",
             message=text_body,
             from_email=None,
             recipient_list=[user.email],

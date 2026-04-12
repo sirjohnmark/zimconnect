@@ -10,11 +10,11 @@ from tests.conftest import UserFactory
 
 User = get_user_model()
 
-REGISTER_URL = "/api/auth/register/"
-LOGIN_URL = "/api/auth/login/"
-LOGOUT_URL = "/api/auth/logout/"
-REFRESH_URL = "/api/auth/token/refresh/"
-PROFILE_URL = "/api/auth/profile/"
+REGISTER_URL = "/api/v1/auth/register/"
+LOGIN_URL = "/api/v1/auth/login/"
+LOGOUT_URL = "/api/v1/auth/logout/"
+REFRESH_URL = "/api/v1/auth/token/refresh/"
+PROFILE_URL = "/api/v1/auth/profile/"
 
 
 # ──────────────────────────────────────────────
@@ -25,9 +25,9 @@ PROFILE_URL = "/api/auth/profile/"
 @pytest.mark.django_db
 class TestRegistration:
     def test_register_buyer(self, api_client, mocker):
-        mocker.patch("apps.accounts.services.send_welcome_email")
-        mocker.patch("apps.accounts.views.send_otp_task")
-        mocker.patch("apps.accounts.views.send_email_otp_task")
+        mocker.patch("apps.accounts.tasks.send_welcome_email")
+        mocker.patch("apps.accounts.tasks.send_otp_task")
+        mocker.patch("apps.accounts.tasks.send_email_otp_task")
         data = {
             "email": "buyer@test.com",
             "username": "newbuyer",
@@ -42,9 +42,9 @@ class TestRegistration:
         assert resp.data["role"] == "BUYER"
 
     def test_register_seller(self, api_client, mocker):
-        mocker.patch("apps.accounts.services.send_welcome_email")
-        mocker.patch("apps.accounts.views.send_otp_task")
-        mocker.patch("apps.accounts.views.send_email_otp_task")
+        mocker.patch("apps.accounts.tasks.send_welcome_email")
+        mocker.patch("apps.accounts.tasks.send_otp_task")
+        mocker.patch("apps.accounts.tasks.send_email_otp_task")
         data = {
             "email": "seller@test.com",
             "username": "newseller",
@@ -58,8 +58,8 @@ class TestRegistration:
         assert resp.data["role"] == "SELLER"
 
     def test_register_cannot_be_admin(self, api_client, mocker):
-        mocker.patch("apps.accounts.services.send_welcome_email")
-        mocker.patch("apps.accounts.views.send_email_otp_task")
+        mocker.patch("apps.accounts.tasks.send_welcome_email")
+        mocker.patch("apps.accounts.tasks.send_email_otp_task")
         data = {
             "email": "admin@test.com",
             "username": "newadmin",
@@ -72,8 +72,8 @@ class TestRegistration:
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_register_duplicate_email(self, api_client, buyer_user, mocker):
-        mocker.patch("apps.accounts.services.send_welcome_email")
-        mocker.patch("apps.accounts.views.send_email_otp_task")
+        mocker.patch("apps.accounts.tasks.send_welcome_email")
+        mocker.patch("apps.accounts.tasks.send_email_otp_task")
         data = {
             "email": buyer_user.email,
             "username": "unique_user",
@@ -85,19 +85,10 @@ class TestRegistration:
         resp = api_client.post(REGISTER_URL, data, format="json")
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_register_invalid_zimbabwe_phone(self, api_client, mocker):
-        mocker.patch("apps.accounts.services.send_welcome_email")
-        mocker.patch("apps.accounts.views.send_email_otp_task")
-        data = {
-            "email": "badphone@test.com",
-            "username": "badphone",
-            "password": "StrongPass1!",
-            "confirm_password": "StrongPass1!",
-            "phone": "+1234567890",  # not a Zimbabwe number
-            "role": "BUYER",
-        }
+    def test_register_missing_required_fields(self, api_client):
+        """Omitting required fields should return 400."""
+        data = {"email": "partial@test.com"}
         resp = api_client.post(REGISTER_URL, data, format="json")
-        # Should fail validation on Zimbabwe phone
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
 

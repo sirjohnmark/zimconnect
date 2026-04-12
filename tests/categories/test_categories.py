@@ -7,12 +7,12 @@ from rest_framework import status
 
 from tests.conftest import CategoryFactory
 
-TREE_URL = "/api/categories/tree/"
-LIST_URL = "/api/categories/"
+TREE_URL = "/api/v1/categories/tree/"
+LIST_URL = "/api/v1/categories/"
 
 
 def _detail_url(category_id):
-    return f"/api/categories/{category_id}/"
+    return f"/api/v1/categories/{category_id}/"
 
 
 @pytest.mark.django_db

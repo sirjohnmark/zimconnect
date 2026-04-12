@@ -1,7 +1,7 @@
 """
 URL routes for the accounts app.
 
-All mounted under /api/auth/ by config/urls.py.
+All mounted under /api/v1/auth/ by config/urls.py.
 """
 
 from django.urls import path

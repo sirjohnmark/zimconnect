@@ -6,6 +6,7 @@ import io
 import logging
 
 from celery import shared_task
+from django.contrib.postgres.search import SearchVector
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import F
@@ -170,6 +171,26 @@ def flush_listing_view_counts() -> None:
 
     if flushed:
         logger.info("flush_listing_view_counts: flushed %d listings", flushed)
+
+
+@shared_task(ignore_result=True)
+def rebuild_search_vectors() -> None:
+    """
+    Backfill / rebuild search_vector for ALL listings.
+
+    Run manually or via management command after schema changes
+    or bulk imports:  rebuild_search_vectors.delay()
+    """
+    from apps.listings.models import Listing
+
+    updated = Listing.all_objects.update(
+        search_vector=(
+            SearchVector("title", weight="A")
+            + SearchVector("description", weight="B")
+            + SearchVector("location", weight="C")
+        ),
+    )
+    logger.info("rebuild_search_vectors: updated %d listings", updated)
 
 
 def increment_view_count(listing_id: int) -> None:

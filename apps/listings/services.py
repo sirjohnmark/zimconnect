@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 
+from django.contrib.postgres.search import SearchVector
 from django.db import transaction
 from django.utils import timezone
 
@@ -68,6 +69,8 @@ def create_listing(
     if images:
         _process_images(listing, images, is_initial=True)
 
+    _update_search_vector(listing)
+
     # Process images in the background (resize, WebP conversion, thumbnails)
     from apps.listings.tasks import process_listing_images
 
@@ -107,6 +110,12 @@ def update_listing(listing: Listing, user, **kwargs) -> Listing:
     listing.full_clean()
     listing.save(update_fields=[*kwargs.keys(), "updated_at"])
     listing.refresh_from_db()
+
+    # Update search vector if any text/location fields changed
+    search_fields = {"title", "description", "location"}
+    if search_fields & set(kwargs.keys()):
+        _update_search_vector(listing)
+
     invalidate_listing_detail(listing.pk)
     return listing
 
@@ -129,13 +138,12 @@ def publish_listing(listing: Listing, user) -> Listing:
 
 
 def delete_listing(listing: Listing, user) -> None:
-    """Delete a listing. Only the owner or an admin may do this."""
+    """Soft-delete a listing. Only the owner or an admin may do this."""
     _assert_owner_or_admin(listing, user)
-    listing_id = listing.pk
-    listing.delete()
-    invalidate_listing_detail(listing_id)
+    listing.soft_delete(user)
+    invalidate_listing_detail(listing.pk)
     invalidate_dashboard_stats()
-    logger.info("listing_deleted id=%d by_user=%d", listing_id, user.pk)
+    logger.info("listing_soft_deleted id=%d by_user=%d", listing.pk, user.pk)
 
 
 @transaction.atomic
@@ -197,6 +205,17 @@ def _process_images(listing: Listing, images: list, *, is_initial: bool) -> list
             )
         )
     return created
+
+
+def _update_search_vector(listing: Listing) -> None:
+    """Recompute the search_vector column for a single listing."""
+    Listing.all_objects.filter(pk=listing.pk).update(
+        search_vector=(
+            SearchVector("title", weight="A")
+            + SearchVector("description", weight="B")
+            + SearchVector("location", weight="C")
+        ),
+    )
 
 
 def _assert_owner(listing: Listing, user) -> None:

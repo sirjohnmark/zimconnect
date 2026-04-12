@@ -1,5 +1,5 @@
-"""
-Category views — tree, list, detail.
+﻿"""
+Category views â€” tree, list, detail.
 """
 
 from django.core.cache import cache
@@ -23,7 +23,7 @@ from apps.common.permissions import IsAdminOrReadOnly
 
 
 class CategoryTreeView(APIView):
-    """GET /api/categories/tree — full nested tree, cached for 1 hour."""
+    """GET /api/v1/categories/tree â€” full nested tree, cached for 1 hour."""
 
     permission_classes = (AllowAny,)
 
@@ -47,8 +47,8 @@ class CategoryTreeView(APIView):
 
 class CategoryListView(APIView):
     """
-    GET  /api/categories/ — paginated flat list of active categories.
-    POST /api/categories/ — create a new category (admin only).
+    GET  /api/v1/categories/ â€” paginated flat list of active categories.
+    POST /api/v1/categories/ â€” create a new category (admin only).
     """
 
     permission_classes = (IsAdminOrReadOnly,)
@@ -100,8 +100,8 @@ class CategoryListView(APIView):
 
 class CategoryDetailView(APIView):
     """
-    GET   /api/categories/{id}/ — category detail + direct children.
-    PATCH /api/categories/{id}/ — update category (admin only).
+    GET   /api/v1/categories/{id}/ â€” category detail + direct children.
+    PATCH /api/v1/categories/{id}/ â€” update category (admin only).
     """
 
     permission_classes = (IsAdminOrReadOnly,)

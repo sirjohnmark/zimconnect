@@ -164,7 +164,7 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-        "zimconnect.requests": {
+        "Sanganai.requests": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,

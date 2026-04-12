@@ -50,6 +50,15 @@ REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] = (  # noqa: F405
 )
 
 # ──────────────────────────────────────────────
+# Channel Layers — in-memory for dev/test (no Redis dependency)
+# ──────────────────────────────────────────────
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
+
+# ──────────────────────────────────────────────
 # Cache — LocMemCache (no Redis required locally)
 # ──────────────────────────────────────────────
 CACHES = {

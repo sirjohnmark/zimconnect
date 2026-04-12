@@ -1,5 +1,5 @@
 """
-Custom middleware for ZimConnect API.
+Custom middleware for Sanganai API.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import uuid
 
 from django.http import HttpRequest, HttpResponse
 
-logger = logging.getLogger("zimconnect.requests")
+logger = logging.getLogger("Sanganai.requests")
 
 _thread_locals = threading.local()
 
@@ -74,4 +74,20 @@ class RequestLoggingMiddleware:
         )
 
         _thread_locals.request_id = None
+        return response
+
+
+class VersionHeaderMiddleware:
+    """
+    Append ``X-API-Version: 1`` to every API response.
+
+    Placed after ``RequestLoggingMiddleware`` so it runs on the way out.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        response = self.get_response(request)
+        response["X-API-Version"] = "1"
         return response

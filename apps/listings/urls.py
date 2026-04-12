@@ -1,7 +1,7 @@
 """
 URL routes for the listings app.
 
-All mounted under /api/listings/ by config/urls.py.
+All mounted under /api/v1/listings/ by config/urls.py.
 """
 
 from django.urls import path

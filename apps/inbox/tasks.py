@@ -70,7 +70,7 @@ def send_new_message_notification(self, message_id: int) -> None:
     # html_body = render_to_string("inbox/email/new_message.html", context)
     # text_body = render_to_string("inbox/email/new_message.txt", context)
     # send_mail(
-    #     subject=f"New message from {message.sender.username} on ZimConnect",
+    #     subject=f"New message from {message.sender.username} on Sanganai",
     #     message=text_body,
     #     from_email=None,
     #     recipient_list=[recipient.email],

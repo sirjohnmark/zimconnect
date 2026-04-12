@@ -1,7 +1,7 @@
 """
 URL routes for the categories app.
 
-All mounted under /api/categories/ by config/urls.py.
+All mounted under /api/v1/categories/ by config/urls.py.
 """
 
 from django.urls import path

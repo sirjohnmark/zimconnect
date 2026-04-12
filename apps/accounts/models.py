@@ -8,11 +8,15 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 
 from apps.common.constants import UserRole, ZimbabweCity
+from apps.common.models import AllObjectsManager, SoftDeleteModel, SoftDeleteQuerySet
 from apps.common.validators import ImageSizeValidator, ZimbabwePhoneValidator
 
 
 class UserManager(BaseUserManager):
     """Manager for the custom User model — email-based authentication."""
+
+    def get_queryset(self) -> SoftDeleteQuerySet:
+        return SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=False)
 
     def create_user(self, email: str, username: str, password: str | None = None, **extra_fields):
         if not email:
@@ -40,7 +44,7 @@ class UserManager(BaseUserManager):
         return self.create_user(email, username, password, **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin, SoftDeleteModel):
     """
     Custom user model — email is the unique identifier for authentication.
 
@@ -104,6 +108,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     updated_at = models.DateTimeField(auto_now=True)
 
     objects = UserManager()
+    all_objects = AllObjectsManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]

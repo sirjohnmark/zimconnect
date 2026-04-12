@@ -1,7 +1,7 @@
 """
 URL routes for the inbox messaging app.
 
-All mounted under /api/inbox/ by config/urls.py.
+All mounted under /api/v1/inbox/ by config/urls.py.
 """
 
 from django.urls import path
