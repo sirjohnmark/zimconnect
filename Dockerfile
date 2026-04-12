@@ -32,13 +32,6 @@ COPY . .
 RUN SECRET_KEY=build-placeholder \
     DATABASE_URL=sqlite:///tmp.db \
     DJANGO_SETTINGS_MODULE=config.settings.prod \
-    SENTRY_DSN=https://placeholder@sentry.io/0 \
-    EMAIL_HOST=localhost \
-    EMAIL_HOST_USER=x \
-    EMAIL_HOST_PASSWORD=x \
-    AWS_ACCESS_KEY_ID=x \
-    AWS_SECRET_ACCESS_KEY=x \
-    AWS_STORAGE_BUCKET_NAME=x \
     ALLOWED_HOSTS=* \
     CORS_ALLOWED_ORIGINS=http://localhost \
     python manage.py collectstatic --noinput 2>/dev/null || true

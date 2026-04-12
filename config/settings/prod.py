@@ -46,70 +46,76 @@ X_FRAME_OPTIONS = "DENY"
 require_env("DATABASE_URL")
 
 # ──────────────────────────────────────────────
-# S3 / Cloudflare R2 storage
+# Static files — WhiteNoise (served from disk)
 # ──────────────────────────────────────────────
-AWS_ACCESS_KEY_ID = require_env("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = require_env("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = require_env("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_ENDPOINT_URL = config("AWS_S3_ENDPOINT_URL", default="")
-AWS_S3_REGION_NAME = config("AWS_S3_REGION_NAME", default="auto")
-AWS_S3_CUSTOM_DOMAIN = config("AWS_S3_CUSTOM_DOMAIN", default="")
-AWS_DEFAULT_ACL = None
-AWS_S3_OBJECT_PARAMETERS = {
-    "CacheControl": "max-age=86400",
-}
-AWS_QUERYSTRING_AUTH = False
-
 STORAGES = {
     "default": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+MIDDLEWARE.insert(2, "whitenoise.middleware.WhiteNoiseMiddleware")  # noqa: F405
+
+# ──────────────────────────────────────────────
+# Cache — local memory (no Redis required)
+# ──────────────────────────────────────────────
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "sanganai-prod",
+    },
+}
+
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
+# ──────────────────────────────────────────────
+# Celery — disabled (no Redis broker)
+# ──────────────────────────────────────────────
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+
+# ──────────────────────────────────────────────
+# Channels — in-memory (no Redis layer)
+# ──────────────────────────────────────────────
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
 
 # ──────────────────────────────────────────────
-# Email
+# Email — console for now (swap to SMTP later)
 # ──────────────────────────────────────────────
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = require_env("EMAIL_HOST")
-EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
-EMAIL_HOST_USER = require_env("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = require_env("EMAIL_HOST_PASSWORD")
-EMAIL_USE_TLS = True
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # ──────────────────────────────────────────────
-# Sentry
+# Sentry (optional — skip if DSN not set)
 # ──────────────────────────────────────────────
-SENTRY_DSN = require_env("SENTRY_DSN")
+SENTRY_DSN = config("SENTRY_DSN", default="")
 
-import sentry_sdk  # noqa: E402
-from sentry_sdk.integrations.django import DjangoIntegration  # noqa: E402
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
 
+    def _before_send(event, hint):
+        """Filter out noisy 404 and 429 errors from Sentry."""
+        if "exc_info" in hint:
+            exc_type = hint["exc_info"][0]
+            if getattr(exc_type, "__name__", "") in ("Http404", "Throttled"):
+                return None
+        return event
 
-def _before_send(event, hint):
-    """Filter out noisy 404 and 429 errors from Sentry."""
-    if "exc_info" in hint:
-        exc_type = hint["exc_info"][0]
-        # django.http.Http404
-        if getattr(exc_type, "__name__", "") == "Http404":
-            return None
-        # DRF Throttled → 429
-        exc_name = getattr(exc_type, "__name__", "")
-        if exc_name == "Throttled":
-            return None
-    return event
-
-
-sentry_sdk.init(
-    dsn=SENTRY_DSN,
-    integrations=[DjangoIntegration()],
-    traces_sample_rate=0.1,
-    profiles_sample_rate=0.1,
-    send_default_pii=False,
-    before_send=_before_send,
-)
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        send_default_pii=False,
+        before_send=_before_send,
+    )
 
 # ──────────────────────────────────────────────
 # CORS — from env only

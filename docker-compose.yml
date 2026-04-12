@@ -1,15 +1,4 @@
 services:
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-
   server:
     build: .
     command: server
@@ -19,37 +8,10 @@ services:
     env_file: .env
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.prod
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      redis:
-        condition: service_healthy
     volumes:
       - static_data:/app/staticfiles
-
-  worker:
-    build: .
-    command: worker
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.prod
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      redis:
-        condition: service_healthy
-
-  beat:
-    build: .
-    command: beat
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.prod
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      redis:
-        condition: service_healthy
+      - media_data:/app/media
 
 volumes:
-  redis_data:
   static_data:
+  media_data:
