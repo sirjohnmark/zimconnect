@@ -160,7 +160,7 @@ export default function PostJobPage() {
 
   if (!user) return null;
 
-  const verification = getVerification(user.id);
+  const verification = getVerification(String(user.id));
   const isVerified   = verification?.status === "verified";
 
   function validate(): boolean {
@@ -192,7 +192,7 @@ export default function PostJobPage() {
     postJob({
       title:           title.trim(),
       company:         company.trim(),
-      employerId:      user!.id,
+      employerId:      String(user!.id),
       location:        location.trim() || "Remote",
       remote:          isRemote,
       type:            jobType,
