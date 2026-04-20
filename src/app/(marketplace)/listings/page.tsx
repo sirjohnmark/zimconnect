@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import { getListings } from "@/lib/api/listings";
 import { ListingCard } from "@/components/marketplace/ListingCard";
-import { getAllListingsSync } from "@/lib/data/listings";
+import { CITY_LABELS } from "@/lib/validations/listing";
+import type { Listing } from "@/types/listing";
 import { cn } from "@/lib/utils";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -33,14 +35,32 @@ function ClearIcon({ className }: { className?: string }) {
   );
 }
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function GridSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-gray-100 overflow-hidden">
+          <div className="aspect-[4/3] w-full animate-pulse bg-gray-100" />
+          <div className="p-4 space-y-2">
+            <div className="h-4 w-3/4 animate-pulse rounded bg-gray-100" />
+            <div className="h-4 w-1/3 animate-pulse rounded bg-gray-100" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-function EmptyState({ q, loc, category }: { q: string; loc: string; category: string }) {
+function EmptyState({ search, location, category }: { search: string; location: string; category: string }) {
   const reason =
-    q && loc ? `No listings for "${q}" in "${loc}"`
-    : q ? `No listings found for "${q}"`
-    : loc ? `No listings found in "${loc}"`
-    : category ? `No listings in this category yet`
+    search && location ? `No listings for "${search}" in ${CITY_LABELS[location] ?? location}`
+    : search   ? `No listings found for "${search}"`
+    : location ? `No listings found in ${CITY_LABELS[location] ?? location}`
+    : category ? "No listings in this category yet"
     : "No listings yet";
 
   return (
@@ -61,42 +81,59 @@ export default function ListingsPage() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const urlQ = searchParams.get("q") ?? "";
-  const urlLoc = searchParams.get("loc") ?? "";
+  const urlSearch   = searchParams.get("search") ?? "";
+  const urlLocation = searchParams.get("location") ?? "";
   const urlCategory = searchParams.get("category") ?? "";
+  const urlPage     = parseInt(searchParams.get("page") ?? "1", 10);
 
-  // Draft inputs — only committed on submit
-  const [draftQ, setDraftQ] = useState(urlQ);
-  const [draftLoc, setDraftLoc] = useState(urlLoc);
+  const [draftSearch,   setDraftSearch]   = useState(urlSearch);
+  const [draftLocation, setDraftLocation] = useState(urlLocation);
 
-  // Sync drafts when URL changes (e.g. from category pills)
-  useEffect(() => { setDraftQ(urlQ); }, [urlQ]);
-  useEffect(() => { setDraftLoc(urlLoc); }, [urlLoc]);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [total,    setTotal]    = useState(0);
+  const [hasNext,  setHasNext]  = useState(false);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState<string | null>(null);
 
-  // ── Instant client-side filtering ──────────────────────────────────────────
-  const { data: listings, total, isFallback } = useMemo(
-    () => getAllListingsSync({ q: urlQ, loc: urlLoc, category: urlCategory }),
-    [urlQ, urlLoc, urlCategory],
-  );
-
-  function navigate(q: string, loc: string, category?: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (q) params.set("q", q); else params.delete("q");
-    if (loc) params.set("loc", loc); else params.delete("loc");
-    if (category !== undefined) {
-      if (category) params.set("category", category); else params.delete("category");
+  const fetchListings = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getListings({
+        search:   urlSearch   || undefined,
+        location: urlLocation || undefined,
+        category: urlCategory || undefined,
+        page:     urlPage,
+        page_size: 24,
+      });
+      setListings(res.results);
+      setTotal(res.count);
+      setHasNext(res.next !== null);
+    } catch {
+      setError("Failed to load listings. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    params.delete("page");
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [urlSearch, urlLocation, urlCategory, urlPage]);
+
+  useEffect(() => { fetchListings(); }, [fetchListings]);
+  useEffect(() => { setDraftSearch(urlSearch); },   [urlSearch]);
+  useEffect(() => { setDraftLocation(urlLocation); }, [urlLocation]);
+
+  function navigate(params: { search?: string; location?: string; category?: string; page?: number }) {
+    const p = new URLSearchParams(searchParams.toString());
+    const set = (k: string, v?: string) => v ? p.set(k, v) : p.delete(k);
+    set("search",   params.search);
+    set("location", params.location);
+    if (params.category !== undefined) set("category", params.category);
+    if (params.page && params.page > 1) p.set("page", String(params.page)); else p.delete("page");
+    router.replace(`${pathname}?${p.toString()}`, { scroll: false });
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    navigate(draftQ.trim(), draftLoc.trim());
+    navigate({ search: draftSearch.trim(), location: draftLocation.trim() });
   }
-
-  function clearQ() { setDraftQ(""); navigate("", draftLoc.trim()); }
-  function clearLoc() { setDraftLoc(""); navigate(draftQ.trim(), ""); }
 
   const headingText = urlCategory
     ? urlCategory.charAt(0).toUpperCase() + urlCategory.slice(1).replace(/-/g, " ")
@@ -104,12 +141,8 @@ export default function ListingsPage() {
 
   return (
     <div>
-      {/* Back to categories */}
       {urlCategory && (
-        <Link
-          href="/categories"
-          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 mb-4 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:scale-[0.97] transition-all"
-        >
+        <Link href="/categories" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 mb-4 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 active:scale-[0.97] transition-all">
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
             <path fillRule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" />
           </svg>
@@ -117,108 +150,126 @@ export default function ListingsPage() {
         </Link>
       )}
 
-      {/* Heading */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold text-gray-900">
           {headingText}
-          <span className="ml-2 text-sm font-normal text-gray-400">
-            {total} result{total !== 1 ? "s" : ""}
-          </span>
+          {!loading && (
+            <span className="ml-2 text-sm font-normal text-gray-400">
+              {total} result{total !== 1 ? "s" : ""}
+            </span>
+          )}
         </h1>
       </div>
 
       {/* Search bar */}
       <form onSubmit={handleSubmit} className="mb-6 space-y-2" role="search">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          {/* Keyword */}
           <div className="relative flex-1">
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <SearchIcon className="text-gray-400" />
             </div>
             <input
               type="search"
-              value={draftQ}
-              onChange={(e) => setDraftQ(e.target.value)}
+              value={draftSearch}
+              onChange={(e) => setDraftSearch(e.target.value)}
               placeholder="Search listings…"
               aria-label="Search by keyword"
               className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors"
             />
-            {draftQ && (
-              <button type="button" onClick={clearQ} aria-label="Clear keyword" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            {draftSearch && (
+              <button type="button" onClick={() => { setDraftSearch(""); navigate({ search: "", location: draftLocation }); }} aria-label="Clear keyword" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <ClearIcon />
               </button>
             )}
           </div>
 
-          {/* Location */}
           <div className="relative sm:w-52">
             <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
               <PinIcon className="text-gray-400" />
             </div>
             <input
               type="search"
-              value={draftLoc}
-              onChange={(e) => setDraftLoc(e.target.value)}
-              placeholder="Location or area…"
+              value={draftLocation}
+              onChange={(e) => setDraftLocation(e.target.value)}
+              placeholder="City or location…"
               aria-label="Filter by location"
               className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors"
             />
-            {draftLoc && (
-              <button type="button" onClick={clearLoc} aria-label="Clear location" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            {draftLocation && (
+              <button type="button" onClick={() => { setDraftLocation(""); navigate({ search: draftSearch, location: "" }); }} aria-label="Clear location" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <ClearIcon />
               </button>
             )}
           </div>
 
-          <button
-            type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] transition-all sm:w-auto"
-          >
+          <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] transition-all sm:w-auto">
             <SearchIcon className="text-white" />
             Search
           </button>
         </div>
 
-        {/* Active filter chips */}
-        {(urlQ || urlLoc) && (
+        {(urlSearch || urlLocation) && (
           <div className="flex flex-wrap gap-1.5">
-            {urlQ && (
+            {urlSearch && (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-                <SearchIcon className="h-3 w-3" />
-                {urlQ}
-                <button type="button" onClick={clearQ} aria-label="Remove keyword filter"><ClearIcon className="h-3 w-3" /></button>
+                <SearchIcon className="h-3 w-3" />{urlSearch}
+                <button type="button" onClick={() => navigate({ search: "", location: urlLocation })} aria-label="Remove keyword filter"><ClearIcon className="h-3 w-3" /></button>
               </span>
             )}
-            {urlLoc && (
+            {urlLocation && (
               <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                <PinIcon className="h-3 w-3" />
-                {urlLoc}
-                <button type="button" onClick={clearLoc} aria-label="Remove location filter"><ClearIcon className="h-3 w-3" /></button>
+                <PinIcon className="h-3 w-3" />{CITY_LABELS[urlLocation] ?? urlLocation}
+                <button type="button" onClick={() => navigate({ search: urlSearch, location: "" })} aria-label="Remove location filter"><ClearIcon className="h-3 w-3" /></button>
               </span>
             )}
           </div>
         )}
       </form>
 
-      {/* Fallback notice */}
-      {isFallback && urlQ && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 mt-0.5 text-amber-500">
-            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-          </svg>
-          <span>No exact match for <strong>&ldquo;{urlQ}&rdquo;</strong> — showing nearest results.</span>
+      {/* Error */}
+      {error && (
+        <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+          <button type="button" onClick={fetchListings} className="ml-auto text-xs font-medium underline">Retry</button>
         </div>
       )}
 
-      {/* Grid or empty state */}
-      {listings.length === 0 ? (
-        <EmptyState q={urlQ} loc={urlLoc} category={urlCategory} />
+      {/* Results */}
+      {loading ? (
+        <GridSkeleton />
+      ) : listings.length === 0 ? (
+        <EmptyState search={urlSearch} location={urlLocation} category={urlCategory} />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {listings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="mt-8 flex items-center justify-center gap-3">
+            {urlPage > 1 && (
+              <button
+                type="button"
+                onClick={() => navigate({ search: urlSearch, location: urlLocation, page: urlPage - 1 })}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                ← Previous
+              </button>
+            )}
+            <span className="text-sm text-gray-500">Page {urlPage}</span>
+            {hasNext && (
+              <button
+                type="button"
+                onClick={() => navigate({ search: urlSearch, location: urlLocation, page: urlPage + 1 })}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Next →
+              </button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

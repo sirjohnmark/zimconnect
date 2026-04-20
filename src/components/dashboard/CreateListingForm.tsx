@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -8,37 +8,20 @@ import {
   createListingSchema,
   type CreateListingInput,
   LISTING_CONDITIONS,
-  LISTING_CATEGORIES,
+  CONDITION_LABELS,
+  ZIMBABWE_CITIES,
+  CITY_LABELS,
 } from "@/lib/validations/listing";
-import { createListing, uploadImages } from "@/lib/data/listings";
+import { createListing, uploadImages, publishListing } from "@/lib/api/listings";
+import { getCategories } from "@/lib/api/categories";
 import { ApiError } from "@/lib/api/client";
 import { ImageUpload, type ImagePreview } from "./ImageUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import type { Category } from "@/types/category";
 
-// ─── Label maps ───────────────────────────────────────────────────────────────
-
-const CONDITION_LABELS: Record<string, string> = {
-  "new": "New",
-  "like-new": "Like New",
-  "good": "Good",
-  "fair": "Fair",
-  "for-parts": "For Parts",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  electronics: "Electronics",
-  vehicles: "Vehicles",
-  property: "Property",
-  jobs: "Jobs",
-  services: "Services",
-  fashion: "Fashion",
-  agriculture: "Agriculture",
-  home: "Home & Garden",
-};
-
-// ─── Select field ─────────────────────────────────────────────────────────────
+// ─── Field components ─────────────────────────────────────────────────────────
 
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label: string;
@@ -67,17 +50,11 @@ function Select({ label, error, hint, id, required, children, ...props }: Select
       >
         {children}
       </select>
-      {error && (
-        <p role="alert" className="text-xs text-red-600">{error}</p>
-      )}
-      {!error && hint && (
-        <p className="text-xs text-gray-500">{hint}</p>
-      )}
+      {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
+      {!error && hint && <p className="text-xs text-gray-500">{hint}</p>}
     </div>
   );
 }
-
-// ─── Textarea field ───────────────────────────────────────────────────────────
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
@@ -113,14 +90,10 @@ function Textarea({ label, error, charCount, maxChars, id, required, ...props }:
           disabled:cursor-not-allowed disabled:bg-gray-50`}
         {...props}
       />
-      {error && (
-        <p role="alert" className="text-xs text-red-600">{error}</p>
-      )}
+      {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }
-
-// ─── Form-level alert ─────────────────────────────────────────────────────────
 
 function FormAlert({ message }: { message: string }) {
   return (
@@ -133,53 +106,79 @@ function FormAlert({ message }: { message: string }) {
   );
 }
 
+// ─── Submit steps ─────────────────────────────────────────────────────────────
+
+type SubmitStep = "idle" | "creating" | "uploading" | "publishing";
+
+const STEP_LABELS: Record<SubmitStep, string> = {
+  idle: "Publish Listing",
+  creating: "Creating listing…",
+  uploading: "Uploading photos…",
+  publishing: "Publishing…",
+};
+
 // ─── Main form ────────────────────────────────────────────────────────────────
 
 export function CreateListingForm() {
   const router = useRouter();
-  const [formError, setFormError] = useState<string | null>(null);
-  const [images, setImages] = useState<ImagePreview[]>([]);
+  const [formError, setFormError]   = useState<string | null>(null);
+  const [images, setImages]         = useState<ImagePreview[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
-  const [deliveryAvailable, setDeliveryAvailable] = useState(false);
-  const [deliveryNote, setDeliveryNote] = useState("");
+  const [step, setStep]             = useState<SubmitStep>("idle");
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    getCategories({ page_size: 100 })
+      .then((res) => setCategories(res.results))
+      .catch(() => { /* categories load silently — user still sees empty select */ });
+  }, []);
 
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<CreateListingInput>({
     resolver: zodResolver(createListingSchema),
+    defaultValues: { currency: "USD" },
   });
 
   const descriptionValue = useWatch({ control, name: "description" }) ?? "";
+  const isSubmitting = step !== "idle";
 
   async function onSubmit(data: CreateListingInput) {
     if (images.length === 0) {
-      setImageError("Add at least one image.");
+      setImageError("Add at least one photo.");
       return;
     }
     setImageError(null);
     setFormError(null);
 
     try {
-      // 1. Upload files → get back permanent URLs from storage
-      const uploaded = await uploadImages(images.map((i) => i.file));
-
-      // 2. Create the listing with the returned image URLs
-      await createListing({
-        ...data,
-        price: Number(data.price),
-        images: uploaded,
-        seller: { phone: data.phone },
-        delivery: { available: deliveryAvailable, note: deliveryNote.trim() || undefined },
+      // Step 1: Create listing (status = DRAFT)
+      setStep("creating");
+      const listing = await createListing({
+        title:       data.title,
+        description: data.description,
+        price:       data.price,
+        currency:    data.currency,
+        condition:   data.condition,
+        category_id: data.category_id,
+        location:    data.location,
       });
+
+      // Step 2: Upload images
+      setStep("uploading");
+      await uploadImages(listing.id, images.map((i) => i.file));
+
+      // Step 3: Publish
+      setStep("publishing");
+      await publishListing(listing.id);
 
       router.push("/dashboard/listings");
     } catch (err) {
-      if (err instanceof ApiError) {
-        setFormError(err.message);
-      } else if (err instanceof Error) {
+      setStep("idle");
+      if (err instanceof ApiError || err instanceof Error) {
         setFormError(err.message);
       } else {
         setFormError("Something went wrong. Please try again.");
@@ -228,7 +227,7 @@ export function CreateListingForm() {
                   {...register("price")}
                   id="price"
                   type="number"
-                  label="Price (USD)"
+                  label="Price"
                   placeholder="0.00"
                   min="0"
                   step="0.01"
@@ -236,24 +235,32 @@ export function CreateListingForm() {
                   required
                 />
 
-                <Input
-                  {...register("location")}
-                  id="location"
-                  label="City / Town"
-                  placeholder="e.g. Harare, Mutare"
-                  error={errors.location?.message}
+                <Select
+                  {...register("currency")}
+                  id="currency"
+                  label="Currency"
+                  error={errors.currency?.message}
                   required
-                />
+                >
+                  <option value="USD">USD — US Dollar</option>
+                  <option value="ZWL">ZWL — Zimbabwe Dollar</option>
+                </Select>
               </div>
 
-              <Input
-                {...register("sublocation")}
-                id="sublocation"
-                label="Area / Suburb"
-                placeholder="e.g. CBD, Chikanga, Avondale, Hintonville"
-                hint="Helps buyers searching by neighbourhood"
-                error={errors.sublocation?.message}
-              />
+              <Select
+                {...register("location")}
+                id="location"
+                label="City / Town"
+                error={errors.location?.message}
+                required
+              >
+                <option value="">Select city…</option>
+                {ZIMBABWE_CITIES.map((city) => (
+                  <option key={city} value={city}>
+                    {CITY_LABELS[city] ?? city}
+                  </option>
+                ))}
+              </Select>
             </div>
           </Card>
 
@@ -272,24 +279,24 @@ export function CreateListingForm() {
           </Card>
         </div>
 
-        {/* ── Right column: categorisation + submit ── */}
+        {/* ── Right column: category + condition + submit ── */}
         <div className="space-y-5">
           <Card padding="lg">
             <Card.Header>
-              <Card.Title>Category</Card.Title>
+              <Card.Title>Category &amp; Condition</Card.Title>
             </Card.Header>
             <div className="space-y-4">
               <Select
-                {...register("category")}
-                id="category"
+                {...register("category_id", { valueAsNumber: true })}
+                id="category_id"
                 label="Category"
-                error={errors.category?.message}
+                error={errors.category_id?.message}
                 required
               >
-                <option value="">Select category</option>
-                {LISTING_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {CATEGORY_LABELS[cat]}
+                <option value="">Select category…</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
                   </option>
                 ))}
               </Select>
@@ -301,7 +308,7 @@ export function CreateListingForm() {
                 error={errors.condition?.message}
                 required
               >
-                <option value="">Select condition</option>
+                <option value="">Select condition…</option>
                 {LISTING_CONDITIONS.map((cond) => (
                   <option key={cond} value={cond}>
                     {CONDITION_LABELS[cond]}
@@ -311,75 +318,24 @@ export function CreateListingForm() {
             </div>
           </Card>
 
-          {/* Contact */}
-          <Card padding="lg">
-            <Card.Header>
-              <Card.Title>Contact</Card.Title>
-              <Card.Description>Buyers will use this to call or WhatsApp you.</Card.Description>
-            </Card.Header>
-            <Input
-              {...register("phone")}
-              id="phone"
-              type="tel"
-              label="Phone Number"
-              placeholder="e.g. 0771 234 567"
-              hint="Shown as Call and WhatsApp buttons on your listing."
-              error={errors.phone?.message}
-              required
-            />
-          </Card>
-
-          {/* Delivery */}
-          <Card padding="lg">
-            <Card.Header>
-              <Card.Title>Delivery</Card.Title>
-              <Card.Description>Let buyers know if you can deliver.</Card.Description>
-            </Card.Header>
-            <div className="space-y-3">
-              {/* Toggle */}
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-gray-700">
-                  {deliveryAvailable ? "Yes, I offer delivery" : "No delivery — collection only"}
-                </span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={deliveryAvailable}
-                  onClick={() => setDeliveryAvailable((v) => !v)}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${deliveryAvailable ? "bg-emerald-600" : "bg-gray-200"}`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${deliveryAvailable ? "translate-x-5" : "translate-x-0"}`}
-                  />
-                </button>
+          {/* Progress indicator during submit */}
+          {isSubmitting && (
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-emerald-700">
+                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                {STEP_LABELS[step]}
               </div>
-
-              {/* Note — only shown when delivery is on */}
-              {deliveryAvailable && (
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="deliveryNote" className="text-sm font-medium text-gray-700">
-                    Delivery note <span className="text-gray-400 font-normal">(optional)</span>
-                  </label>
-                  <textarea
-                    id="deliveryNote"
-                    value={deliveryNote}
-                    onChange={(e) => setDeliveryNote(e.target.value)}
-                    rows={2}
-                    maxLength={200}
-                    placeholder="e.g. Deliver within Harare only — $3 fee"
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 resize-none placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors"
-                  />
-                  <p className="text-right text-xs text-gray-400">{deliveryNote.length}/200</p>
-                </div>
-              )}
             </div>
-          </Card>
+          )}
 
           {/* Publish */}
           <Card padding="lg">
             <div className="space-y-3">
               <Button type="submit" fullWidth loading={isSubmitting}>
-                {isSubmitting ? "Publishing…" : "Publish Listing"}
+                {STEP_LABELS[step]}
               </Button>
               <Button
                 type="button"

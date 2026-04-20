@@ -1,74 +1,70 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
 import {
   getConversations,
-  getConversation,
-  sendMessage,
-  markConversationRead,
-  deleteConversation,
+  markMessageRead,
   type Conversation,
+  type ConversationParticipant,
   type Message,
-} from "@/lib/mock/messages";
+} from "@/lib/api/inbox";
+import { useWebSocket } from "@/lib/hooks/useWebSocket";
 import { cn } from "@/lib/utils";
 
-// ─── Time formatting ──────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr  = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
+  const diffMin = Math.floor((now.getTime() - d.getTime()) / 60000);
   if (diffMin < 1)  return "just now";
   if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHr  < 24) return `${diffHr}h ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24)  return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
   if (diffDay < 7)  return `${diffDay}d ago`;
   return d.toLocaleDateString("en-ZW", { day: "numeric", month: "short" });
 }
 
 function formatMessageTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString("en-ZW", { hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("en-ZW", { hour: "2-digit", minute: "2-digit" });
+}
+
+function getOther(conv: Conversation, myId: number): ConversationParticipant {
+  return conv.participants.find((p) => p.id !== myId) ?? conv.participants[0];
+}
+
+function initial(username: string): string {
+  return username.charAt(0).toUpperCase();
 }
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 
-function Avatar({
-  initial,
-  avatar,
-  size = "md",
-}: {
-  initial: string;
-  avatar?: string;
-  size?: "sm" | "md" | "lg";
-}) {
+function Avatar({ username, src, size = "md" }: { username: string; src?: string | null; size?: "sm" | "md" | "lg" }) {
   const sz = { sm: "h-8 w-8 text-xs", md: "h-10 w-10 text-sm", lg: "h-12 w-12 text-base" }[size];
   return (
     <span className={cn("relative flex shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700 overflow-hidden", sz)}>
-      {avatar ? <Image src={avatar} alt={initial} fill className="object-cover" /> : initial}
+      {src
+        ? <Image src={src} alt={username} fill className="object-cover" />
+        : initial(username)}
     </span>
   );
 }
 
-// ─── Conversation row (list) ──────────────────────────────────────────────────
+// ─── Conversation row ─────────────────────────────────────────────────────────
 
-function ConversationRow({
-  conv,
-  active,
-  onClick,
-}: {
+function ConversationRow({ conv, active, myId, onClick }: {
   conv: Conversation;
   active: boolean;
+  myId: number;
   onClick: () => void;
 }) {
-  const last = conv.messages[conv.messages.length - 1];
-  const unread = conv.messages.filter((m) => m.senderId !== "me" && !m.read).length;
+  const other = getOther(conv, myId);
+  const unread = conv.unread_count;
 
   return (
     <button
@@ -76,14 +72,16 @@ function ConversationRow({
       onClick={onClick}
       className={cn(
         "w-full flex items-start gap-3 px-4 py-3.5 text-left transition-colors",
-        active ? "bg-emerald-50 border-l-2 border-emerald-500" : "hover:bg-gray-50 border-l-2 border-transparent",
+        active
+          ? "bg-emerald-50 border-l-2 border-emerald-500"
+          : "hover:bg-gray-50 border-l-2 border-transparent",
       )}
     >
       <div className="relative shrink-0">
-        <Avatar initial={conv.contactInitial} avatar={conv.contactAvatar} />
+        <Avatar username={other.username} src={other.profile_picture} />
         {unread > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
-            {unread}
+            {unread > 9 ? "9+" : unread}
           </span>
         )}
       </div>
@@ -91,14 +89,17 @@ function ConversationRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <p className={cn("text-sm truncate", unread > 0 ? "font-semibold text-gray-900" : "font-medium text-gray-700")}>
-            {conv.contactName}
+            {other.username}
           </p>
-          <span className="shrink-0 text-xs text-gray-400">{formatTime(conv.updatedAt)}</span>
+          <span className="shrink-0 text-xs text-gray-400">{formatTime(conv.updated_at)}</span>
         </div>
-        <p className="text-xs text-gray-400 truncate">{conv.listingTitle}</p>
-        {last && (
+        {conv.listing && (
+          <p className="text-xs text-gray-400 truncate">{conv.listing.title}</p>
+        )}
+        {conv.last_message && (
           <p className={cn("text-sm truncate mt-0.5", unread > 0 ? "text-gray-800" : "text-gray-500")}>
-            {last.senderId === "me" ? "You: " : ""}{last.body}
+            {conv.last_message.sender.id === myId ? "You: " : ""}
+            {conv.last_message.content}
           </p>
         )}
       </div>
@@ -111,20 +112,16 @@ function ConversationRow({
 function Bubble({ msg, isMe }: { msg: Message; isMe: boolean }) {
   return (
     <div className={cn("flex items-end gap-2 max-w-[80%]", isMe ? "ml-auto flex-row-reverse" : "mr-auto")}>
-      <div
-        className={cn(
-          "rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
-          isMe
-            ? "rounded-br-sm bg-emerald-600 text-white"
-            : "rounded-bl-sm bg-white border border-gray-100 text-gray-800 shadow-sm",
-        )}
-      >
-        <p>{msg.body}</p>
+      <div className={cn(
+        "rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+        isMe
+          ? "rounded-br-sm bg-emerald-600 text-white"
+          : "rounded-bl-sm bg-white border border-gray-100 text-gray-800 shadow-sm",
+      )}>
+        <p>{msg.content}</p>
         <p className={cn("mt-1 text-right text-[11px]", isMe ? "text-emerald-200" : "text-gray-400")}>
-          {formatMessageTime(msg.sentAt)}
-          {isMe && (
-            <span className="ml-1">{msg.read ? "✓✓" : "✓"}</span>
-          )}
+          {formatMessageTime(msg.created_at)}
+          {isMe && <span className="ml-1">{msg.is_read ? "✓✓" : "✓"}</span>}
         </p>
       </div>
     </div>
@@ -133,141 +130,89 @@ function Bubble({ msg, isMe }: { msg: Message; isMe: boolean }) {
 
 // ─── Chat header ─────────────────────────────────────────────────────────────
 
-function ChatHeader({
-  conv,
-  onBack,
-  onDelete,
-}: {
+function ChatHeader({ conv, myId, isConnected, onBack }: {
   conv: Conversation;
+  myId: number;
+  isConnected: boolean;
   onBack: () => void;
-  onDelete: () => void;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const other = getOther(conv, myId);
 
   return (
     <div className="flex items-center gap-3 border-b border-gray-100 bg-white px-4 py-3 shrink-0">
-      {/* Back button — mobile only */}
       <button
         type="button"
         onClick={onBack}
         className="md:hidden flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 transition-colors"
-        aria-label="Back to conversations"
+        aria-label="Back"
       >
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
           <path fillRule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" />
         </svg>
       </button>
 
-      <Avatar initial={conv.contactInitial} avatar={conv.contactAvatar} />
-
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900">{conv.contactName}</p>
-        <Link
-          href={`/listings/${conv.listingId}`}
-          className="text-xs text-emerald-600 hover:underline truncate block"
-        >
-          {conv.listingTitle}
-        </Link>
+      <div className="relative">
+        <Avatar username={other.username} src={other.profile_picture} />
+        <span className={cn(
+          "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white",
+          isConnected ? "bg-emerald-400" : "bg-gray-300",
+        )} />
       </div>
 
-      {/* Listing thumbnail */}
-      {conv.listingImage && (
-        <Link href={`/listings/${conv.listingId}`} className="hidden sm:block shrink-0">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-900">{other.username}</p>
+        {conv.listing && (
+          <Link href={`/listings/${conv.listing.id}`} className="text-xs text-emerald-600 hover:underline truncate block">
+            {conv.listing.title}
+          </Link>
+        )}
+      </div>
+
+      {conv.listing?.primary_image && (
+        <Link href={`/listings/${conv.listing.id}`} className="hidden sm:block shrink-0">
           <div className="relative h-10 w-14 rounded-lg overflow-hidden bg-gray-100">
-            <Image src={conv.listingImage} alt={conv.listingTitle} fill className="object-cover" />
+            <Image src={conv.listing.primary_image} alt={conv.listing.title} fill className="object-cover" />
           </div>
         </Link>
       )}
-
-      {/* Price */}
-      <p className="hidden sm:block shrink-0 text-sm font-bold text-emerald-600">
-        {conv.listingCurrency} {conv.listingPrice.toLocaleString()}
-      </p>
-
-      {/* Menu */}
-      <div className="relative">
-        <button
-          type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          className="flex items-center justify-center rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 transition-colors"
-          aria-label="Conversation options"
-        >
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
-            <path d="M3 10a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM8.5 10a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0ZM15.5 8.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" />
-          </svg>
-        </button>
-        {menuOpen && (
-          <div className="absolute right-0 top-full mt-1 w-40 rounded-xl border border-gray-100 bg-white py-1 shadow-lg z-10">
-            <Link
-              href={`/listings/${conv.listingId}`}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              onClick={() => setMenuOpen(false)}
-            >
-              View listing
-            </Link>
-            <button
-              type="button"
-              onClick={() => { setMenuOpen(false); onDelete(); }}
-              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-            >
-              Delete conversation
-            </button>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
 
-// ─── Input bar ────────────────────────────────────────────────────────────────
+// ─── Message input ────────────────────────────────────────────────────────────
 
-function MessageInput({
-  onSend,
-  disabled,
-}: {
-  onSend: (body: string) => void;
-  disabled?: boolean;
-}) {
+function MessageInput({ onSend, disabled }: { onSend: (text: string) => void; disabled?: boolean }) {
   const [value, setValue] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const ref = useRef<HTMLTextAreaElement>(null);
 
-  function handleSubmit(e?: React.FormEvent) {
+  function submit(e?: React.FormEvent) {
     e?.preventDefault();
-    const body = value.trim();
-    if (!body) return;
-    onSend(body);
+    const text = value.trim();
+    if (!text) return;
+    onSend(text);
     setValue("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+    if (ref.current) ref.current.style.height = "auto";
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
   }
 
-  function handleInput(e: React.ChangeEvent<HTMLTextAreaElement>) {
+  function onInput(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setValue(e.target.value);
-    // Auto-grow textarea
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex items-end gap-3 border-t border-gray-100 bg-white px-4 py-3 shrink-0"
-    >
+    <form onSubmit={submit} className="flex items-end gap-3 border-t border-gray-100 bg-white px-4 py-3 shrink-0">
       <textarea
-        ref={textareaRef}
+        ref={ref}
         rows={1}
         value={value}
-        onChange={handleInput}
-        onKeyDown={handleKeyDown}
+        onChange={onInput}
+        onKeyDown={onKeyDown}
         placeholder="Type a message… (Enter to send)"
         disabled={disabled}
         className={cn(
@@ -291,7 +236,64 @@ function MessageInput({
   );
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
+// ─── Chat thread (WebSocket-connected) ───────────────────────────────────────
+
+function ChatThread({ conv, myId, onBack }: { conv: Conversation; myId: number; onBack: () => void }) {
+  const { messages, isConnected, sendMessage, markAsRead } = useWebSocket(conv.id);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length]);
+
+  // Mark latest unread message as read when thread is open
+  useEffect(() => {
+    const unread = messages.filter((m) => m.sender.id !== myId && !m.is_read);
+    if (unread.length === 0) return;
+    const last = unread[unread.length - 1];
+    markAsRead(last.id);
+    markMessageRead(last.id).catch(() => {});
+  }, [messages, myId, markAsRead]);
+
+  const firstMessageDate = messages[0]?.created_at;
+
+  return (
+    <>
+      <ChatHeader conv={conv} myId={myId} isConnected={isConnected} onBack={onBack} />
+
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {firstMessageDate && (
+          <div className="flex items-center gap-3 my-2">
+            <div className="flex-1 border-t border-gray-200" />
+            <span className="text-xs text-gray-400 shrink-0">
+              {new Date(firstMessageDate).toLocaleDateString("en-ZW", { weekday: "long", day: "numeric", month: "long" })}
+            </span>
+            <div className="flex-1 border-t border-gray-200" />
+          </div>
+        )}
+
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-gray-400">
+              {isConnected ? "No messages yet. Say hello!" : "Connecting…"}
+            </p>
+          </div>
+        )}
+
+        {messages.map((msg) => (
+          <Bubble key={msg.id} msg={msg} isMe={msg.sender.id === myId} />
+        ))}
+
+        <div ref={endRef} />
+      </div>
+
+      <MessageInput onSend={sendMessage} disabled={!isConnected} />
+    </>
+  );
+}
+
+// ─── Empty states ─────────────────────────────────────────────────────────────
 
 function EmptyInbox() {
   return (
@@ -305,10 +307,7 @@ function EmptyInbox() {
       <p className="mt-1 text-xs text-gray-400 max-w-xs">
         When someone contacts you about a listing, the conversation will appear here.
       </p>
-      <Link
-        href="/listings"
-        className="mt-5 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
-      >
+      <Link href="/listings" className="mt-5 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">
         Browse Listings
       </Link>
     </div>
@@ -328,95 +327,93 @@ function NothingSelected() {
   );
 }
 
+// ─── Skeleton loader ──────────────────────────────────────────────────────────
+
+function ListSkeleton() {
+  return (
+    <>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <div key={n} className="flex gap-3 px-4 py-4 border-b border-gray-50">
+          <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-gray-100" />
+          <div className="flex-1 space-y-2">
+            <div className="flex justify-between gap-2">
+              <div className="h-3 w-28 animate-pulse rounded bg-gray-100" />
+              <div className="h-3 w-10 animate-pulse rounded bg-gray-100" />
+            </div>
+            <div className="h-3 w-40 animate-pulse rounded bg-gray-100" />
+            <div className="h-3 w-32 animate-pulse rounded bg-gray-100" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MessagesPage() {
   const { user } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeId, setActiveId]           = useState<string | null>(null);
-  const [active, setActive]               = useState<Conversation | null>(null);
-  const [search, setSearch]               = useState("");
-  const [showList, setShowList]           = useState(true); // mobile: toggle panel
-  const [mounted, setMounted]             = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const myId = (user as { id?: number } | null)?.id ?? 0;
 
-  // Initial load
-  useEffect(() => {
-    setConversations(getConversations());
-    setMounted(true);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [hasMore, setHasMore]             = useState(false);
+  const [page, setPage]                   = useState(1);
+  const [loading, setLoading]             = useState(true);
+  const [loadingMore, setLoadingMore]     = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
+
+  const [activeConv, setActiveConv] = useState<Conversation | null>(null);
+  const [search, setSearch]         = useState("");
+  const [showList, setShowList]     = useState(true);
+
+  const loadConversations = useCallback(async (p: number, append = false) => {
+    if (append) setLoadingMore(true); else setLoading(true);
+    setError(null);
+    try {
+      const data = await getConversations(p);
+      setConversations((prev) => append ? [...prev, ...data.results] : data.results);
+      setHasMore(data.next !== null);
+      setPage(p);
+    } catch {
+      setError("Failed to load conversations. Please try again.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
   }, []);
 
-  // Load active conversation and mark read
   useEffect(() => {
-    if (!activeId) { setActive(null); return; }
-    const conv = getConversation(activeId);
-    if (!conv) return;
-    markConversationRead(activeId);
-    const updated = { ...conv, messages: conv.messages.map((m) => ({ ...m, read: true })) };
-    setActive(updated);
-    setConversations(getConversations());
-  }, [activeId]);
+    loadConversations(1);
+  }, [loadConversations]);
 
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [active?.messages.length]);
-
-  function openConversation(id: string) {
-    setActiveId(id);
-    setShowList(false); // on mobile, hide list and show chat
+  function openConversation(conv: Conversation) {
+    setActiveConv(conv);
+    setShowList(false);
+    // Optimistically clear unread badge
+    setConversations((prev) =>
+      prev.map((c) => c.id === conv.id ? { ...c, unread_count: 0 } : c),
+    );
   }
 
   function handleBack() {
     setShowList(true);
-    setActiveId(null);
+    setActiveConv(null);
   }
 
-  function handleSend(body: string) {
-    if (!activeId) return;
-    const updated = sendMessage(activeId, body);
-    setActive(updated);
-    setConversations(getConversations());
-  }
+  const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
 
-  function handleDelete(id: string) {
-    deleteConversation(id);
-    setConversations(getConversations());
-    if (activeId === id) { setActiveId(null); setShowList(true); }
-  }
-
-  const filtered = conversations.filter((c) =>
-    c.contactName.toLowerCase().includes(search.toLowerCase()) ||
-    c.listingTitle.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const totalUnread = conversations.reduce(
-    (sum, c) => sum + c.messages.filter((m) => m.senderId !== "me" && !m.read).length,
-    0,
-  );
-
-  if (!mounted) {
+  const filtered = conversations.filter((c) => {
+    const q = search.toLowerCase();
+    if (!q) return true;
+    const other = getOther(c, myId);
     return (
-      <div className="flex h-[calc(100dvh-3.5rem-2rem)] gap-0 rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <div className="w-80 shrink-0 border-r border-gray-100 bg-white">
-          {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="flex gap-3 px-4 py-4 border-b border-gray-50">
-              <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-gray-100" />
-              <div className="flex-1 space-y-2">
-                <div className="h-3 w-28 animate-pulse rounded bg-gray-100" />
-                <div className="h-3 w-40 animate-pulse rounded bg-gray-100" />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="flex-1 bg-gray-50 hidden md:block" />
-      </div>
+      other.username.toLowerCase().includes(q) ||
+      (c.listing?.title.toLowerCase().includes(q) ?? false)
     );
-  }
+  });
 
   return (
     <div className="flex flex-col">
-      {/* Page heading — outside the panel */}
       <div className="mb-4 flex items-center justify-between">
         <div>
           <BackButton href="/dashboard" label="Dashboard" className="-ml-1 mb-1" />
@@ -428,22 +425,19 @@ export default function MessagesPage() {
               </span>
             )}
           </h1>
-          <p className="mt-0.5 text-sm text-gray-500">{conversations.length} conversation{conversations.length !== 1 ? "s" : ""}</p>
+          <p className="mt-0.5 text-sm text-gray-500">
+            {loading ? "Loading…" : `${conversations.length} conversation${conversations.length !== 1 ? "s" : ""}`}
+          </p>
         </div>
       </div>
 
-      {/* Split-pane inbox */}
       <div className="flex h-[calc(100dvh-11rem)] rounded-2xl border border-gray-100 overflow-hidden shadow-sm bg-white">
 
         {/* ── Conversation list ── */}
-        <div
-          className={cn(
-            "flex flex-col w-full md:w-80 lg:w-96 shrink-0 border-r border-gray-100",
-            // mobile: hide when viewing a chat
-            showList ? "flex" : "hidden md:flex",
-          )}
-        >
-          {/* Search */}
+        <div className={cn(
+          "flex flex-col w-full md:w-80 lg:w-96 shrink-0 border-r border-gray-100",
+          showList ? "flex" : "hidden md:flex",
+        )}>
           <div className="border-b border-gray-100 p-3">
             <div className="relative">
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
@@ -459,65 +453,61 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* List */}
           <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-            {filtered.length === 0 ? (
-              conversations.length === 0 ? <EmptyInbox /> : (
-                <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-                  <p className="text-sm text-gray-500">No conversations match your search.</p>
-                </div>
-              )
+            {loading ? (
+              <ListSkeleton />
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center gap-3">
+                <p className="text-sm text-red-600">{error}</p>
+                <button
+                  type="button"
+                  onClick={() => loadConversations(1)}
+                  className="text-xs font-medium text-emerald-600 hover:underline"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : filtered.length === 0 ? (
+              conversations.length === 0
+                ? <EmptyInbox />
+                : <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                    <p className="text-sm text-gray-500">No conversations match your search.</p>
+                  </div>
             ) : (
-              filtered.map((conv) => (
-                <ConversationRow
-                  key={conv.id}
-                  conv={conv}
-                  active={activeId === conv.id}
-                  onClick={() => openConversation(conv.id)}
-                />
-              ))
+              <>
+                {filtered.map((conv) => (
+                  <ConversationRow
+                    key={conv.id}
+                    conv={conv}
+                    active={activeConv?.id === conv.id}
+                    myId={myId}
+                    onClick={() => openConversation(conv)}
+                  />
+                ))}
+                {hasMore && (
+                  <div className="p-3">
+                    <button
+                      type="button"
+                      onClick={() => loadConversations(page + 1, true)}
+                      disabled={loadingMore}
+                      className="w-full rounded-lg border border-gray-200 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                    >
+                      {loadingMore ? "Loading…" : "Load more"}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
 
         {/* ── Chat thread ── */}
-        <div
-          className={cn(
-            "flex flex-col flex-1 min-w-0 bg-gray-50",
-            !showList ? "flex" : "hidden md:flex",
-          )}
-        >
-          {active ? (
-            <>
-              {/* Header */}
-              <ChatHeader
-                conv={active}
-                onBack={handleBack}
-                onDelete={() => handleDelete(active.id)}
-              />
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-                {/* Date separator */}
-                {active.messages.length > 0 && (
-                  <div className="flex items-center gap-3 my-2">
-                    <div className="flex-1 border-t border-gray-200" />
-                    <span className="text-xs text-gray-400 shrink-0">
-                      {new Date(active.messages[0].sentAt).toLocaleDateString("en-ZW", { weekday: "long", day: "numeric", month: "long" })}
-                    </span>
-                    <div className="flex-1 border-t border-gray-200" />
-                  </div>
-                )}
-
-                {active.messages.map((msg) => (
-                  <Bubble key={msg.id} msg={msg} isMe={msg.senderId === "me"} />
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input */}
-              <MessageInput onSend={handleSend} />
-            </>
+        <div className={cn(
+          "flex flex-col flex-1 min-w-0 bg-gray-50",
+          !showList ? "flex" : "hidden md:flex",
+        )}>
+          {activeConv && myId ? (
+            <ChatThread key={activeConv.id} conv={activeConv} myId={myId} onBack={handleBack} />
           ) : (
             <NothingSelected />
           )}
