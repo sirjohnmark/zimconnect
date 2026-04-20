@@ -67,6 +67,8 @@ export function LoginForm() {
         } else {
           setFormError(err.message);
         }
+      } else if (err instanceof Error) {
+        setFormError(err.message);
       } else {
         setFormError("Something went wrong. Please try again.");
       }

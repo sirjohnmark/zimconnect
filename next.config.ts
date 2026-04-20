@@ -1,22 +1,38 @@
 import type { NextConfig } from "next";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
+
+  // Proxy /api/* → Django backend to avoid CORS in development and production
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${API_URL}/api/:path*`,
+      },
+      {
+        source: "/ws/:path*",
+        destination: `${API_URL}/ws/:path*`,
+      },
+    ];
+  },
+
   images: {
     remotePatterns: [
-      // Deterministic free photos — used in mock data (picsum.photos/seed/N/W/H)
+      {
+        protocol: "https",
+        hostname: "api.sanganai.co.zw",
+      },
       {
         protocol: "https",
         hostname: "picsum.photos",
       },
-      // Legacy placeholder — keep until all mock data is updated
       {
         protocol: "https",
         hostname: "via.placeholder.com",
       },
-      // Add your production storage hostname here when ready, e.g.:
-      // { protocol: "https", hostname: "res.cloudinary.com" },
-      // { protocol: "https", hostname: "your-s3-bucket.s3.amazonaws.com" },
     ],
   },
 };

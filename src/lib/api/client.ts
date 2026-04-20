@@ -1,23 +1,11 @@
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
-
-/**
- * Safety check — called before any real API request.
- * Throws immediately in production when no real API URL is configured,
- * so callers can catch and fall back to mock data without a network timeout.
- */
-function assertApiAvailable() {
-  const isProduction = process.env.NODE_ENV === "production";
-  const hasRealApi =
-    !!process.env.NEXT_PUBLIC_API_URL &&
-    !process.env.NEXT_PUBLIC_API_URL.includes("localhost");
-  if (isProduction && !hasRealApi) {
-    throw new NetworkError(
-      "No backend API configured. Set NEXT_PUBLIC_API_URL to enable live data.",
-    );
-  }
-}
+// In the browser use relative paths so the Next.js rewrite proxy handles them (avoids CORS).
+// On the server (SSR/ISR) use the full API URL directly.
+const BASE_URL =
+  typeof window === "undefined"
+    ? (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
+    : "";
 
 // ─── Error types ─────────────────────────────────────────────────────────────
 
@@ -61,11 +49,11 @@ export interface RequestOptions extends Omit<RequestInit, "body"> {
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  assertApiAvailable();
   const { params, body, next, headers: extraHeaders, ...rest } = options;
 
-  // Build URL
-  const url = new URL(path.startsWith("http") ? path : `${BASE_URL}${path}`);
+  // Build URL — on the server use absolute URL, in the browser use relative path (proxied by Next.js)
+  const rawUrl = path.startsWith("http") ? path : `${BASE_URL}${path}`;
+  const url = new URL(rawUrl, typeof window !== "undefined" ? window.location.href : "http://localhost");
   if (params) {
     for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
       if (value !== undefined && value !== null) {
@@ -90,11 +78,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   let res: Response;
   try {
     res = await fetch(url.toString(), {
-      credentials: "include",
       ...rest,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
-      // Next.js-specific cache config
       ...(next ? { next } : {}),
     });
   } catch (err) {
