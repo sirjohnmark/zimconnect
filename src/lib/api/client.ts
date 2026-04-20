@@ -75,11 +75,17 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   // Build headers
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
     Accept: "application/json",
-    ...extraHeaders,
+    ...(extraHeaders as Record<string, string>),
   };
+
+  // Inject Bearer token when available (client-side only)
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("sanganai_access");
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+  }
 
   let res: Response;
   try {
@@ -108,14 +114,18 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   if (!res.ok) {
-    const message =
-      typeof data === "object" &&
-      data !== null &&
-      "message" in data &&
-      typeof (data as Record<string, unknown>).message === "string"
-        ? (data as { message: string }).message
-        : `${res.status} ${res.statusText}`;
-
+    // API envelope: { error: { code, message, details } }
+    // Fallback: { message: "..." } or plain status text
+    let message = `${res.status} ${res.statusText}`;
+    if (typeof data === "object" && data !== null) {
+      const d = data as Record<string, unknown>;
+      const errObj = d["error"] as Record<string, unknown> | undefined;
+      if (typeof errObj?.["message"] === "string") {
+        message = errObj["message"] as string;
+      } else if (typeof d["message"] === "string") {
+        message = d["message"] as string;
+      }
+    }
     throw new ApiError(res.status, res.statusText, message, data);
   }
 

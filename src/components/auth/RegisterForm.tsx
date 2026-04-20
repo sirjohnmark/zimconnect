@@ -6,13 +6,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
+import { useAuth } from "@/lib/auth/useAuth";
 import { useAuthContext } from "@/lib/auth/AuthProvider";
+import {
+  sendEmailOtp, verifyEmailOtp,
+  sendPhoneOtp, verifyPhoneOtp,
+} from "@/lib/api/auth";
 import { generateAndStoreOtp, verifyOtp } from "@/lib/auth/auth";
 import { ApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
@@ -84,12 +91,8 @@ function Alert({ message, type = "error" }: { message: string; type?: "error" | 
 
 type OtpStatus = "idle" | "error" | "success";
 
-function OtpInput({
-  digits,
-  onChange,
-  status = "idle",
-}: {
-  digits: string[]; // always length 6
+function OtpInput({ digits, onChange, status = "idle" }: {
+  digits: string[];
   onChange: (next: string[]) => void;
   status?: OtpStatus;
 }) {
@@ -97,13 +100,11 @@ function OtpInput({
 
   function handleChange(idx: number, e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/\D/g, "");
-    // Paste: fill from this position onward
     if (raw.length > 1) {
       const next = [...digits];
       for (let i = 0; i < raw.length && idx + i < 6; i++) next[idx + i] = raw[i];
       onChange(next);
-      const lastFilled = Math.min(idx + raw.length, 5);
-      inputs.current[lastFilled]?.focus();
+      inputs.current[Math.min(idx + raw.length, 5)]?.focus();
       return;
     }
     const next = [...digits];
@@ -115,13 +116,9 @@ function OtpInput({
   function handleKeyDown(idx: number, e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Backspace") {
       if (digits[idx]) {
-        const next = [...digits];
-        next[idx] = "";
-        onChange(next);
+        const next = [...digits]; next[idx] = ""; onChange(next);
       } else if (idx > 0) {
-        const next = [...digits];
-        next[idx - 1] = "";
-        onChange(next);
+        const next = [...digits]; next[idx - 1] = ""; onChange(next);
         inputs.current[idx - 1]?.focus();
       }
     } else if (e.key === "ArrowLeft" && idx > 0) {
@@ -174,9 +171,9 @@ export function RegisterForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { register: registerAuth } = useAuthContext();
-  const redirectTo   = searchParams.get("redirect") ?? "/dashboard";
+  const { login } = useAuth();
+  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
 
-  // multi-step state
   const [step, setStep]             = useState<1 | 2 | 3>(1);
   const [formData, setFormData]     = useState<RegisterInput | null>(null);
   const [verifyMethod, setMethod]   = useState<"email" | "phone">("email");
@@ -189,7 +186,7 @@ export function RegisterForm() {
   const [verifying, setVerifying]   = useState(false);
   const [resendCooldown, setCooldown] = useState(0);
 
-  const otpCode = otpDigits.join("");
+  const otpCode     = otpDigits.join("");
   const otpComplete = otpDigits.every((d) => d !== "");
 
   const {
@@ -200,7 +197,6 @@ export function RegisterForm() {
     resolver: zodResolver(registerSchema),
   });
 
-  // Auto-verify the moment all 6 digits are filled
   useEffect(() => {
     if (step === 3 && otpComplete && !verifying && otpStatus === "idle") {
       handleVerifyAndRegister();
@@ -210,14 +206,27 @@ export function RegisterForm() {
 
   // ── Step 1: collect details ───────────────────────────────────────────────
 
-  function onDetailsSubmit(data: RegisterInput) {
+  async function onDetailsSubmit(data: RegisterInput) {
     setFormError(null);
+
+    if (!USE_MOCK) {
+      // Real API: create account now — server sends OTP automatically
+      try {
+        await registerAuth(data);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 409) {
+          setFormError("An account with this email already exists.");
+        } else if (err instanceof ApiError) {
+          setFormError(err.message);
+        } else {
+          setFormError("Something went wrong. Please try again.");
+        }
+        return;
+      }
+    }
+
     setFormData(data);
-
-    // Decide default verify method based on what user filled
-    if (data.phone) setMethod("phone");
-    else setMethod("email");
-
+    setMethod(data.phone ? "phone" : "email");
     setStep(2);
   }
 
@@ -228,73 +237,83 @@ export function RegisterForm() {
     setSending(true);
     setOtpError(null);
 
-    const contact = verifyMethod === "email" ? formData.email : (formData.phone ?? "");
-    const code    = generateAndStoreOtp(contact, verifyMethod);
+    try {
+      if (USE_MOCK) {
+        const contact = verifyMethod === "email" ? formData.email : (formData.phone ?? "");
+        const code    = generateAndStoreOtp(contact, verifyMethod);
+        await new Promise((r) => setTimeout(r, 800));
+        setSentCode(code);
+      } else {
+        if (verifyMethod === "email") await sendEmailOtp();
+        else await sendPhoneOtp();
+      }
 
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 800));
-
-    // In mock mode we reveal the code so the user can complete registration.
-    // In production this would actually send an email/SMS — never expose the code.
-    setSentCode(code);
-    setSending(false);
-    setStep(3);
-
-    // 60s resend cooldown
-    setCooldown(60);
-    const interval = setInterval(() => {
-      setCooldown((c) => {
-        if (c <= 1) { clearInterval(interval); return 0; }
-        return c - 1;
-      });
-    }, 1000);
+      setStep(3);
+      startResendCooldown();
+    } catch (err) {
+      setOtpError(err instanceof ApiError ? err.message : "Failed to send code. Please try again.");
+    } finally {
+      setSending(false);
+    }
   }
 
   async function handleResend() {
     if (resendCooldown > 0 || !formData) return;
-    const contact = verifyMethod === "email" ? formData.email : (formData.phone ?? "");
-    const code    = generateAndStoreOtp(contact, verifyMethod);
-    setSentCode(code);
+
+    if (USE_MOCK) {
+      const contact = verifyMethod === "email" ? formData.email : (formData.phone ?? "");
+      const code    = generateAndStoreOtp(contact, verifyMethod);
+      setSentCode(code);
+    } else {
+      try {
+        if (verifyMethod === "email") await sendEmailOtp();
+        else await sendPhoneOtp();
+      } catch {
+        return;
+      }
+    }
+
     setOtpDigits(Array(6).fill(""));
     setOtpStatus("idle");
     setOtpError(null);
+    startResendCooldown();
+  }
+
+  function startResendCooldown() {
     setCooldown(60);
     const interval = setInterval(() => {
-      setCooldown((c) => {
-        if (c <= 1) { clearInterval(interval); return 0; }
-        return c - 1;
-      });
+      setCooldown((c) => { if (c <= 1) { clearInterval(interval); return 0; } return c - 1; });
     }, 1000);
   }
 
-  // ── Step 3: verify OTP + create account ──────────────────────────────────
+  // ── Step 3: verify OTP + finalise ─────────────────────────────────────────
 
   async function handleVerifyAndRegister() {
     if (!formData || !otpComplete) return;
     setVerifying(true);
     setOtpError(null);
 
-    const result = verifyOtp(otpCode);
-
-    if (!result.valid) {
-      setOtpStatus("error");
-      setOtpError(result.reason ?? "Incorrect code. Please try again.");
-      setVerifying(false);
-      // Reset digits after short delay so user can re-enter
-      setTimeout(() => {
-        setOtpDigits(Array(6).fill(""));
-        setOtpStatus("idle");
-      }, 1000);
-      return;
-    }
-
-    // Code accepted — show success state, then create account
-    setOtpStatus("success");
-    setOtpError(null);
-
     try {
-      await registerAuth(formData);
-      // Brief pause so user sees the green success state
+      if (USE_MOCK) {
+        const result = verifyOtp(otpCode);
+        if (!result.valid) {
+          setOtpStatus("error");
+          setOtpError(result.reason ?? "Incorrect code. Please try again.");
+          setTimeout(() => { setOtpDigits(Array(6).fill("")); setOtpStatus("idle"); }, 1000);
+          return;
+        }
+        // Mock: account already staged, just log in
+        setOtpStatus("success");
+        await registerAuth(formData);
+      } else {
+        // Real API: verify OTP then login to get tokens
+        if (verifyMethod === "email") await verifyEmailOtp(otpCode);
+        else await verifyPhoneOtp(otpCode);
+
+        setOtpStatus("success");
+        await login({ email: formData.email, password: formData.password });
+      }
+
       await new Promise((r) => setTimeout(r, 600));
       router.push(redirectTo);
       router.refresh();
@@ -303,8 +322,10 @@ export function RegisterForm() {
       if (err instanceof ApiError && err.status === 409) {
         setFormError("An account with this email already exists.");
         setStep(1);
+      } else if (err instanceof ApiError) {
+        setOtpError(err.message);
       } else {
-        setOtpError("Account creation failed. Please try again.");
+        setOtpError("Verification failed. Please try again.");
       }
     } finally {
       setVerifying(false);
@@ -327,13 +348,34 @@ export function RegisterForm() {
         <form onSubmit={handleSubmit(onDetailsSubmit)} noValidate className="space-y-4">
           {formError && <Alert message={formError} />}
 
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              {...register("first_name")}
+              type="text"
+              label="First Name"
+              placeholder="Alice"
+              autoComplete="given-name"
+              error={errors.first_name?.message}
+              required
+            />
+            <Input
+              {...register("last_name")}
+              type="text"
+              label="Last Name"
+              placeholder="Smith"
+              autoComplete="family-name"
+              error={errors.last_name?.message}
+              required
+            />
+          </div>
+
           <Input
-            {...register("name")}
+            {...register("username")}
             type="text"
-            label="Full Name"
-            placeholder="John Doe"
-            autoComplete="name"
-            error={errors.name?.message}
+            label="Username"
+            placeholder="alice_zw"
+            autoComplete="username"
+            error={errors.username?.message}
             required
           />
           <Input
@@ -351,9 +393,29 @@ export function RegisterForm() {
             label="Phone Number"
             placeholder="e.g. 0771234567"
             autoComplete="tel"
-            hint="Used to verify your account via SMS. Optional if verifying by email."
+            hint="Optional — used to verify via SMS."
             error={errors.phone?.message}
           />
+
+          {/* Role selector */}
+          <div className="space-y-1.5">
+            <span className="block text-sm font-medium text-gray-700">I want to <span className="text-red-500">*</span></span>
+            {errors.role && <p className="text-xs text-red-600">{errors.role.message}</p>}
+            <div className="grid grid-cols-2 gap-3">
+              {(["BUYER", "SELLER"] as const).map((r) => (
+                <label key={r} className="cursor-pointer">
+                  <input {...register("role")} type="radio" value={r} className="sr-only" />
+                  <span className={cn(
+                    "flex items-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors",
+                    "has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50 border-gray-200 hover:border-gray-300",
+                  )}>
+                    {r === "BUYER" ? "🛍️ Buy goods" : "🏪 Sell goods"}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <Input
             {...register("password")}
             type="password"
@@ -364,12 +426,12 @@ export function RegisterForm() {
             required
           />
           <Input
-            {...register("confirmPassword")}
+            {...register("confirm_password")}
             type="password"
             label="Confirm Password"
             placeholder="Re-enter your password"
             autoComplete="new-password"
-            error={errors.confirmPassword?.message}
+            error={errors.confirm_password?.message}
             required
           />
 
@@ -379,7 +441,7 @@ export function RegisterForm() {
         </form>
       )}
 
-      {/* ── Step 2: Choose method ── */}
+      {/* ── Step 2: Choose verify method ── */}
       {step === 2 && formData && (
         <div className="space-y-5">
           <p className="text-sm text-gray-600">
@@ -387,21 +449,15 @@ export function RegisterForm() {
           </p>
 
           <div className="space-y-2.5">
-            {/* Email option */}
             <button
               type="button"
               onClick={() => setMethod("email")}
               className={cn(
                 "w-full flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-colors",
-                verifyMethod === "email"
-                  ? "border-emerald-500 bg-emerald-50"
-                  : "border-gray-200 bg-white hover:border-gray-300",
+                verifyMethod === "email" ? "border-emerald-500 bg-emerald-50" : "border-gray-200 bg-white hover:border-gray-300",
               )}
             >
-              <span className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-                verifyMethod === "email" ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400",
-              )}>
+              <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", verifyMethod === "email" ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400")}>
                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                   <path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z" />
                   <path d="m19 8.839-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z" />
@@ -418,7 +474,6 @@ export function RegisterForm() {
               )}
             </button>
 
-            {/* Phone option */}
             <button
               type="button"
               onClick={() => setMethod("phone")}
@@ -430,10 +485,7 @@ export function RegisterForm() {
                 : "border-gray-200 bg-white hover:border-gray-300",
               )}
             >
-              <span className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-                verifyMethod === "phone" ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400",
-              )}>
+              <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", verifyMethod === "phone" ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400")}>
                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                   <path fillRule="evenodd" d="M2 3.5A1.5 1.5 0 0 1 3.5 2h1.148a1.5 1.5 0 0 1 1.465 1.175l.716 3.223a1.5 1.5 0 0 1-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 0 0 6.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 0 1 1.767-1.052l3.223.716A1.5 1.5 0 0 1 18 16.352V17.5a1.5 1.5 0 0 1-1.5 1.5H15c-1.149 0-2.263-.15-3.326-.43A13.022 13.022 0 0 1 2.43 8.326 13.019 13.019 0 0 1 2 5V3.5Z" clipRule="evenodd" />
                 </svg>
@@ -460,12 +512,7 @@ export function RegisterForm() {
             >
               Back
             </button>
-            <Button
-              type="button"
-              className="flex-1"
-              loading={sending}
-              onClick={handleSendCode}
-            >
+            <Button type="button" className="flex-1" loading={sending} onClick={handleSendCode}>
               {sending ? "Sending…" : "Send Code"}
             </Button>
           </div>
@@ -475,8 +522,6 @@ export function RegisterForm() {
       {/* ── Step 3: Enter OTP ── */}
       {step === 3 && formData && (
         <div className="space-y-5">
-
-          {/* Success banner */}
           {otpStatus === "success" ? (
             <div className="flex flex-col items-center gap-3 py-4">
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
@@ -494,9 +539,7 @@ export function RegisterForm() {
                   {verifyMethod === "email" ? formData.email : formData.phone}
                 </span>
               </p>
-
-              {/* Dev helper — shows the mock OTP code */}
-              {sentCode && (
+              {USE_MOCK && sentCode && (
                 <Alert
                   type="info"
                   message={`Demo mode: your code is ${sentCode}. In production this is sent by ${verifyMethod === "email" ? "email" : "SMS"}.`}

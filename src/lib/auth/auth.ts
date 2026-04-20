@@ -14,6 +14,8 @@ import type { AuthUser } from "@/lib/api/auth";
 const SESSION_KEY      = "sanganai_user";
 const ACCOUNTS_KEY     = "sanganai_accounts";
 const PREFERENCES_KEY  = "sanganai_prefs";
+const ACCESS_TOKEN_KEY = "sanganai_access";
+const REFRESH_TOKEN_KEY = "sanganai_refresh";
 
 // ─── Stored account shape (includes password for mock validation) ─────────────
 
@@ -68,6 +70,30 @@ export function getStoredUser(): AuthUser | null {
 export function clearStoredUser(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(SESSION_KEY);
+}
+
+// ─── JWT tokens ───────────────────────────────────────────────────────────────
+
+export function saveTokens(access: string, refresh: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(ACCESS_TOKEN_KEY, access);
+  localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+}
+
+export function getAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export function clearTokens(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
 export function isStoredAuthenticated(): boolean {

@@ -2,25 +2,30 @@ import { api } from "./client";
 import type { Category } from "@/types/category";
 
 export interface GetCategoriesParams {
-  includeCount?: boolean;
+  page?: number;
+  page_size?: number;
 }
 
-export interface GetCategoryParams {
-  id: string;
+export interface PaginatedCategories {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Category[];
 }
 
-// ISR: revalidate category list every 10 minutes (low-churn data)
-const CATEGORIES_CACHE: NextFetchRequestConfig = { revalidate: 600 };
+const CACHE: NextFetchRequestConfig = { revalidate: 600 };
 
-export async function getCategories(params: GetCategoriesParams = {}): Promise<Category[]> {
-  return api.get<Category[]>("/categories", {
-    params: { include_count: params.includeCount },
-    next: CATEGORIES_CACHE,
+export async function getCategories(params: GetCategoriesParams = {}): Promise<PaginatedCategories> {
+  return api.get<PaginatedCategories>("/api/v1/categories/", {
+    params: params as Record<string, string | number | undefined | null>,
+    next: CACHE,
   });
 }
 
-export async function getCategory({ id }: GetCategoryParams): Promise<Category> {
-  return api.get<Category>(`/categories/${id}`, {
-    next: CATEGORIES_CACHE,
-  });
+export async function getCategoryTree(): Promise<Category[]> {
+  return api.get<Category[]>("/api/v1/categories/tree/", { next: CACHE });
+}
+
+export async function getCategory(id: number): Promise<Category> {
+  return api.get<Category>(`/api/v1/categories/${id}/`, { next: CACHE });
 }
