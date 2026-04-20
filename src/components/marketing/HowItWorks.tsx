@@ -38,42 +38,44 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="bg-white py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section id="how-it-works" className="relative overflow-hidden bg-near-black py-14 sm:py-20">
+      {/* Subtle background */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:28px_28px]" />
+        <div className="absolute right-0 top-0 h-80 w-80 translate-x-1/3 -translate-y-1/3 rounded-full bg-apple-blue opacity-[0.08] blur-[80px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
-        <div className="text-center mb-14">
+        <div className="mb-12">
           <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">Simple process</p>
-          <h2 className="text-2xl font-semibold text-near-black sm:text-[32px] tracking-tight">How It Works</h2>
-          <p className="mt-3 text-[rgba(0,0,0,0.48)] max-w-xl mx-auto">
+          <h2 className="text-2xl font-semibold text-white sm:text-[32px] tracking-tight">How It Works</h2>
+          <p className="mt-2 text-[rgba(255,255,255,0.48)] max-w-md">
             Buying and selling on Sanganai is simple, fast, and free to start.
           </p>
         </div>
 
         {/* Steps */}
-        <div className="relative grid gap-6 sm:grid-cols-3">
-          {/* Connecting line (desktop) */}
-          <div className="pointer-events-none absolute top-10 left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] hidden h-px bg-border-base sm:block" aria-hidden="true" />
-
+        <div className="grid gap-4 sm:grid-cols-3">
           {STEPS.map(({ number, title, description, icon, cta }) => (
             <div
               key={number}
-              className="relative flex flex-col rounded-2xl border border-border-base bg-light-gray p-6 sm:items-center sm:text-center"
+              className="relative flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm"
             >
-              <div className="relative z-10 mb-5 flex h-20 w-20 sm:mx-auto items-center justify-center rounded-2xl bg-white shadow-sm border border-border-base">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-apple-blue/10 text-apple-blue">
-                  {icon}
-                </div>
-                <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-apple-blue text-[11px] font-bold text-white shadow">
-                  {number.replace("0", "")}
-                </span>
+              {/* Step number */}
+              <span className="mb-4 text-xs font-bold uppercase tracking-widest text-white/20">{number}</span>
+
+              {/* Icon */}
+              <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-apple-blue/10 text-apple-blue">
+                {icon}
               </div>
 
-              <h3 className="text-base font-semibold text-near-black">{title}</h3>
-              <p className="mt-2 text-sm text-[rgba(0,0,0,0.48)] leading-relaxed">{description}</p>
+              <h3 className="text-base font-semibold text-white">{title}</h3>
+              <p className="mt-2 flex-1 text-sm text-[rgba(255,255,255,0.48)] leading-relaxed">{description}</p>
               <Link
                 href={cta.href}
-                className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-apple-blue hover:opacity-80 transition-opacity"
+                className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-apple-blue hover:opacity-80 transition-opacity"
               >
                 {cta.label}
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

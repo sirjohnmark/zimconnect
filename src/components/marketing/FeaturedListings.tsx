@@ -19,15 +19,15 @@ export async function FeaturedListings() {
   if (listings.length === 0) return null;
 
   return (
-    <section className="bg-light-gray py-16 sm:py-24">
+    <section className="bg-white py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-1">Fresh picks</p>
-            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Featured Listings</h2>
-            <p className="mt-1.5 text-sm text-gray-500">Handpicked deals from across Zimbabwe</p>
+            <h2 className="text-2xl font-semibold text-near-black sm:text-[32px] tracking-tight">Featured Listings</h2>
+            <p className="mt-1.5 text-sm text-[rgba(0,0,0,0.48)]">Handpicked deals from across Zimbabwe</p>
           </div>
           <Link
             href="/listings"

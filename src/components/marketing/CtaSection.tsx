@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function CtaSection() {
   return (
-    <section className="bg-light-gray py-16 sm:py-24">
+    <section className="bg-light-gray py-14 sm:py-20">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl bg-near-black px-8 py-14 text-center sm:px-14" style={{ boxShadow: "rgba(0,0,0,0.22) 3px 5px 30px 0px" }}>
 
