@@ -346,7 +346,7 @@ export default function JobsDashboardPage() {
 
       {tab === "seeker" ? (
         <>
-          <CvUploadSection userId={user.id} userName={user.name} />
+          <CvUploadSection userId={String(user.id)} userName={user.name} />
 
           {/* My applications */}
           <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 space-y-3">
@@ -359,7 +359,7 @@ export default function JobsDashboardPage() {
         </>
       ) : (
         <>
-          <VerificationSection userId={user.id} />
+          <VerificationSection userId={String(user.id)} />
 
           {/* Post a job CTA */}
           <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 space-y-3">
