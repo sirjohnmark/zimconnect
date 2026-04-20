@@ -19,7 +19,7 @@ export default function ProfilePage() {
       <Card padding="lg">
         <Card.Header>
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center text-2xl font-bold text-emerald-600">
+            <div className="h-16 w-16 rounded-full bg-apple-blue/10 flex items-center justify-center text-2xl font-bold text-apple-blue">
               Y
             </div>
             <div className="flex-1">

@@ -19,24 +19,24 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: [
-    "bg-emerald-600 text-white",
-    "hover:bg-emerald-700 active:bg-emerald-800",
-    "focus-visible:ring-emerald-500",
-    "disabled:bg-emerald-300",
+    "rounded-full bg-apple-blue text-white",
+    "hover:opacity-90 active:opacity-80",
+    "focus-visible:ring-apple-blue",
+    "disabled:opacity-40",
   ].join(" "),
 
   secondary: [
-    "bg-gray-100 text-gray-800",
+    "rounded-lg bg-gray-100 text-gray-800",
     "hover:bg-gray-200 active:bg-gray-300",
     "focus-visible:ring-gray-400",
     "disabled:bg-gray-50 disabled:text-gray-400",
   ].join(" "),
 
   outline: [
-    "border border-emerald-600 text-emerald-700 bg-transparent",
-    "hover:bg-emerald-50 active:bg-emerald-100",
-    "focus-visible:ring-emerald-500",
-    "disabled:border-emerald-200 disabled:text-emerald-300",
+    "rounded-full border border-apple-blue text-apple-blue bg-transparent",
+    "hover:bg-apple-blue/[.06] active:bg-apple-blue/10",
+    "focus-visible:ring-apple-blue",
+    "disabled:opacity-40",
   ].join(" "),
 };
 
@@ -89,8 +89,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
       aria-busy={loading}
       className={cn(
         // Base
-        "inline-flex items-center justify-center rounded-md font-semibold",
-        "transition-colors duration-150",
+        "inline-flex items-center justify-center font-semibold",
+        "transition-all duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         "disabled:cursor-not-allowed",
         // Variant + size

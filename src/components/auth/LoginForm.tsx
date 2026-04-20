@@ -99,7 +99,7 @@ export function LoginForm() {
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700">Password</span>
-            <Link href="/forgot-password" className="text-xs text-emerald-600 hover:underline">
+            <Link href="/forgot-password" className="text-xs text-apple-blue hover:underline">
               Forgot password?
             </Link>
           </div>
@@ -121,7 +121,7 @@ export function LoginForm() {
       <Card.Footer>
         <p className="text-center text-sm text-gray-500">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-medium text-emerald-600 hover:underline">
+          <Link href="/register" className="font-medium text-apple-blue hover:underline">
             Create one
           </Link>
         </p>

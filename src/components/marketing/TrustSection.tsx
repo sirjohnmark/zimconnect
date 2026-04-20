@@ -38,40 +38,40 @@ const NUMBERS = [
 
 export function TrustSection() {
   return (
-    <section className="bg-emerald-600 py-16 sm:py-24">
+    <section className="bg-near-black py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-2">Why Sanganai</p>
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">Built for Zimbabweans</h2>
-          <p className="mt-3 text-emerald-100 max-w-xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-wider text-white/48 mb-2">Why Sanganai</p>
+          <h2 className="text-2xl font-semibold text-white sm:text-[32px] tracking-tight">Built for Zimbabweans</h2>
+          <p className="mt-3 text-[rgba(255,255,255,0.7)] max-w-xl mx-auto">
             Thousands of Zimbabweans trust Sanganai every day to buy, sell, and connect.
           </p>
         </div>
 
         {/* Trust pillars */}
-        <div className="grid gap-6 sm:grid-cols-3 mb-14">
+        <div className="grid gap-5 sm:grid-cols-3 mb-14">
           {TRUST_ITEMS.map(({ title, description, icon }) => (
             <div
               key={title}
-              className="rounded-2xl bg-white/10 p-6 backdrop-blur-sm border border-white/10"
+              className="rounded-2xl bg-dark-surface-1 p-6 border border-white/10"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 text-white mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-white mb-4">
                 {icon}
               </div>
               <h3 className="text-base font-semibold text-white">{title}</h3>
-              <p className="mt-2 text-sm text-emerald-100 leading-relaxed">{description}</p>
+              <p className="mt-2 text-sm text-[rgba(255,255,255,0.7)] leading-relaxed">{description}</p>
             </div>
           ))}
         </div>
 
         {/* Numbers bar */}
-        <div className="grid grid-cols-2 gap-4 rounded-2xl bg-white/10 p-6 sm:grid-cols-4 sm:gap-0 sm:divide-x sm:divide-white/20">
+        <div className="grid grid-cols-2 gap-4 rounded-2xl bg-dark-surface-1 p-6 sm:grid-cols-4 sm:gap-0 sm:divide-x sm:divide-white/10">
           {NUMBERS.map(({ value, label }) => (
             <div key={label} className="flex flex-col items-center py-2">
-              <p className="text-3xl font-extrabold text-white">{value}</p>
-              <p className="mt-1 text-xs font-medium text-emerald-200 uppercase tracking-wider">{label}</p>
+              <p className="text-3xl font-semibold text-white">{value}</p>
+              <p className="mt-1 text-xs font-medium text-[rgba(255,255,255,0.48)] uppercase tracking-wider">{label}</p>
             </div>
           ))}
         </div>

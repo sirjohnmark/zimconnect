@@ -132,9 +132,9 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
         "bg-white border border-gray-200 shadow-sm text-center",
         // Hover
         "transition-all duration-200 ease-out",
-        "hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-200 hover:bg-emerald-50",
+        "hover:-translate-y-0.5 hover:shadow-md hover:border-apple-blue/20 hover:bg-light-gray",
         // Focus
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue focus-visible:ring-offset-2",
         className,
       )}
       aria-label={count ? `${name} — ${count} listings` : name}
@@ -145,14 +145,14 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
           "flex h-12 w-12 items-center justify-center rounded-xl",
           "bg-gray-100 text-gray-500",
           "transition-colors duration-200",
-          "group-hover:bg-emerald-100 group-hover:text-emerald-600",
+          "group-hover:bg-apple-blue/10 group-hover:text-apple-blue",
         )}
       >
         <span className="h-6 w-6">{icon}</span>
       </span>
 
       {/* Name */}
-      <span className="text-sm font-semibold text-gray-800 leading-tight group-hover:text-emerald-700 transition-colors duration-200">
+      <span className="text-sm font-semibold text-gray-800 leading-tight group-hover:text-apple-blue transition-colors duration-200">
         {name}
       </span>
 

@@ -43,9 +43,9 @@ export function HowItWorks() {
 
         {/* Header */}
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-2">Simple process</p>
-          <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">How It Works</h2>
-          <p className="mt-3 text-gray-500 max-w-xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">Simple process</p>
+          <h2 className="text-2xl font-semibold text-near-black sm:text-[32px] tracking-tight">How It Works</h2>
+          <p className="mt-3 text-[rgba(0,0,0,0.48)] max-w-xl mx-auto">
             Buying and selling on Sanganai is simple, fast, and free to start.
           </p>
         </div>
@@ -53,28 +53,27 @@ export function HowItWorks() {
         {/* Steps */}
         <div className="relative grid gap-6 sm:grid-cols-3">
           {/* Connecting line (desktop) */}
-          <div className="pointer-events-none absolute top-10 left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] hidden h-px bg-gradient-to-r from-emerald-200 via-emerald-300 to-emerald-200 sm:block" aria-hidden="true" />
+          <div className="pointer-events-none absolute top-10 left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] hidden h-px bg-border-base sm:block" aria-hidden="true" />
 
           {STEPS.map(({ number, title, description, icon, cta }) => (
             <div
               key={number}
-              className="relative flex flex-col rounded-2xl border border-gray-100 bg-gray-50 p-6 sm:items-center sm:text-center"
+              className="relative flex flex-col rounded-2xl border border-border-base bg-light-gray p-6 sm:items-center sm:text-center"
             >
-              {/* Step number badge */}
-              <div className="relative z-10 mb-5 flex h-20 w-20 sm:mx-auto items-center justify-center rounded-2xl bg-white shadow-sm border border-gray-100">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <div className="relative z-10 mb-5 flex h-20 w-20 sm:mx-auto items-center justify-center rounded-2xl bg-white shadow-sm border border-border-base">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-apple-blue/10 text-apple-blue">
                   {icon}
                 </div>
-                <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[11px] font-bold text-white shadow">
+                <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-apple-blue text-[11px] font-bold text-white shadow">
                   {number.replace("0", "")}
                 </span>
               </div>
 
-              <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-              <p className="mt-2 text-sm text-gray-500 leading-relaxed">{description}</p>
+              <h3 className="text-base font-semibold text-near-black">{title}</h3>
+              <p className="mt-2 text-sm text-[rgba(0,0,0,0.48)] leading-relaxed">{description}</p>
               <Link
                 href={cta.href}
-                className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-apple-blue hover:opacity-80 transition-opacity"
               >
                 {cta.label}
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

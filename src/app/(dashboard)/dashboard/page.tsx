@@ -108,7 +108,7 @@ function NotifIcon({ type }: { type: Notification["icon"] }) {
     message: "bg-blue-50 text-blue-500",
     eye:     "bg-purple-50 text-purple-500",
     star:    "bg-amber-50 text-amber-500",
-    bell:    "bg-emerald-50 text-emerald-500",
+    bell:    "bg-light-gray text-apple-blue",
   };
   return (
     <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", colors[type])}>
@@ -123,11 +123,11 @@ function SectionHeader({ eyebrow, title, href, linkLabel }: { eyebrow: string; t
   return (
     <div className="flex items-end justify-between mb-5">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-0.5">{eyebrow}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-0.5">{eyebrow}</p>
         <h2 className="text-lg font-bold text-gray-900">{title}</h2>
       </div>
       {href && linkLabel && (
-        <Link href={href} className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors shrink-0">
+        <Link href={href} className="inline-flex items-center gap-1 text-sm font-semibold text-apple-blue hover:text-apple-blue transition-colors shrink-0">
           {linkLabel}
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -161,7 +161,7 @@ function CompactListingCard({ listing }: { listing: Listing }) {
       <div className="p-3">
         <p className="text-xs text-gray-400 truncate">{listing.location}</p>
         <p className="mt-0.5 text-sm font-semibold text-gray-900 line-clamp-1">{listing.title}</p>
-        <p className="mt-1 text-sm font-bold text-emerald-600">
+        <p className="mt-1 text-sm font-bold text-apple-blue">
           {listing.currency ?? "USD"} {listing.price.toLocaleString()}
         </p>
       </div>
@@ -195,16 +195,16 @@ export default function DashboardPage() {
     <div className="space-y-10 pb-10">
 
       {/* ── Welcome banner ── */}
-      <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 px-5 py-7 sm:px-10 sm:py-10 text-white shadow-md">
-        <p className="text-sm font-semibold text-emerald-200 uppercase tracking-wider mb-1">{greeting}</p>
+      <div className="rounded-2xl bg-apple-blue px-5 py-7 sm:px-10 sm:py-10 text-white shadow-md">
+        <p className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-1">{greeting}</p>
         <h1 className="text-2xl sm:text-3xl font-extrabold">{firstName} 👋</h1>
-        <p className="mt-2 text-emerald-100 text-sm max-w-md">
+        <p className="mt-2 text-white/70 text-sm max-w-md">
           Here&apos;s what&apos;s happening with your listings and messages today.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/dashboard/listings/create"
-            className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 active:scale-[0.97] transition-all duration-75 shadow"
+            className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-apple-blue hover:bg-light-gray active:scale-[0.97] transition-all duration-75 shadow"
           >
             + Post a Listing
           </Link>
@@ -220,7 +220,7 @@ export default function DashboardPage() {
       {/* ── Stats row ── */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          { label: "Active Listings", value: "12",              color: "text-emerald-600" },
+          { label: "Active Listings", value: "12",              color: "text-apple-blue" },
           { label: "Total Views",     value: "3,240",           color: "text-blue-600"   },
           { label: "Unread Messages", value: String(unreadMessages), color: "text-amber-600" },
           { label: "Saved Items",     value: mounted ? String(savedListings.length) : "—", color: "text-purple-600" },
@@ -264,7 +264,7 @@ export default function DashboardPage() {
                 </svg>
                 <p className="text-sm font-semibold text-gray-500">No saved listings yet</p>
                 <p className="text-xs text-gray-400 mt-1">Browse the marketplace and save items you like.</p>
-                <Link href="/listings" className="mt-4 rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">
+                <Link href="/listings" className="mt-4 rounded-lg bg-apple-blue px-5 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
                   Browse Listings
                 </Link>
               </div>
@@ -293,13 +293,13 @@ export default function DashboardPage() {
             />
             <div className="rounded-2xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50">
               {MOCK_NOTIFICATIONS.map((n) => (
-                <div key={n.id} className={cn("flex items-start gap-3 px-4 py-3.5", !n.read && "bg-emerald-50/40")}>
+                <div key={n.id} className={cn("flex items-start gap-3 px-4 py-3.5", !n.read && "bg-light-gray/40")}>
                   <NotifIcon type={n.icon} />
                   <div className="min-w-0 flex-1">
                     <p className={cn("text-sm leading-snug", n.read ? "text-gray-600" : "text-gray-900 font-medium")}>{n.text}</p>
                     <p className="mt-1 text-xs text-gray-400">{n.time}</p>
                   </div>
-                  {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />}
+                  {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-apple-blue" />}
                 </div>
               ))}
             </div>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
                   href="/dashboard/messages"
                   className={cn("flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors", c.unread > 0 && "bg-blue-50/40")}
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-sm font-bold text-apple-blue">
                     {c.initial}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -332,7 +332,7 @@ export default function DashboardPage() {
                     <p className={cn("text-sm truncate mt-0.5", c.unread > 0 ? "text-gray-800" : "text-gray-500")}>{c.preview}</p>
                   </div>
                   {c.unread > 0 && (
-                    <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-[11px] font-bold text-white">
+                    <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-apple-blue text-[11px] font-bold text-white">
                       {c.unread}
                     </span>
                   )}

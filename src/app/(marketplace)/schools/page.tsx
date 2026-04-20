@@ -35,7 +35,7 @@ const CURRICULUM_LABEL: Record<SchoolCurriculum, string> = {
 };
 
 const CURRICULUM_COLOR: Record<SchoolCurriculum, string> = {
-  zimsec:   "bg-emerald-100 text-emerald-800 border border-emerald-200",
+  zimsec:   "bg-apple-blue/10 text-near-black border border-apple-blue/20",
   cambridge: "bg-blue-100 text-blue-800 border border-blue-200",
   both:     "bg-violet-100 text-violet-800 border border-violet-200",
 };
@@ -102,7 +102,7 @@ function SchoolCard({ school }: { school: SchoolProfile }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden hover:border-emerald-200 hover:shadow-md transition-all">
+    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden hover:border-apple-blue/20 hover:shadow-md transition-all">
       <ImageCarousel images={school.images} name={school.name} />
 
       <div className="p-5 space-y-3">
@@ -127,7 +127,7 @@ function SchoolCard({ school }: { school: SchoolProfile }) {
                 </span>
               )}
               {school.verified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-light-gray border border-apple-blue/20 px-2 py-0.5 text-xs font-semibold text-apple-blue">
                   <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
                     <path fillRule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm3.78 5.78-4.5 4.5a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06L6.75 9.69l3.97-3.97a.75.75 0 0 1 1.06 1.06Z" clipRule="evenodd" />
                   </svg>
@@ -175,7 +175,7 @@ function SchoolCard({ school }: { school: SchoolProfile }) {
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className="mt-1 text-xs font-medium text-emerald-600 hover:underline"
+              className="mt-1 text-xs font-medium text-apple-blue hover:underline"
             >
               {expanded ? "Show less" : "Read more"}
             </button>
@@ -188,7 +188,7 @@ function SchoolCard({ school }: { school: SchoolProfile }) {
           <div className="flex flex-wrap gap-2">
             <a
               href={`tel:${school.contacts.phone}`}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-apple-blue px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
             >
               <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
                 <path fillRule="evenodd" d="M2 2.5A1.5 1.5 0 0 1 3.5 1h.928a1.5 1.5 0 0 1 1.464 1.174l.536 2.41a1.5 1.5 0 0 1-1.052 1.767l-.748.214a9.038 9.038 0 0 0 4.807 4.807l.214-.748a1.5 1.5 0 0 1 1.767-1.052l2.41.536A1.5 1.5 0 0 1 15 11.572V12.5a1.5 1.5 0 0 1-1.5 1.5H12c-5.523 0-10-4.477-10-10v-1Z" clipRule="evenodd" />
@@ -311,7 +311,7 @@ export default function SchoolsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search school name or location…"
-            className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue"
           />
         </div>
 
@@ -325,8 +325,8 @@ export default function SchoolsPage() {
               className={cn(
                 "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
                 typeFilter === t
-                  ? "border-emerald-500 bg-emerald-600 text-white"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-emerald-300 hover:text-emerald-700",
+                  ? "border-apple-blue bg-apple-blue text-white"
+                  : "border-gray-200 bg-white text-gray-600 hover:border-apple-blue/40 hover:text-apple-blue",
               )}
             >
               {t === "all" ? "All Types" : TYPE_LABEL[t]}
@@ -366,7 +366,7 @@ export default function SchoolsPage() {
                   ? c === "cambridge"
                     ? "border-blue-600 bg-blue-700 text-white"
                     : c === "zimsec"
-                    ? "border-emerald-600 bg-emerald-700 text-white"
+                    ? "border-apple-blue bg-apple-blue text-white"
                     : c === "both"
                     ? "border-violet-600 bg-violet-700 text-white"
                     : "border-gray-500 bg-gray-700 text-white"
@@ -382,7 +382,7 @@ export default function SchoolsPage() {
             <select
               value={cityFilter}
               onChange={(e) => setCity(e.target.value)}
-              className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-600 focus:outline-none focus:ring-2 focus:ring-apple-blue"
             >
               {cities.map((c) => (
                 <option key={c} value={c}>{c === "all" ? "All Cities" : c}</option>

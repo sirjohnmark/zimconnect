@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 // ─── Condition badge ──────────────────────────────────────────────────────────
 
 const CONDITION_STYLE: Record<ListingCondition, string> = {
-  NEW:      "bg-emerald-100 text-emerald-700",
+  NEW:      "bg-apple-blue/10 text-apple-blue",
   LIKE_NEW: "bg-teal-100 text-teal-700",
   GOOD:     "bg-blue-100 text-blue-700",
   FAIR:     "bg-amber-100 text-amber-700",
@@ -102,7 +102,7 @@ function Gallery({ images, primaryImage, title }: { images: { image: string }[];
               onClick={() => setActive(i)}
               className={cn(
                 "relative shrink-0 h-16 w-20 overflow-hidden rounded-lg border-2 transition-colors",
-                i === active ? "border-emerald-500" : "border-transparent hover:border-gray-300",
+                i === active ? "border-apple-blue" : "border-transparent hover:border-gray-300",
               )}
             >
               <Image src={img.image} alt={`Photo ${i + 1}`} fill className="object-cover" />
@@ -168,7 +168,7 @@ export default function ListingDetailPage() {
         <button
           type="button"
           onClick={() => { setError(null); setListing(null); }}
-          className="mt-3 text-sm font-medium text-emerald-600 underline"
+          className="mt-3 text-sm font-medium text-apple-blue underline"
         >
           Retry
         </button>
@@ -207,7 +207,7 @@ export default function ListingDetailPage() {
               )}
             </div>
             <h1 className="text-xl font-bold text-gray-900 sm:text-2xl leading-snug">{title}</h1>
-            <p className="mt-2 text-3xl font-extrabold text-emerald-600">{formatPrice(price, currency)}</p>
+            <p className="mt-2 text-3xl font-extrabold text-apple-blue">{formatPrice(price, currency)}</p>
             <div className="mt-1.5 flex items-center gap-1.5 text-sm text-gray-500">
               <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5 text-gray-400 shrink-0">
                 <path fillRule="evenodd" d="m7.539 14.841.003.003.002.002a.755.755 0 0 0 .912 0l.002-.002.003-.003.012-.009a5.57 5.57 0 0 0 .19-.153 15.173 15.173 0 0 0 2.046-2.082C11.81 13.235 13 11.255 13 9A5 5 0 0 0 3 9c0 2.255 1.19 4.235 2.292 5.597a15.173 15.173 0 0 0 2.046 2.082 8.994 8.994 0 0 0 .19.153l.012.009ZM8 10.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" clipRule="evenodd" />
@@ -249,7 +249,7 @@ export default function ListingDetailPage() {
                     className="h-12 w-12 shrink-0 rounded-full object-cover"
                   />
                 ) : (
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-lg font-bold text-emerald-700">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-lg font-bold text-apple-blue">
                     {(owner.first_name || owner.username).charAt(0).toUpperCase()}
                   </span>
                 )}

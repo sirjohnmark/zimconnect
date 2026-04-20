@@ -12,13 +12,13 @@ export function FeaturedCategories() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-1">Shop by type</p>
-            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Browse Categories</h2>
-            <p className="mt-1.5 text-sm text-gray-500">Find exactly what you&apos;re looking for</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-1">Shop by type</p>
+            <h2 className="text-2xl font-semibold text-near-black sm:text-[32px] tracking-tight">Browse Categories</h2>
+            <p className="mt-1.5 text-sm text-[rgba(0,0,0,0.48)]">Find exactly what you&apos;re looking for</p>
           </div>
           <Link
             href="/categories"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors shrink-0"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-apple-blue hover:opacity-80 transition-opacity shrink-0"
           >
             All categories
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

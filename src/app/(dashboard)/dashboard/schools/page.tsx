@@ -83,7 +83,7 @@ function ImageUploader({
               "aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-colors",
               images.length < 2
                 ? "border-red-300 bg-red-50 text-red-400 hover:border-red-400"
-                : "border-gray-200 bg-gray-50 text-gray-400 hover:border-emerald-300 hover:bg-emerald-50",
+                : "border-gray-200 bg-gray-50 text-gray-400 hover:border-apple-blue/40 hover:bg-light-gray",
             )}
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
@@ -132,7 +132,7 @@ function Field({ label, hint, error, required, children }: {
   );
 }
 
-const INPUT = "w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors";
+const INPUT = "w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -272,7 +272,7 @@ export default function SchoolDashboardPage() {
             </p>
           </div>
           {existing && (
-            <Link href="/schools" className="shrink-0 text-xs font-medium text-emerald-600 hover:underline">
+            <Link href="/schools" className="shrink-0 text-xs font-medium text-apple-blue hover:underline">
               View listing →
             </Link>
           )}
@@ -359,7 +359,7 @@ export default function SchoolDashboardPage() {
                 onClick={() => setHasFees((v) => !v)}
                 className={cn(
                   "relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-200",
-                  hasFees ? "bg-emerald-500" : "bg-gray-200",
+                  hasFees ? "bg-apple-blue" : "bg-gray-200",
                 )}
               >
                 <span className={cn("inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 mt-0.5", hasFees ? "translate-x-4.5" : "translate-x-0.5")} />
@@ -444,12 +444,12 @@ export default function SchoolDashboardPage() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 active:scale-[0.97] transition-all"
+            className="rounded-xl bg-apple-blue px-6 py-3 text-sm font-semibold text-white hover:bg-apple-blue disabled:opacity-50 active:scale-[0.97] transition-all"
           >
             {saving ? "Saving…" : existing ? "Update School Profile" : "Publish School Profile"}
           </button>
           {saved && (
-            <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-600">
+            <span className="flex items-center gap-1.5 text-sm font-semibold text-apple-blue">
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                 <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
               </svg>

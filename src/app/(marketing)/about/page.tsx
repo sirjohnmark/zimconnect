@@ -55,7 +55,7 @@ const VALUES = [
 ];
 
 const TEAM = [
-  { name: "Ian Marware",        role: "Co-Founder & CEO",      initial: "I", color: "bg-emerald-100 text-emerald-700" },
+  { name: "Ian Marware",        role: "Co-Founder & CEO",      initial: "I", color: "bg-apple-blue/10 text-apple-blue" },
   { name: "Strive Chitakatira", role: "Co-Founder & CEO",     initial: "S", color: "bg-blue-100 text-blue-700"    },
   { name: "Rudo Maziwisa",     role: "Head of Product",       initial: "R", color: "bg-purple-100 text-purple-700" },
   { name: "Farai Ncube",       role: "Head of Operations",    initial: "F", color: "bg-amber-100 text-amber-700"   },
@@ -77,13 +77,13 @@ export default function AboutPage() {
     <div className="bg-white">
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-emerald-50 to-white py-16 sm:py-24">
+      <section className="relative overflow-hidden bg-light-gray py-16 sm:py-24">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_0%,black_40%,transparent_100%)] opacity-30"
         />
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-          <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-semibold text-emerald-700 mb-6">
+          <span className="inline-flex items-center rounded-full border border-apple-blue/20 bg-light-gray px-4 py-1.5 text-xs font-semibold text-apple-blue mb-6">
             🇿🇼 Made in Zimbabwe
           </span>
           <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
@@ -93,7 +93,7 @@ export default function AboutPage() {
             Sanganai is Zimbabwe&apos;s trusted marketplace where anyone can buy, sell, and discover — from a phone in Mbare to a laptop in Borrowdale.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link href="/listings" className="rounded-xl bg-emerald-600 px-7 py-3 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all">
+            <Link href="/listings" className="rounded-xl bg-apple-blue px-7 py-3 text-sm font-semibold text-white hover:bg-apple-blue active:scale-[0.97] transition-all">
               Browse Listings
             </Link>
             <Link href="/contact" className="rounded-xl border border-gray-200 bg-white px-7 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 active:scale-[0.97] transition-all">
@@ -109,7 +109,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 text-center">
             {STATS.map(({ value, label }) => (
               <div key={label}>
-                <p className="text-3xl font-extrabold text-emerald-600">{value}</p>
+                <p className="text-3xl font-extrabold text-apple-blue">{value}</p>
                 <p className="mt-1 text-sm font-medium text-gray-500">{label}</p>
               </div>
             ))}
@@ -122,7 +122,7 @@ export default function AboutPage() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-2">Our Mission</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">Our Mission</p>
               <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl leading-snug">
                 Making commerce accessible to every Zimbabwean
               </h2>
@@ -134,8 +134,8 @@ export default function AboutPage() {
               </p>
             </div>
             {/* Visual placeholder */}
-            <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 p-8 text-white">
-              <p className="text-sm font-semibold text-emerald-200 uppercase tracking-wider mb-4">Our vision</p>
+            <div className="rounded-2xl bg-apple-blue p-8 text-white">
+              <p className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-4">Our vision</p>
               <p className="text-xl font-bold leading-snug">
                 &ldquo;A Zimbabwe where every individual and business can reach any buyer — a single trusted space where buyers and sellers meet, trade, and grow together, instantly, safely, and for free.&rdquo;
               </p>
@@ -144,7 +144,7 @@ export default function AboutPage() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-sm font-bold">S</span>
                 <div>
                   <p className="text-sm font-semibold">Ian Marware &amp; Strive Chitakatira</p>
-                  <p className="text-xs text-emerald-200">Co-Founders &amp; CEOs</p>
+                  <p className="text-xs text-white/50">Co-Founders &amp; CEOs</p>
                 </div>
               </div>
             </div>
@@ -156,13 +156,13 @@ export default function AboutPage() {
       <section className="bg-gray-50 py-16 sm:py-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-2">What we stand for</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">What we stand for</p>
             <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">Our core values</h2>
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
             {VALUES.map(({ icon, title, description }) => (
               <div key={title} className="flex gap-4 rounded-2xl bg-white border border-gray-100 p-6 shadow-sm">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-light-gray text-apple-blue">
                   {icon}
                 </span>
                 <div>
@@ -179,16 +179,16 @@ export default function AboutPage() {
       <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-2">Our story</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">Our story</p>
             <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">How we got here</h2>
           </div>
-          <div className="relative border-l-2 border-emerald-100 pl-8 space-y-10">
+          <div className="relative border-l-2 border-apple-blue/10 pl-8 space-y-10">
             {MILESTONES.map(({ year, event }) => (
               <div key={year} className="relative">
-                <span className="absolute -left-[2.6rem] flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white ring-4 ring-white">
+                <span className="absolute -left-[2.6rem] flex h-8 w-8 items-center justify-center rounded-full bg-apple-blue text-xs font-bold text-white ring-4 ring-white">
                   {year.slice(2)}
                 </span>
-                <p className="text-xs font-semibold text-emerald-600 mb-1">{year}</p>
+                <p className="text-xs font-semibold text-apple-blue mb-1">{year}</p>
                 <p className="text-sm text-gray-600 leading-relaxed">{event}</p>
               </div>
             ))}
@@ -200,7 +200,7 @@ export default function AboutPage() {
       <section className="bg-gray-50 py-16 sm:py-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-2">The people</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">The people</p>
             <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">Meet our team</h2>
             <p className="mt-3 text-sm text-gray-500 max-w-xl mx-auto">A small, passionate team based in Harare, building the future of commerce in Zimbabwe.</p>
           </div>
@@ -224,7 +224,7 @@ export default function AboutPage() {
           <h2 className="text-2xl font-extrabold text-gray-900 sm:text-3xl">Ready to join Sanganai?</h2>
           <p className="mt-4 text-gray-500">Whether you&apos;re buying or selling, it&apos;s free and takes less than 2 minutes to get started.</p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link href="/register" className="rounded-xl bg-emerald-600 px-7 py-3 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all shadow-sm">
+            <Link href="/register" className="rounded-xl bg-apple-blue px-7 py-3 text-sm font-semibold text-white hover:bg-apple-blue active:scale-[0.97] transition-all shadow-sm">
               Create Free Account
             </Link>
             <Link href="/contact" className="rounded-xl border border-gray-200 bg-white px-7 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 active:scale-[0.97] transition-all">

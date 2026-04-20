@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 const INPUT_CLASS = cn(
   "w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900",
   "placeholder:text-gray-400 shadow-sm",
-  "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors duration-150",
+  "focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors duration-150",
   "disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed",
 );
 
@@ -55,8 +55,8 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
-          checked ? "bg-emerald-500" : "bg-gray-200",
+          "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue focus-visible:ring-offset-2",
+          checked ? "bg-apple-blue" : "bg-gray-200",
         )}
       >
         <span
@@ -77,12 +77,12 @@ function SaveRow({ saving, saved, error, onSave }: { saving: boolean; saved: boo
         type={onSave ? "button" : "submit"}
         onClick={onSave}
         disabled={saving}
-        className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-60 transition-all duration-75"
+        className="rounded-lg bg-apple-blue px-5 py-2 text-sm font-semibold text-white hover:bg-apple-blue active:scale-[0.97] disabled:opacity-60 transition-all duration-75"
       >
         {saving ? "Saving…" : "Save Changes"}
       </button>
       {saved && (
-        <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-apple-blue">
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
             <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
           </svg>
@@ -179,7 +179,7 @@ function PasswordSection() {
             type="checkbox"
             checked={show}
             onChange={(e) => setShow(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            className="h-4 w-4 rounded border-gray-300 text-apple-blue focus:ring-apple-blue"
           />
           <label htmlFor="show-pw" className="text-xs text-gray-500 cursor-pointer select-none">Show passwords</label>
         </div>
@@ -338,7 +338,7 @@ function LinkedAccountsSection() {
               "rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors",
               connected
                 ? "border border-gray-200 text-gray-600 hover:bg-gray-50"
-                : "bg-emerald-600 text-white hover:bg-emerald-700",
+                : "bg-apple-blue text-white hover:bg-apple-blue",
             )}
           >
             {connected ? "Disconnect" : "Connect"}
@@ -379,7 +379,7 @@ function SessionsSection() {
               <div>
                 <p className="text-sm font-medium text-gray-800">
                   {device}
-                  {current && <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">This device</span>}
+                  {current && <span className="ml-2 rounded-full bg-apple-blue/10 px-2 py-0.5 text-xs font-semibold text-apple-blue">This device</span>}
                 </p>
                 <p className="text-xs text-gray-400">{location} · {lastSeen}</p>
               </div>

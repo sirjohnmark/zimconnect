@@ -52,15 +52,15 @@ function VerificationSection({ userId }: { userId: string }) {
 
   if (verification?.status === "verified") {
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+      <div className="flex items-center gap-3 rounded-2xl border border-apple-blue/20 bg-light-gray p-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-apple-blue text-white">
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
             <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
           </svg>
         </span>
         <div>
-          <p className="text-sm font-bold text-emerald-800">Verified Employer</p>
-          <p className="text-xs text-emerald-600">Your account is verified. A badge is shown on all your job listings.</p>
+          <p className="text-sm font-bold text-near-black">Verified Employer</p>
+          <p className="text-xs text-apple-blue">Your account is verified. A badge is shown on all your job listings.</p>
         </div>
       </div>
     );
@@ -95,7 +95,7 @@ function VerificationSection({ userId }: { userId: string }) {
           <select
             value={docType}
             onChange={(e) => setDocType(e.target.value as VerificationRequest["docType"])}
-            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue"
           >
             <option value="national_id">National ID</option>
             <option value="company_registry">Company Registry Certificate (CR14 / CR6)</option>
@@ -110,15 +110,15 @@ function VerificationSection({ userId }: { userId: string }) {
             onClick={() => inputRef.current?.click()}
             className={cn(
               "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 cursor-pointer transition-colors",
-              fileName ? "border-emerald-300 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-emerald-300 hover:bg-emerald-50/50",
+              fileName ? "border-apple-blue/40 bg-light-gray" : "border-gray-200 bg-gray-50 hover:border-apple-blue/40 hover:bg-light-gray/50",
             )}
           >
             {fileName ? (
               <>
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-emerald-600">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-apple-blue">
                   <path fillRule="evenodd" d="M3 17a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm3.293-7.707a1 1 0 0 1 1.414 0L9 10.586V3a1 1 0 1 1 2 0v7.586l1.293-1.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 0-1.414Z" clipRule="evenodd" />
                 </svg>
-                <p className="text-xs font-semibold text-emerald-700">{fileName}</p>
+                <p className="text-xs font-semibold text-apple-blue">{fileName}</p>
               </>
             ) : (
               <>
@@ -139,7 +139,7 @@ function VerificationSection({ userId }: { userId: string }) {
         <button
           type="submit"
           disabled={!fileName || submitting}
-          className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+          className="w-full rounded-xl bg-apple-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-apple-blue disabled:opacity-40 transition-colors"
         >
           {submitting ? "Submitting…" : "Submit for Verification"}
         </button>
@@ -216,19 +216,19 @@ function CvUploadSection({ userId, userName }: { userId: string; userName: strin
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-gray-700">Job Title / Role *</label>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Software Engineer" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Software Engineer" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue" />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-gray-700">Location</label>
-            <input value={location} onChange={(e) => setLoc(e.target.value)} placeholder="e.g. Harare" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <input value={location} onChange={(e) => setLoc(e.target.value)} placeholder="e.g. Harare" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue" />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-gray-700">Years of Experience</label>
-            <input value={experience} onChange={(e) => setExp(e.target.value)} placeholder="e.g. 3 years" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            <input value={experience} onChange={(e) => setExp(e.target.value)} placeholder="e.g. 3 years" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue" />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-gray-700">Availability Status</label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue">
               <option>Actively looking</option>
               <option>Open to offers</option>
               <option>Not currently available</option>
@@ -238,12 +238,12 @@ function CvUploadSection({ userId, userName }: { userId: string; userName: strin
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-gray-700">Skills (comma-separated)</label>
-          <input value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="e.g. React, Node.js, PostgreSQL" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <input value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="e.g. React, Node.js, PostgreSQL" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue" />
         </div>
 
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-gray-700">Professional Summary</label>
-          <textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={3} placeholder="A brief overview of your experience and what you're looking for…" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" />
+          <textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={3} placeholder="A brief overview of your experience and what you're looking for…" className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue resize-none" />
         </div>
 
         <div className="space-y-1.5">
@@ -252,13 +252,13 @@ function CvUploadSection({ userId, userName }: { userId: string; userName: strin
             onClick={() => fileRef.current?.click()}
             className={cn(
               "flex items-center gap-3 rounded-xl border-2 border-dashed px-4 py-3.5 cursor-pointer transition-colors",
-              fileName ? "border-emerald-300 bg-emerald-50" : "border-gray-200 bg-gray-50 hover:border-emerald-300",
+              fileName ? "border-apple-blue/40 bg-light-gray" : "border-gray-200 bg-gray-50 hover:border-apple-blue/40",
             )}
           >
-            <svg viewBox="0 0 20 20" fill="currentColor" className={cn("h-5 w-5 shrink-0", fileName ? "text-emerald-600" : "text-gray-400")}>
+            <svg viewBox="0 0 20 20" fill="currentColor" className={cn("h-5 w-5 shrink-0", fileName ? "text-apple-blue" : "text-gray-400")}>
               <path d="M3 3.5A1.5 1.5 0 0 1 4.5 2h6.879a1.5 1.5 0 0 1 1.06.44l4.122 4.12A1.5 1.5 0 0 1 17 7.622V16.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 16.5v-13Z" />
             </svg>
-            <p className={cn("text-xs", fileName ? "text-emerald-700 font-semibold" : "text-gray-500")}>
+            <p className={cn("text-xs", fileName ? "text-apple-blue font-semibold" : "text-gray-500")}>
               {fileName || "Click to attach your CV (PDF, max 5MB)"}
             </p>
           </div>
@@ -269,11 +269,11 @@ function CvUploadSection({ userId, userName }: { userId: string; userName: strin
           <button
             type="submit"
             disabled={!title.trim() || saving}
-            className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+            className="rounded-xl bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:bg-apple-blue disabled:opacity-40 transition-colors"
           >
             {saving ? "Saving…" : cv ? "Update CV" : "Publish CV"}
           </button>
-          {saved && <span className="text-xs font-semibold text-emerald-600">✓ CV updated</span>}
+          {saved && <span className="text-xs font-semibold text-apple-blue">✓ CV updated</span>}
         </div>
       </form>
     </div>
@@ -292,7 +292,7 @@ function MyJobCard({ job }: { job: JobListing }) {
       <div className="flex items-center gap-2 shrink-0">
         <span className={cn(
           "rounded-full px-2.5 py-0.5 text-xs font-semibold",
-          job.status === "open" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500",
+          job.status === "open" ? "bg-apple-blue/10 text-apple-blue" : "bg-gray-100 text-gray-500",
         )}>
           {job.status}
         </span>
@@ -353,7 +353,7 @@ export default function JobsDashboardPage() {
             <p className="text-sm font-bold text-gray-900">My Applications</p>
             <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 py-10 text-center">
               <p className="text-sm font-medium text-gray-500">No applications yet</p>
-              <Link href="/jobs" className="mt-2 inline-block text-xs text-emerald-600 hover:underline">Browse open jobs →</Link>
+              <Link href="/jobs" className="mt-2 inline-block text-xs text-apple-blue hover:underline">Browse open jobs →</Link>
             </div>
           </div>
         </>
@@ -367,7 +367,7 @@ export default function JobsDashboardPage() {
               <p className="text-sm font-bold text-gray-900">My Job Postings</p>
               <Link
                 href="/dashboard/jobs/post"
-                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition-all"
+                className="rounded-xl bg-apple-blue px-4 py-2 text-xs font-semibold text-white hover:bg-apple-blue transition-all"
               >
                 + Post a Job
               </Link>
@@ -391,7 +391,7 @@ export default function JobsDashboardPage() {
           <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-gray-900">Browse Candidate CVs</p>
-              <Link href="/jobs" className="text-xs text-emerald-600 hover:underline font-medium">View all →</Link>
+              <Link href="/jobs" className="text-xs text-apple-blue hover:underline font-medium">View all →</Link>
             </div>
             <div className="space-y-2">
               {cvs.slice(0, 3).map((cv) => (
@@ -403,7 +403,7 @@ export default function JobsDashboardPage() {
                     <p className="text-sm font-semibold text-gray-900 truncate">{cv.seekerName}</p>
                     <p className="text-xs text-gray-500">{cv.title} · {cv.location}</p>
                   </div>
-                  <span className={cn("text-xs font-medium shrink-0", cv.available ? "text-emerald-600" : "text-gray-400")}>
+                  <span className={cn("text-xs font-medium shrink-0", cv.available ? "text-apple-blue" : "text-gray-400")}>
                     {cv.available ? "Available" : "Unavailable"}
                   </span>
                 </div>

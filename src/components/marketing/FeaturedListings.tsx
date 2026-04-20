@@ -19,19 +19,19 @@ export async function FeaturedListings() {
   if (listings.length === 0) return null;
 
   return (
-    <section className="bg-gray-50 py-16 sm:py-24">
+    <section className="bg-light-gray py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-1">Fresh picks</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-1">Fresh picks</p>
             <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">Featured Listings</h2>
             <p className="mt-1.5 text-sm text-gray-500">Handpicked deals from across Zimbabwe</p>
           </div>
           <Link
             href="/listings"
-            className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors shrink-0"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-apple-blue hover:text-apple-blue transition-colors shrink-0"
           >
             View all listings
             <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">

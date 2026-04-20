@@ -114,7 +114,7 @@ export function EngagementChart() {
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
       <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-0.5">Analytics</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-0.5">Analytics</p>
           <h3 className="text-base font-bold text-gray-900">Listing Engagement</h3>
           <p className="text-xs text-gray-400 mt-0.5">Views, messages, and saves over time</p>
         </div>
@@ -165,7 +165,7 @@ export function CategoryChart() {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
       <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-0.5">Breakdown</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-0.5">Breakdown</p>
         <h3 className="text-base font-bold text-gray-900">Views by Category</h3>
         <p className="text-xs text-gray-400 mt-0.5">How your listings perform across categories</p>
       </div>

@@ -100,7 +100,7 @@ const SUBJECTS = [
 const INPUT_CLASS = cn(
   "w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900",
   "placeholder:text-gray-400 shadow-sm",
-  "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors",
+  "focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors",
 );
 
 function ContactForm() {
@@ -125,8 +125,8 @@ function ContactForm() {
   if (submitted) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 mb-4">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-8 w-8 text-emerald-600">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-apple-blue/10 mb-4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-8 w-8 text-apple-blue">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
         </span>
@@ -136,7 +136,7 @@ function ContactForm() {
         </p>
         <button
           onClick={() => { setSubmitted(false); setForm({ name: "", email: "", subject: "", message: "" }); }}
-          className="mt-6 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+          className="mt-6 text-sm font-semibold text-apple-blue hover:text-apple-blue transition-colors"
         >
           Send another message
         </button>
@@ -198,7 +198,7 @@ function ContactForm() {
       <button
         type="submit"
         disabled={submitting || !form.name || !form.email || !form.message}
-        className="w-full rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50 transition-all duration-75 shadow-sm"
+        className="w-full rounded-xl bg-apple-blue px-6 py-3 text-sm font-semibold text-white hover:bg-apple-blue active:scale-[0.98] disabled:opacity-50 transition-all duration-75 shadow-sm"
       >
         {submitting ? "Sending…" : "Send Message"}
       </button>
@@ -244,12 +244,12 @@ export default function ContactPage() {
     <div className="bg-white">
 
       {/* ── Hero ── */}
-      <section className="bg-gradient-to-b from-emerald-50 to-white py-14 sm:py-20 text-center">
+      <section className="bg-light-gray py-14 sm:py-20 text-center">
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
-          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-semibold text-emerald-700 mb-5">
+          <span className="inline-flex items-center gap-2 rounded-full border border-apple-blue/20 bg-light-gray px-4 py-1.5 text-xs font-semibold text-apple-blue mb-5">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-apple-blue opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-apple-blue" />
             </span>
             We&apos;re online right now
           </span>
@@ -279,7 +279,7 @@ export default function ContactPage() {
                 </span>
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{label}</p>
-                  <p className="text-sm font-medium text-emerald-600 mt-0.5">{value}</p>
+                  <p className="text-sm font-medium text-apple-blue mt-0.5">{value}</p>
                   <p className="text-xs text-gray-400 mt-1 leading-snug">{description}</p>
                 </div>
               </a>
@@ -295,7 +295,7 @@ export default function ContactPage() {
 
             {/* Contact form */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-2">Send a message</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">Send a message</p>
               <h2 className="text-xl font-bold text-gray-900 mb-6">Get in touch</h2>
               <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                 <ContactForm />
@@ -304,14 +304,14 @@ export default function ContactPage() {
 
             {/* FAQ */}
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 mb-2">Quick answers</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue mb-2">Quick answers</p>
               <h2 className="text-xl font-bold text-gray-900 mb-6">Frequently asked questions</h2>
               <div className="rounded-2xl border border-gray-100 bg-white px-6 shadow-sm">
                 {FAQS.map(({ q, a }) => <FAQ key={q} q={q} a={a} />)}
               </div>
               <p className="mt-4 text-sm text-gray-500">
                 Still stuck?{" "}
-                <a href="mailto:hello@sanganai.co.zw" className="font-semibold text-emerald-600 hover:underline">
+                <a href="mailto:hello@sanganai.co.zw" className="font-semibold text-apple-blue hover:underline">
                   Email us directly
                 </a>{" "}
                 and we&apos;ll sort it out.
@@ -326,13 +326,13 @@ export default function ContactPage() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
             {/* Fake map banner */}
-            <div className="h-40 bg-gradient-to-br from-emerald-100 via-teal-50 to-blue-50 flex items-center justify-center relative overflow-hidden">
+            <div className="h-40 bg-light-gray flex items-center justify-center relative overflow-hidden">
               <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_right,#d1fae5_1px,transparent_1px),linear-gradient(to_bottom,#d1fae5_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-60" />
               <span className="relative flex flex-col items-center gap-1">
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 text-emerald-600 drop-shadow">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="h-8 w-8 text-apple-blue drop-shadow">
                   <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
                 </svg>
-                <span className="text-xs font-semibold text-emerald-700 bg-white/80 rounded-full px-3 py-0.5 shadow-sm">Joina City, Harare</span>
+                <span className="text-xs font-semibold text-apple-blue bg-white/80 rounded-full px-3 py-0.5 shadow-sm">Joina City, Harare</span>
               </span>
             </div>
             {/* Office details */}

@@ -94,7 +94,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-sm font-bold text-apple-blue">
             {review.buyerInitial}
           </span>
           <div>
@@ -113,7 +113,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-xs font-medium text-emerald-600 hover:underline"
+          className="text-xs font-medium text-apple-blue hover:underline"
         >
           {expanded ? "Show less" : "Read more"}
         </button>
@@ -127,7 +127,7 @@ function ReviewCard({ review, currentUserId }: { review: Review; currentUserId: 
           className={cn(
             "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors",
             voted
-              ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+              ? "border-apple-blue/40 bg-light-gray text-apple-blue"
               : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-700",
           )}
         >
@@ -185,15 +185,15 @@ function WriteReview({
 
   if (done) {
     return (
-      <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
+      <div className="flex items-center gap-3 rounded-2xl border border-apple-blue/20 bg-light-gray p-4">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-apple-blue text-white">
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
             <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
           </svg>
         </span>
         <div>
-          <p className="text-sm font-bold text-emerald-800">Review submitted!</p>
-          <p className="text-xs text-emerald-600">Thank you. Your review is now visible to other buyers.</p>
+          <p className="text-sm font-bold text-near-black">Review submitted!</p>
+          <p className="text-xs text-apple-blue">Thank you. Your review is now visible to other buyers.</p>
         </div>
       </div>
     );
@@ -222,7 +222,7 @@ function WriteReview({
           onChange={(e) => { setComment(e.target.value); setError(""); }}
           rows={4}
           placeholder="Describe your experience with this seller — was the product as described? Was the seller responsive and trustworthy?"
-          className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none transition-colors"
+          className="w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue resize-none transition-colors"
         />
         <div className="flex items-center justify-between">
           {error ? <p className="text-xs text-red-500">{error}</p> : <span />}
@@ -237,7 +237,7 @@ function WriteReview({
       <button
         type="submit"
         disabled={submitting}
-        className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 active:scale-[0.97] transition-all"
+        className="rounded-xl bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:bg-apple-blue disabled:opacity-50 active:scale-[0.97] transition-all"
       >
         {submitting ? "Submitting…" : "Submit Review"}
       </button>
@@ -332,13 +332,13 @@ export function ReviewsSection({ listingId, sellerName }: ReviewsSectionProps) {
       {!isLoading && !user && (
         <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5 text-center">
           <p className="text-sm text-gray-600">
-            <a href="/login" className="font-semibold text-emerald-600 hover:underline">Sign in</a> to leave a review for this seller.
+            <a href="/login" className="font-semibold text-apple-blue hover:underline">Sign in</a> to leave a review for this seller.
           </p>
         </div>
       )}
 
       {!isLoading && user && alreadyReviewed && reviews.some((r) => r.buyerId === user.id) && (
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs text-emerald-700 font-medium">
+        <div className="rounded-xl border border-apple-blue/10 bg-light-gray px-4 py-3 text-xs text-apple-blue font-medium">
           ✓ You have already reviewed this listing.
         </div>
       )}

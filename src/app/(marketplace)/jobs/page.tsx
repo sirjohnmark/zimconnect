@@ -16,7 +16,7 @@ function Disclaimer() {
         <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
       </svg>
       <span>
-        <strong>Disclaimer:</strong> Sanganai does not guarantee the accuracy of job listings or the legitimacy of employers. Always verify an employer&apos;s identity before sharing personal information or attending interviews. Verified employers are marked with a <span className="font-semibold text-emerald-700">✓ Verified</span> badge. Report suspicious listings using the Report button.
+        <strong>Disclaimer:</strong> Sanganai does not guarantee the accuracy of job listings or the legitimacy of employers. Always verify an employer&apos;s identity before sharing personal information or attending interviews. Verified employers are marked with a <span className="font-semibold text-apple-blue">✓ Verified</span> badge. Report suspicious listings using the Report button.
       </span>
     </div>
   );
@@ -25,7 +25,7 @@ function Disclaimer() {
 // ─── Job card ─────────────────────────────────────────────────────────────────
 
 const TYPE_COLORS: Record<string, string> = {
-  "full-time":  "bg-emerald-100 text-emerald-700",
+  "full-time":  "bg-apple-blue/10 text-apple-blue",
   "part-time":  "bg-blue-100 text-blue-700",
   "contract":   "bg-purple-100 text-purple-700",
   "internship": "bg-amber-100 text-amber-700",
@@ -38,7 +38,7 @@ function JobCard({ job }: { job: JobListing }) {
     : null;
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 hover:border-emerald-200 hover:shadow-md transition-all">
+    <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 hover:border-apple-blue/20 hover:shadow-md transition-all">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
@@ -46,7 +46,7 @@ function JobCard({ job }: { job: JobListing }) {
               {job.type}
             </span>
             {job.verifiedEmployer && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-light-gray border border-apple-blue/20 px-2 py-0.5 text-xs font-semibold text-apple-blue">
                 <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
                   <path fillRule="evenodd" d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm3.78 5.78-4.5 4.5a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06L6.75 9.69l3.97-3.97a.75.75 0 0 1 1.06 1.06Z" clipRule="evenodd" />
                 </svg>
@@ -73,7 +73,7 @@ function JobCard({ job }: { job: JobListing }) {
           {job.location}
         </span>
         {job.salary && (
-          <span className="flex items-center gap-1 font-semibold text-emerald-700">
+          <span className="flex items-center gap-1 font-semibold text-apple-blue">
             ${job.salary.min.toLocaleString()}–${job.salary.max.toLocaleString()} {job.salary.currency}/mo
           </span>
         )}
@@ -97,14 +97,14 @@ function JobCard({ job }: { job: JobListing }) {
             href={job.howToApply.includes("@") ? `mailto:${job.howToApply}` : job.howToApply.startsWith("http") ? job.howToApply : `https://${job.howToApply}`}
             target={job.howToApply.includes("@") ? undefined : "_blank"}
             rel="noopener noreferrer"
-            className="flex-1 rounded-xl bg-emerald-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all"
+            className="flex-1 rounded-xl bg-apple-blue px-4 py-2 text-center text-sm font-semibold text-white hover:bg-apple-blue active:scale-[0.97] transition-all"
           >
             Apply Now
           </a>
         ) : (
           <Link
             href="/dashboard/messages"
-            className="flex-1 rounded-xl bg-emerald-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all"
+            className="flex-1 rounded-xl bg-apple-blue px-4 py-2 text-center text-sm font-semibold text-white hover:bg-apple-blue active:scale-[0.97] transition-all"
           >
             Apply Now
           </Link>
@@ -139,7 +139,7 @@ function CvCard({ cv }: { cv: CvProfile }) {
             <span>·</span>
             <span>{cv.experience} exp.</span>
             <span>·</span>
-            <span className={cn("font-semibold", cv.available ? "text-emerald-600" : "text-gray-400")}>
+            <span className={cn("font-semibold", cv.available ? "text-apple-blue" : "text-gray-400")}>
               {cv.status}
             </span>
           </div>
@@ -266,14 +266,14 @@ export default function JobsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={tab === "jobs" ? "Search job title or company…" : "Search by name or skill…"}
-            className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue"
           />
         </div>
         {tab === "jobs" && (
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as typeof filter)}
-            className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue"
           >
             <option value="all">All Types</option>
             <option value="full-time">Full-time</option>
@@ -285,7 +285,7 @@ export default function JobsPage() {
         )}
         <Link
           href="/dashboard/jobs"
-          className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] transition-all whitespace-nowrap"
+          className="rounded-xl bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:bg-apple-blue active:scale-[0.97] transition-all whitespace-nowrap"
         >
           {tab === "jobs" ? "Post a Job" : "Upload My CV"}
         </Link>
@@ -333,12 +333,12 @@ export default function JobsPage() {
       )}
 
       {/* Bottom employer CTA */}
-      <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="rounded-2xl border border-apple-blue/10 bg-light-gray p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-bold text-emerald-800">Are you an employer?</p>
-          <p className="text-xs text-emerald-700 mt-0.5">Post jobs, browse CVs, and get verified to build trust with candidates.</p>
+          <p className="text-sm font-bold text-near-black">Are you an employer?</p>
+          <p className="text-xs text-apple-blue mt-0.5">Post jobs, browse CVs, and get verified to build trust with candidates.</p>
         </div>
-        <Link href="/dashboard/jobs" className="shrink-0 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-all">
+        <Link href="/dashboard/jobs" className="shrink-0 rounded-xl bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:bg-apple-blue transition-all">
           Employer Dashboard →
         </Link>
       </div>

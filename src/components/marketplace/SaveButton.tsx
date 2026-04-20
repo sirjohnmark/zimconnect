@@ -36,7 +36,7 @@ export function SaveButton({ listingId, variant = "icon", className }: SaveButto
       aria-label={saved ? "Remove from saved" : "Save listing"}
       aria-pressed={saved}
       className={cn(
-        "flex items-center gap-1.5 rounded-full transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500",
+        "flex items-center gap-1.5 rounded-full transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue",
         variant === "icon"
           ? "p-1.5 hover:bg-black/10 active:scale-90"
           : "rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold shadow-sm hover:bg-gray-50 active:scale-[0.97]",

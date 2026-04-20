@@ -130,17 +130,17 @@ function NavLink({ item, badge, onClick }: { item: NavItem; badge?: number; onCl
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
         isActive
-          ? "bg-emerald-50 text-emerald-700"
-          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+          ? "bg-light-gray text-near-black"
+          : "text-[rgba(0,0,0,0.6)] hover:bg-light-gray hover:text-near-black",
       )}
       aria-current={isActive ? "page" : undefined}
     >
-      <span className={cn(isActive ? "text-emerald-600" : "text-gray-400")}>
+      <span className={cn(isActive ? "text-apple-blue" : "text-[rgba(0,0,0,0.3)]")}>
         {item.icon}
       </span>
       <span className="flex-1">{item.label}</span>
       {badge != null && badge > 0 && (
-        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1 text-[11px] font-bold text-white">
+        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-apple-blue px-1 text-[11px] font-bold text-white">
           {badge > 99 ? "99+" : badge}
         </span>
       )}
@@ -165,8 +165,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-gray-100 px-5">
-        <Link href="/home" className="text-lg font-bold text-emerald-600">
-          Sanganai
+        <Link href="/home" className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-apple-blue">
+            <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z" stroke="white" strokeWidth="1.75" strokeLinejoin="round"/>
+              <path d="M9 21V13h6v8" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </span>
+          <span className="text-base font-semibold tracking-tight text-near-black">Sanganai</span>
         </Link>
       </div>
 
@@ -196,7 +202,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       <div className="border-t border-gray-100 px-3 py-4">
         {user && (
           <Link href="/dashboard/profile" className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
-            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-600 overflow-hidden">
+            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-sm font-bold text-apple-blue overflow-hidden">
               {user.avatar ? (
                 <Image src={user.avatar} alt={user.name} fill className="object-cover" />
               ) : (

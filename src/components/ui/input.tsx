@@ -21,7 +21,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { label, error, hint, leftAddon, rightAddon, className, id: externalId, ...props },
   ref,
 ) {
-  // Stable id for label ↔ input association even when `id` is not provided
   const generatedId = useId();
   const id = externalId ?? generatedId;
   const errorId = `${id}-error`;
@@ -31,11 +30,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   return (
     <div className="flex flex-col gap-1">
-      {/* Label */}
       {label && (
         <label
           htmlFor={id}
-          className="text-sm font-medium text-gray-700"
+          className="text-sm font-semibold text-near-black"
         >
           {label}
           {props.required && (
@@ -46,7 +44,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         </label>
       )}
 
-      {/* Input wrapper (for addons) */}
       <div className="relative flex items-center">
         {leftAddon && (
           <div className="pointer-events-none absolute left-3 flex items-center text-gray-400">
@@ -64,19 +61,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
               .join(" ") || undefined
           }
           className={cn(
-            // Base
-            "w-full rounded-md border bg-white px-3 py-2 text-sm text-gray-900",
+            "w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-near-black",
             "placeholder:text-gray-400",
             "transition-colors duration-150",
-            // Focus
             "focus:outline-none focus:ring-2 focus:ring-offset-0",
-            // Normal state
-            !hasError && "border-gray-300 focus:border-emerald-500 focus:ring-emerald-500",
-            // Error state
-            hasError && "border-red-400 focus:border-red-500 focus:ring-red-400",
-            // Disabled
-            "disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400",
-            // Addon padding
+            !hasError && "border-border-base focus:border-apple-blue focus:ring-apple-blue/20",
+            hasError && "border-red-400 focus:border-red-500 focus:ring-red-400/20",
+            "disabled:cursor-not-allowed disabled:bg-light-gray disabled:text-gray-400",
             leftAddon && "pl-9",
             rightAddon && "pr-9",
             className,
@@ -91,7 +82,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         )}
       </div>
 
-      {/* Error message */}
       {hasError && (
         <p id={errorId} role="alert" className="flex items-center gap-1 text-xs text-red-600">
           <svg
@@ -106,7 +96,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         </p>
       )}
 
-      {/* Hint (only shown when no error) */}
       {!hasError && hint && (
         <p id={hintId} className="text-xs text-gray-500">
           {hint}

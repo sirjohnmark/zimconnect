@@ -37,8 +37,8 @@ function Steps({ current }: { current: 1 | 2 | 3 }) {
               <span
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors",
-                  done    ? "bg-emerald-600 text-white"
-                  : active ? "bg-emerald-600 text-white ring-4 ring-emerald-100"
+                  done    ? "bg-apple-blue text-white"
+                  : active ? "bg-apple-blue text-white ring-4 ring-apple-blue/20"
                   : "bg-gray-100 text-gray-400",
                 )}
               >
@@ -48,12 +48,12 @@ function Steps({ current }: { current: 1 | 2 | 3 }) {
                   </svg>
                 ) : step}
               </span>
-              <span className={cn("text-[10px] font-medium", active ? "text-emerald-700" : "text-gray-400")}>
+              <span className={cn("text-[10px] font-medium", active ? "text-apple-blue" : "text-gray-400")}>
                 {label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div className={cn("h-px flex-1 mx-2 mt-[-12px] transition-colors", done ? "bg-emerald-400" : "bg-gray-200")} />
+              <div className={cn("h-px flex-1 mx-2 mt-[-12px] transition-colors", done ? "bg-apple-blue" : "bg-gray-200")} />
             )}
           </div>
         );
@@ -68,7 +68,7 @@ function Alert({ message, type = "error" }: { message: string; type?: "error" | 
   const styles = {
     error:   "border-red-200 bg-red-50 text-red-700",
     info:    "border-blue-200 bg-blue-50 text-blue-700",
-    success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    success: "border-apple-blue/20 bg-light-gray text-apple-blue",
   };
   return (
     <div role="alert" className={cn("flex items-start gap-2.5 rounded-lg border px-4 py-3 text-sm", styles[type])}>
@@ -129,14 +129,14 @@ function OtpInput({ digits, onChange, status = "idle" }: {
   }
 
   const boxStyle: Record<OtpStatus, string> = {
-    idle:    "border-gray-200 bg-white text-gray-800 focus:ring-emerald-500 focus:border-emerald-400",
+    idle:    "border-gray-200 bg-white text-gray-800 focus:ring-apple-blue focus:border-apple-blue",
     error:   "border-red-400 bg-red-50 text-red-700 focus:ring-red-400 focus:border-red-400",
-    success: "border-emerald-500 bg-emerald-50 text-emerald-800 focus:ring-emerald-500 focus:border-emerald-500",
+    success: "border-apple-blue bg-light-gray text-near-black focus:ring-apple-blue focus:border-apple-blue",
   };
   const filledStyle: Record<OtpStatus, string> = {
-    idle:    "border-emerald-400 bg-emerald-50 text-emerald-800",
+    idle:    "border-apple-blue bg-light-gray text-near-black",
     error:   "border-red-400 bg-red-50 text-red-700",
-    success: "border-emerald-500 bg-emerald-100 text-emerald-800",
+    success: "border-apple-blue bg-apple-blue/10 text-near-black",
   };
 
   return (
@@ -407,7 +407,7 @@ export function RegisterForm() {
                   <input {...register("role")} type="radio" value={r} className="sr-only" />
                   <span className={cn(
                     "flex items-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors",
-                    "has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50 border-gray-200 hover:border-gray-300",
+                    "has-[:checked]:border-apple-blue has-[:checked]:bg-light-gray border-gray-200 hover:border-gray-300",
                   )}>
                     {r === "BUYER" ? "🛍️ Buy goods" : "🏪 Sell goods"}
                   </span>
@@ -454,10 +454,10 @@ export function RegisterForm() {
               onClick={() => setMethod("email")}
               className={cn(
                 "w-full flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-colors",
-                verifyMethod === "email" ? "border-emerald-500 bg-emerald-50" : "border-gray-200 bg-white hover:border-gray-300",
+                verifyMethod === "email" ? "border-apple-blue bg-light-gray" : "border-gray-200 bg-white hover:border-gray-300",
               )}
             >
-              <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", verifyMethod === "email" ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400")}>
+              <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", verifyMethod === "email" ? "bg-apple-blue/10 text-apple-blue" : "bg-gray-100 text-gray-400")}>
                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                   <path d="M3 4a2 2 0 0 0-2 2v1.161l8.441 4.221a1.25 1.25 0 0 0 1.118 0L19 7.162V6a2 2 0 0 0-2-2H3Z" />
                   <path d="m19 8.839-7.77 3.885a2.75 2.75 0 0 1-2.46 0L1 8.839V14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.839Z" />
@@ -468,7 +468,7 @@ export function RegisterForm() {
                 <p className="text-xs text-gray-500 truncate">Code sent to {formData.email}</p>
               </div>
               {verifyMethod === "email" && (
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-emerald-600 shrink-0">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-apple-blue shrink-0">
                   <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
                 </svg>
               )}
@@ -481,11 +481,11 @@ export function RegisterForm() {
               className={cn(
                 "w-full flex items-center gap-4 rounded-xl border-2 p-4 text-left transition-colors",
                 !formData.phone ? "border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed"
-                : verifyMethod === "phone" ? "border-emerald-500 bg-emerald-50"
+                : verifyMethod === "phone" ? "border-apple-blue bg-light-gray"
                 : "border-gray-200 bg-white hover:border-gray-300",
               )}
             >
-              <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", verifyMethod === "phone" ? "bg-emerald-100 text-emerald-600" : "bg-gray-100 text-gray-400")}>
+              <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", verifyMethod === "phone" ? "bg-apple-blue/10 text-apple-blue" : "bg-gray-100 text-gray-400")}>
                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
                   <path fillRule="evenodd" d="M2 3.5A1.5 1.5 0 0 1 3.5 2h1.148a1.5 1.5 0 0 1 1.465 1.175l.716 3.223a1.5 1.5 0 0 1-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 0 0 6.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 0 1 1.767-1.052l3.223.716A1.5 1.5 0 0 1 18 16.352V17.5a1.5 1.5 0 0 1-1.5 1.5H15c-1.149 0-2.263-.15-3.326-.43A13.022 13.022 0 0 1 2.43 8.326 13.019 13.019 0 0 1 2 5V3.5Z" clipRule="evenodd" />
                 </svg>
@@ -497,7 +497,7 @@ export function RegisterForm() {
                 </p>
               </div>
               {verifyMethod === "phone" && (
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-emerald-600 shrink-0">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-apple-blue shrink-0">
                   <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
                 </svg>
               )}
@@ -524,12 +524,12 @@ export function RegisterForm() {
         <div className="space-y-5">
           {otpStatus === "success" ? (
             <div className="flex flex-col items-center gap-3 py-4">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-emerald-600">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-apple-blue/10">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-apple-blue">
                   <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                 </svg>
               </span>
-              <p className="text-sm font-semibold text-emerald-700">Verified! Creating your account…</p>
+              <p className="text-sm font-semibold text-apple-blue">Verified! Creating your account…</p>
             </div>
           ) : (
             <>
@@ -578,7 +578,7 @@ export function RegisterForm() {
               disabled={resendCooldown > 0}
               className={cn(
                 "font-medium transition-colors",
-                resendCooldown > 0 ? "text-gray-300 cursor-not-allowed" : "text-emerald-600 hover:underline",
+                resendCooldown > 0 ? "text-gray-300 cursor-not-allowed" : "text-apple-blue hover:underline",
               )}
             >
               {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
@@ -590,7 +590,7 @@ export function RegisterForm() {
       <Card.Footer>
         <p className="text-center text-sm text-gray-500">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-emerald-600 hover:underline">
+          <Link href="/login" className="font-medium text-apple-blue hover:underline">
             Sign in
           </Link>
         </p>

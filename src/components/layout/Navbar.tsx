@@ -10,8 +10,8 @@ import { useAuth } from "@/lib/auth/useAuth";
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { label: "Browse Categories", href: "/categories" },
   { label: "How It Works",      href: "/home#how-it-works" },
+  { label: "Browse Categories", href: "/categories" },
   { label: "About",             href: "/about" },
   { label: "Contact",           href: "/contact" },
 ] as const;
@@ -113,7 +113,7 @@ function ChevronIcon({ open }: { open: boolean }) {
 function UserAvatar({ name, avatar, size = "sm" }: { name: string; avatar?: string; size?: "sm" | "md" }) {
   const sz = size === "sm" ? "h-7 w-7 text-xs" : "h-10 w-10 text-sm";
   return (
-    <span className={cn("relative flex shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700 overflow-hidden", sz)}>
+    <span className={cn("relative flex shrink-0 items-center justify-center rounded-full bg-apple-blue/10 font-bold text-apple-blue overflow-hidden", sz)}>
       {avatar ? <Image src={avatar} alt={name} fill className="object-cover" /> : name.charAt(0).toUpperCase()}
     </span>
   );
@@ -142,7 +142,7 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
     return (
       <div className="flex items-center gap-3">
         <div className="h-8 w-16 animate-pulse rounded-md bg-gray-100" />
-        <div className="h-8 w-24 animate-pulse rounded-lg bg-emerald-100" />
+        <div className="h-8 w-24 animate-pulse rounded-lg bg-apple-blue/10" />
       </div>
     );
   }
@@ -164,7 +164,7 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
         {menuOpen && (
           <div className="absolute right-0 top-full mt-1.5 w-56 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden">
             {/* User card */}
-            <div className="flex items-center gap-3 bg-emerald-50 px-4 py-3 border-b border-emerald-100">
+            <div className="flex items-center gap-3 bg-light-gray px-4 py-3 border-b border-apple-blue/10">
               <UserAvatar name={user.name} avatar={user.avatar} size="md" />
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-gray-900">{user.name}</p>
@@ -183,10 +183,10 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
                     onClick={() => { setMenuOpen(false); onClose(); }}
                     className={cn(
                       "flex items-center gap-3 px-4 py-2 text-sm transition-colors",
-                      isActive ? "bg-emerald-50 text-emerald-700 font-medium" : "text-gray-700 hover:bg-gray-50",
+                      isActive ? "bg-light-gray text-apple-blue font-medium" : "text-gray-700 hover:bg-gray-50",
                     )}
                   >
-                    <span className={cn(isActive ? "text-emerald-600" : "text-gray-400")}>{icon}</span>
+                    <span className={cn(isActive ? "text-apple-blue" : "text-gray-400")}>{icon}</span>
                     {label}
                   </Link>
                 );
@@ -197,7 +197,7 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
               <Link
                 href="/dashboard/listings/create"
                 onClick={() => { setMenuOpen(false); onClose(); }}
-                className="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                className="flex items-center gap-3 px-4 py-2 text-sm font-semibold text-apple-blue hover:bg-light-gray transition-colors"
               >
                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                   <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
@@ -223,14 +223,11 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
 
   // Unauthenticated
   return (
-    <div className="flex items-center gap-2">
-      <Link href="/login" className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-all duration-75">
-        Log In
+    <div className="flex items-center gap-3">
+      <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-near-black transition-colors">
+        Sign In
       </Link>
-      <Link href="/register" className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-all duration-75">
-        Sign Up
-      </Link>
-      <Link href="/register" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.96] active:bg-emerald-800 transition-all duration-75">
+      <Link href="/register" className="rounded-full bg-apple-blue px-4 py-2 text-sm font-normal text-white hover:opacity-90 active:opacity-80 transition-opacity">
         Get Started
       </Link>
     </div>
@@ -259,8 +256,15 @@ export function Navbar() {
           <div className="flex h-16 items-center justify-between gap-8">
 
             {/* Logo */}
-            <Link href="/home" onClick={close} className="shrink-0 text-xl font-bold tracking-tight" aria-label="Sanganai home">
-              San<span className="text-emerald-600">ganai</span>
+            <Link href="/home" onClick={close} className="shrink-0 flex items-center gap-2" aria-label="Sanganai home">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-apple-blue">
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+                  <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z" stroke="white" strokeWidth="1.75" strokeLinejoin="round"/>
+                  <path d="M9 21V13h6v8" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="16.5" cy="7.5" r="2" fill="white" opacity="0.8"/>
+                </svg>
+              </span>
+              <span className="text-lg font-semibold tracking-tight text-near-black">Sanganai</span>
             </Link>
 
             {/* Desktop nav links */}
@@ -274,7 +278,7 @@ export function Navbar() {
                     href={href}
                     className={cn(
                       "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                      isActive ? "bg-emerald-50 text-emerald-700" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                      isActive ? "bg-light-gray text-apple-blue" : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
                     )}
                     aria-current={isActive ? "page" : undefined}
                   >
@@ -344,14 +348,14 @@ export function Navbar() {
             <Link
               href="/dashboard/profile"
               onClick={close}
-              className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3.5"
+              className="flex items-center gap-3 rounded-2xl bg-apple-blue px-4 py-3.5"
             >
               <UserAvatar name={user.name} avatar={user.avatar} size="md" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-white">{user.name}</p>
-                <p className="truncate text-xs text-emerald-200">{user.email}</p>
+                <p className="truncate text-xs text-white/50">{user.email}</p>
               </div>
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-emerald-300 shrink-0">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-white/40 shrink-0">
                 <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
               </svg>
             </Link>
@@ -370,11 +374,11 @@ export function Navbar() {
                       className={cn(
                         "flex flex-col items-center justify-center gap-1.5 rounded-xl p-3 text-center transition-colors",
                         isActive
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "bg-light-gray text-apple-blue"
                           : "bg-gray-50 text-gray-600 hover:bg-gray-100",
                       )}
                     >
-                      <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", isActive ? "bg-emerald-100 text-emerald-600" : "bg-white text-gray-500 shadow-sm")}>
+                      <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", isActive ? "bg-apple-blue/10 text-apple-blue" : "bg-white text-gray-500 shadow-sm")}>
                         {icon}
                       </span>
                       <span className="text-[11px] font-medium leading-tight">{label}</span>
@@ -388,7 +392,7 @@ export function Navbar() {
             <Link
               href="/dashboard/listings/create"
               onClick={close}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-apple-blue px-4 py-3 text-sm font-semibold text-white hover:opacity-90 active:opacity-80 transition-colors"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                 <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
@@ -410,7 +414,7 @@ export function Navbar() {
                       onClick={close}
                       className={cn(
                         "flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                        isActive ? "bg-emerald-50 text-emerald-700" : "text-gray-700 hover:bg-gray-50",
+                        isActive ? "bg-light-gray text-apple-blue" : "text-gray-700 hover:bg-gray-50",
                       )}
                     >
                       {label}
@@ -445,7 +449,7 @@ export function Navbar() {
                   onClick={close}
                   className={cn(
                     "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors",
-                    isActive ? "bg-emerald-50 text-emerald-700" : "text-gray-700 hover:bg-gray-50",
+                    isActive ? "bg-light-gray text-apple-blue" : "text-gray-700 hover:bg-gray-50",
                   )}
                   aria-current={isActive ? "page" : undefined}
                 >
@@ -455,14 +459,11 @@ export function Navbar() {
             })}
 
             <div className="border-t border-gray-100 pt-3 mt-2 space-y-2">
-              <Link href="/login" onClick={close} className="flex items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
-                Log In
+              <Link href="/login" onClick={close} className="flex items-center justify-center rounded-full border border-border-base px-4 py-3 text-sm font-medium text-gray-700 hover:bg-light-gray transition-colors">
+                Sign In
               </Link>
-              <Link href="/register" onClick={close} className="flex items-center justify-center rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
-                Sign Up
-              </Link>
-              <Link href="/register" onClick={close} className="flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">
-                Get Started — It&apos;s Free
+              <Link href="/register" onClick={close} className="flex items-center justify-center rounded-full bg-apple-blue px-4 py-3 text-sm font-normal text-white hover:opacity-90 transition-opacity">
+                Get Started Now
               </Link>
             </div>
           </div>

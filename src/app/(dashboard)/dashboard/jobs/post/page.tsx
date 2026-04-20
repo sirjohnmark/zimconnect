@@ -56,7 +56,7 @@ function Field({
 
 const inputCls = (error?: string) => cn(
   "w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400",
-  "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors",
+  "focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors",
   error ? "border-red-400" : "border-gray-300",
 );
 
@@ -94,7 +94,7 @@ function TagList({
         <ul className="space-y-1.5">
           {items.map((item, i) => (
             <li key={i} className="flex items-start gap-2 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
-              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-apple-blue">
                 <svg viewBox="0 0 12 12" fill="currentColor" className="h-2.5 w-2.5">
                   <path d="M9.765 3.205a.75.75 0 0 1 .03 1.06l-4.25 4.5a.75.75 0 0 1-1.085.006L2.21 6.52a.75.75 0 0 1 1.08-1.04l1.865 1.934 3.75-3.977a.75.75 0 0 1 1.06-.232Z" />
                 </svg>
@@ -117,13 +117,13 @@ function TagList({
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKey}
           placeholder={placeholder}
-          className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors"
+          className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors"
         />
         <button
           type="button"
           onClick={add}
           disabled={!draft.trim()}
-          className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-40 transition-colors"
+          className="rounded-lg bg-apple-blue px-3 py-2 text-sm font-semibold text-white hover:bg-apple-blue disabled:opacity-40 transition-colors"
         >
           Add
         </button>
@@ -215,8 +215,8 @@ export default function PostJobPage() {
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-9 w-9 text-emerald-600">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-apple-blue/10">
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-9 w-9 text-apple-blue">
             <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
           </svg>
         </div>
@@ -325,8 +325,8 @@ export default function PostJobPage() {
               onClick={() => setIsRemote((v) => !v)}
               className={cn(
                 "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
-                isRemote ? "bg-emerald-600" : "bg-gray-200",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue focus-visible:ring-offset-2",
+                isRemote ? "bg-apple-blue" : "bg-gray-200",
               )}
             >
               <span className={cn("inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200", isRemote ? "translate-x-5" : "translate-x-0")} />
@@ -347,8 +347,8 @@ export default function PostJobPage() {
                 onClick={() => setSalaryOn((v) => !v)}
                 className={cn(
                   "relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200",
-                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
-                  salaryOn ? "bg-emerald-600" : "bg-gray-200",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue focus-visible:ring-offset-2",
+                  salaryOn ? "bg-apple-blue" : "bg-gray-200",
                 )}
               >
                 <span className={cn("inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200", salaryOn ? "translate-x-5" : "translate-x-0")} />
@@ -451,12 +451,12 @@ export default function PostJobPage() {
 
         {/* ── Preview card ── */}
         {title && company && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-1">
-            <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Preview</p>
+          <div className="rounded-xl border border-apple-blue/20 bg-light-gray p-4 space-y-1">
+            <p className="text-xs font-semibold text-apple-blue uppercase tracking-wide">Preview</p>
             <p className="text-sm font-bold text-gray-900">{title}</p>
             <p className="text-xs text-gray-600">{company} · {isRemote ? "Remote" : location || "—"} · {JOB_TYPES.find(t => t.value === jobType)?.label}</p>
             {salaryOn && salaryMin && salaryMax && (
-              <p className="text-xs text-emerald-700 font-medium">USD {Number(salaryMin).toLocaleString()} – {Number(salaryMax).toLocaleString()} / month</p>
+              <p className="text-xs text-apple-blue font-medium">USD {Number(salaryMin).toLocaleString()} – {Number(salaryMax).toLocaleString()} / month</p>
             )}
           </div>
         )}
@@ -473,7 +473,7 @@ export default function PostJobPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-apple-blue px-5 py-3 text-sm font-semibold text-white hover:bg-apple-blue disabled:opacity-60 transition-colors"
           >
             {submitting ? (
               <>

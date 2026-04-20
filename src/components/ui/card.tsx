@@ -56,8 +56,8 @@ export function Card({
   return (
     <Tag
       className={cn(
-        "rounded-xl bg-white",
-        bordered && "border border-gray-200",
+        "rounded-lg bg-white",
+        bordered && "border border-border-base",
         shadowClasses[shadow],
         paddingClasses[padding],
         hoverable && "transition-shadow duration-200 hover:shadow-md cursor-pointer",
@@ -71,39 +71,34 @@ export function Card({
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-/** Optional header section — renders with a bottom divider. */
 function CardHeader({ children, className }: CardSectionProps) {
   return (
-    <div className={cn("border-b border-gray-100 pb-4 mb-4", className)}>
+    <div className={cn("border-b border-border-base pb-4 mb-4", className)}>
       {children}
     </div>
   );
 }
 
-/** Optional footer section — renders with a top divider. */
 function CardFooter({ children, className }: CardSectionProps) {
   return (
-    <div className={cn("border-t border-gray-100 pt-4 mt-4", className)}>
+    <div className={cn("border-t border-border-base pt-4 mt-4", className)}>
       {children}
     </div>
   );
 }
 
-/** Semantic content wrapper — no extra styling, just a semantic landmark. */
 function CardContent({ children, className }: CardSectionProps) {
   return <div className={cn(className)}>{children}</div>;
 }
 
-/** Card title — large, bold heading. */
 function CardTitle({ children, className }: CardSectionProps) {
   return (
-    <h3 className={cn("text-base font-semibold text-gray-900", className)}>
+    <h3 className={cn("text-base font-semibold text-near-black", className)}>
       {children}
     </h3>
   );
 }
 
-/** Muted subtitle / description beneath a CardTitle. */
 function CardDescription({ children, className }: CardSectionProps) {
   return (
     <p className={cn("mt-0.5 text-sm text-gray-500", className)}>

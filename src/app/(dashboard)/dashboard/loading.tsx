@@ -43,7 +43,7 @@ export default function DashboardLoading() {
   return (
     <div className="space-y-6 p-4 sm:p-6">
       {/* Greeting banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 p-5 sm:p-7 space-y-3">
+      <div className="rounded-2xl bg-light-gray p-5 sm:p-7 space-y-3">
         <Skeleton className="h-7 w-56" />
         <Skeleton className="h-4 w-72" />
         <div className="flex gap-3 pt-1">

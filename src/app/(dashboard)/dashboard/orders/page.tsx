@@ -74,7 +74,7 @@ const MOCK_ORDERS: Order[] = [
 const STATUS_CONFIG: Record<OrderStatus, { label: string; className: string }> = {
   pending:   { label: "Pending",   className: "bg-amber-100 text-amber-700" },
   confirmed: { label: "Confirmed", className: "bg-blue-100 text-blue-700"  },
-  completed: { label: "Completed", className: "bg-emerald-100 text-emerald-700" },
+  completed: { label: "Completed", className: "bg-apple-blue/10 text-apple-blue" },
   cancelled: { label: "Cancelled", className: "bg-red-100 text-red-600"    },
 };
 
@@ -110,7 +110,7 @@ export default function OrdersPage() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
           { label: "Total Orders",    value: total,     color: "text-gray-900"    },
-          { label: "Completed",       value: completed, color: "text-emerald-600" },
+          { label: "Completed",       value: completed, color: "text-apple-blue" },
           { label: "Active",          value: pending,   color: "text-blue-600"    },
           { label: "Cancelled",       value: MOCK_ORDERS.filter(o => o.status === "cancelled").length, color: "text-red-500" },
         ].map(({ label, value, color }) => (
@@ -129,7 +129,7 @@ export default function OrdersPage() {
           </svg>
           <p className="text-sm font-semibold text-gray-600">No orders yet</p>
           <p className="mt-1 text-xs text-gray-400">Browse listings to start buying.</p>
-          <Link href="/listings" className="mt-4 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">
+          <Link href="/listings" className="mt-4 rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
             Browse Listings
           </Link>
         </div>
@@ -155,7 +155,7 @@ export default function OrdersPage() {
                   <p className="text-xs font-mono text-gray-400 mb-0.5">{order.id}</p>
                   <Link
                     href={`/listings/${order.listingId}`}
-                    className="text-sm font-semibold text-gray-900 hover:text-emerald-600 transition-colors line-clamp-1"
+                    className="text-sm font-semibold text-gray-900 hover:text-apple-blue transition-colors line-clamp-1"
                   >
                     {order.listingTitle}
                   </Link>
@@ -164,14 +164,14 @@ export default function OrdersPage() {
 
                 {/* Seller */}
                 <div className="flex items-center gap-2">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-xs font-bold text-apple-blue">
                     {order.seller.charAt(0)}
                   </span>
                   <span className="text-sm text-gray-700 truncate">{order.seller}</span>
                 </div>
 
                 {/* Price */}
-                <p className="text-sm font-bold text-emerald-600">
+                <p className="text-sm font-bold text-apple-blue">
                   {order.currency} {order.price.toLocaleString()}
                 </p>
 

@@ -60,7 +60,7 @@ export default function SavedPage() {
           </p>
         </div>
         {listings.length > 0 && (
-          <Link href="/listings" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+          <Link href="/listings" className="text-sm font-semibold text-apple-blue hover:text-apple-blue transition-colors">
             Browse more →
           </Link>
         )}
@@ -73,7 +73,7 @@ export default function SavedPage() {
           </svg>
           <p className="text-sm font-semibold text-gray-600">No saved listings yet</p>
           <p className="mt-1 text-xs text-gray-400">Tap the heart icon on any listing to save it here.</p>
-          <Link href="/listings" className="mt-5 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">
+          <Link href="/listings" className="mt-5 rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
             Browse Listings
           </Link>
         </div>

@@ -19,32 +19,45 @@ export function Navbar() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-30 bg-black/80 backdrop-blur-xl backdrop-saturate-[180%]">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="flex h-12 items-center justify-between">
 
           {/* Logo */}
-          <Link href="/home" className="text-xl font-bold text-emerald-600 shrink-0">
-            San<span className="text-gray-900">ganai</span>
+          <Link href="/home" className="shrink-0 flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-apple-blue">
+              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z" stroke="white" strokeWidth="1.75" strokeLinejoin="round"/>
+                <path d="M9 21V13h6v8" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
+            <span className="text-sm font-semibold text-white tracking-tight">Sanganai</span>
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-gray-600">
+          <nav className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map(({ label, href }) => (
-              <Link key={href} href={href} className="hover:text-gray-900 transition-colors">
+              <Link
+                key={href}
+                href={href}
+                className="text-xs font-normal text-white/80 hover:text-white transition-colors"
+              >
                 {label}
               </Link>
             ))}
           </nav>
 
           {/* Desktop actions */}
-          <div className="hidden md:flex items-center gap-3">
-            <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+          <div className="hidden md:flex items-center gap-4">
+            <Link
+              href="/login"
+              className="text-xs font-normal text-white/80 hover:text-white transition-colors"
+            >
               Sign In
             </Link>
             <Link
               href={isAuthenticated ? SELL_HREF : SELL_GATE}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.96] active:bg-emerald-800 transition-all duration-75"
+              className="rounded-full bg-apple-blue px-3 py-1 text-xs font-normal text-white hover:opacity-90 transition-opacity"
             >
               + Sell
             </Link>
@@ -52,7 +65,7 @@ export function Navbar() {
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden rounded-md p-2 text-gray-500 hover:bg-gray-100"
+            className="md:hidden rounded-md p-2 text-white/70 hover:text-white"
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
@@ -72,28 +85,32 @@ export function Navbar() {
 
       {/* Mobile menu */}
       <div className={cn(
-        "md:hidden border-t border-gray-100 bg-white overflow-hidden transition-all duration-200",
+        "md:hidden bg-dark-surface-1 overflow-hidden transition-all duration-200",
         open ? "max-h-64" : "max-h-0",
       )}>
-        <nav className="flex flex-col px-4 py-3 gap-1">
+        <nav className="flex flex-col px-6 py-3 gap-1">
           {NAV_LINKS.map(({ label, href }) => (
             <Link
               key={href}
               href={href}
               onClick={() => setOpen(false)}
-              className="rounded-md px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-lg px-3 py-2.5 text-sm font-normal text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             >
               {label}
             </Link>
           ))}
-          <div className="mt-2 flex flex-col gap-2 border-t border-gray-100 pt-3">
-            <Link href="/login" onClick={() => setOpen(false)} className="rounded-md px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <div className="mt-2 flex flex-col gap-2 border-t border-white/10 pt-3">
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="rounded-lg px-3 py-2.5 text-sm font-normal text-white/80 hover:text-white hover:bg-white/10"
+            >
               Sign In
             </Link>
             <Link
               href={isAuthenticated ? SELL_HREF : SELL_GATE}
               onClick={() => setOpen(false)}
-              className="rounded-lg bg-emerald-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.96] active:bg-emerald-800 transition-all duration-75"
+              className="rounded-full bg-apple-blue px-4 py-2.5 text-center text-sm font-normal text-white hover:opacity-90 transition-opacity"
             >
               + Post a Listing
             </Link>

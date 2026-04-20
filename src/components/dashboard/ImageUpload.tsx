@@ -125,13 +125,13 @@ export function ImageUpload({ value, onChange, max = 5, error }: ImageUploadProp
           className={cn(
             "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 text-center transition-colors duration-150",
             dragOver
-              ? "border-emerald-400 bg-emerald-50"
-              : "border-gray-200 bg-gray-50 hover:border-emerald-300 hover:bg-emerald-50/50",
+              ? "border-apple-blue bg-light-gray"
+              : "border-gray-200 bg-gray-50 hover:border-apple-blue/40 hover:bg-light-gray/50",
             displayError && "border-red-300 bg-red-50",
           )}
         >
           <svg
-            className={cn("h-8 w-8", dragOver ? "text-emerald-500" : "text-gray-300")}
+            className={cn("h-8 w-8", dragOver ? "text-apple-blue" : "text-gray-300")}
             fill="none"
             stroke="currentColor"
             strokeWidth={1.5}
@@ -145,7 +145,7 @@ export function ImageUpload({ value, onChange, max = 5, error }: ImageUploadProp
             />
           </svg>
           <div>
-            <span className="text-sm font-semibold text-emerald-600">Click to upload</span>
+            <span className="text-sm font-semibold text-apple-blue">Click to upload</span>
             <span className="text-sm text-gray-500"> or drag and drop</span>
           </div>
           <p className="text-xs text-gray-400">

@@ -38,13 +38,13 @@ function AvatarUpload({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        className="group relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full overflow-hidden bg-emerald-100 ring-4 ring-white shadow-md hover:ring-emerald-300 transition-all"
+        className="group relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full overflow-hidden bg-apple-blue/10 ring-4 ring-white shadow-md hover:ring-apple-blue/40 transition-all"
         aria-label="Change profile picture"
       >
         {avatar ? (
           <Image src={avatar} alt="Profile" fill className="object-cover" />
         ) : (
-          <span className="text-3xl font-bold text-emerald-600">{initial}</span>
+          <span className="text-3xl font-bold text-apple-blue">{initial}</span>
         )}
         {/* Hover overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -102,7 +102,7 @@ function Field({
 const INPUT_CLASS = cn(
   "w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900",
   "placeholder:text-gray-400 shadow-sm",
-  "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors duration-150",
+  "focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors duration-150",
   "disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed",
 );
 
@@ -248,13 +248,13 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-60 transition-all duration-75"
+            className="rounded-lg bg-apple-blue px-6 py-2.5 text-sm font-semibold text-white hover:bg-apple-blue active:scale-[0.97] disabled:opacity-60 transition-all duration-75"
           >
             {saving ? "Saving…" : "Save Changes"}
           </button>
 
           {saved && (
-            <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+            <span className="flex items-center gap-1.5 text-sm font-medium text-apple-blue">
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                 <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
               </svg>

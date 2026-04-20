@@ -47,7 +47,7 @@ function initial(username: string): string {
 function Avatar({ username, src, size = "md" }: { username: string; src?: string | null; size?: "sm" | "md" | "lg" }) {
   const sz = { sm: "h-8 w-8 text-xs", md: "h-10 w-10 text-sm", lg: "h-12 w-12 text-base" }[size];
   return (
-    <span className={cn("relative flex shrink-0 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700 overflow-hidden", sz)}>
+    <span className={cn("relative flex shrink-0 items-center justify-center rounded-full bg-apple-blue/10 font-bold text-apple-blue overflow-hidden", sz)}>
       {src
         ? <Image src={src} alt={username} fill className="object-cover" />
         : initial(username)}
@@ -73,14 +73,14 @@ function ConversationRow({ conv, active, myId, onClick }: {
       className={cn(
         "w-full flex items-start gap-3 px-4 py-3.5 text-left transition-colors",
         active
-          ? "bg-emerald-50 border-l-2 border-emerald-500"
+          ? "bg-light-gray border-l-2 border-apple-blue"
           : "hover:bg-gray-50 border-l-2 border-transparent",
       )}
     >
       <div className="relative shrink-0">
         <Avatar username={other.username} src={other.profile_picture} />
         {unread > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-apple-blue text-[10px] font-bold text-white">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
@@ -115,11 +115,11 @@ function Bubble({ msg, isMe }: { msg: Message; isMe: boolean }) {
       <div className={cn(
         "rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
         isMe
-          ? "rounded-br-sm bg-emerald-600 text-white"
+          ? "rounded-br-sm bg-apple-blue text-white"
           : "rounded-bl-sm bg-white border border-gray-100 text-gray-800 shadow-sm",
       )}>
         <p>{msg.content}</p>
-        <p className={cn("mt-1 text-right text-[11px]", isMe ? "text-emerald-200" : "text-gray-400")}>
+        <p className={cn("mt-1 text-right text-[11px]", isMe ? "text-white/50" : "text-gray-400")}>
           {formatMessageTime(msg.created_at)}
           {isMe && <span className="ml-1">{msg.is_read ? "✓✓" : "✓"}</span>}
         </p>
@@ -155,14 +155,14 @@ function ChatHeader({ conv, myId, isConnected, onBack }: {
         <Avatar username={other.username} src={other.profile_picture} />
         <span className={cn(
           "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white",
-          isConnected ? "bg-emerald-400" : "bg-gray-300",
+          isConnected ? "bg-apple-blue" : "bg-gray-300",
         )} />
       </div>
 
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-900">{other.username}</p>
         {conv.listing && (
-          <Link href={`/listings/${conv.listing.id}`} className="text-xs text-emerald-600 hover:underline truncate block">
+          <Link href={`/listings/${conv.listing.id}`} className="text-xs text-apple-blue hover:underline truncate block">
             {conv.listing.title}
           </Link>
         )}
@@ -218,14 +218,14 @@ function MessageInput({ onSend, disabled }: { onSend: (text: string) => void; di
         className={cn(
           "flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900",
           "placeholder:text-gray-400 leading-relaxed max-h-40 overflow-y-auto",
-          "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors",
+          "focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors",
           "disabled:opacity-50",
         )}
       />
       <button
         type="submit"
         disabled={!value.trim() || disabled}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95 disabled:opacity-40 transition-all duration-75"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-apple-blue text-white hover:bg-apple-blue active:scale-95 disabled:opacity-40 transition-all duration-75"
         aria-label="Send message"
       >
         <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 rotate-90 -translate-x-px">
@@ -298,8 +298,8 @@ function ChatThread({ conv, myId, onBack }: { conv: Conversation; myId: number; 
 function EmptyInbox() {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center px-6">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 mb-4">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-8 w-8 text-emerald-500">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-light-gray mb-4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-8 w-8 text-apple-blue">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
         </svg>
       </div>
@@ -307,7 +307,7 @@ function EmptyInbox() {
       <p className="mt-1 text-xs text-gray-400 max-w-xs">
         When someone contacts you about a listing, the conversation will appear here.
       </p>
-      <Link href="/listings" className="mt-5 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors">
+      <Link href="/listings" className="mt-5 rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
         Browse Listings
       </Link>
     </div>
@@ -420,7 +420,7 @@ export default function MessagesPage() {
           <h1 className="text-xl font-semibold text-gray-900">
             Messages
             {totalUnread > 0 && (
-              <span className="ml-2 inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">
+              <span className="ml-2 inline-flex items-center rounded-full bg-apple-blue/10 px-2 py-0.5 text-xs font-bold text-apple-blue">
                 {totalUnread} new
               </span>
             )}
@@ -448,7 +448,7 @@ export default function MessagesPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search conversations…"
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors"
               />
             </div>
           </div>
@@ -462,7 +462,7 @@ export default function MessagesPage() {
                 <button
                   type="button"
                   onClick={() => loadConversations(1)}
-                  className="text-xs font-medium text-emerald-600 hover:underline"
+                  className="text-xs font-medium text-apple-blue hover:underline"
                 >
                   Try again
                 </button>

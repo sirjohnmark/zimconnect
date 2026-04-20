@@ -4,7 +4,7 @@ export default function AboutLoading() {
   return (
     <div className="bg-white">
       {/* Hero */}
-      <section className="py-16 sm:py-24 bg-gradient-to-b from-emerald-50 to-white">
+      <section className="py-16 sm:py-24 bg-light-gray">
         <div className="mx-auto max-w-3xl px-4 text-center space-y-4">
           <Skeleton className="h-6 w-36 rounded-full mx-auto" />
           <Skeleton className="h-10 w-4/5 mx-auto" />

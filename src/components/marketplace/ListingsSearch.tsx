@@ -100,7 +100,7 @@ export function ListingsSearch({
             className={cn(
               "w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900",
               "placeholder:text-gray-400 shadow-sm",
-              "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors duration-150",
+              "focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors duration-150",
             )}
           />
           {draftQ && (
@@ -108,7 +108,7 @@ export function ListingsSearch({
               type="button"
               onClick={handleClearQ}
               aria-label="Clear keyword"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue"
             >
               <ClearIcon className="h-4 w-4" />
             </button>
@@ -129,7 +129,7 @@ export function ListingsSearch({
             className={cn(
               "w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900",
               "placeholder:text-gray-400 shadow-sm",
-              "focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors duration-150",
+              "focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors duration-150",
             )}
           />
           {draftLoc && (
@@ -137,7 +137,7 @@ export function ListingsSearch({
               type="button"
               onClick={handleClearLoc}
               aria-label="Clear location"
-              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-apple-blue"
             >
               <ClearIcon className="h-4 w-4" />
             </button>
@@ -148,7 +148,7 @@ export function ListingsSearch({
         <button
           type="submit"
           disabled={isPending}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] disabled:opacity-70 transition-all duration-75 sm:w-auto"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-apple-blue active:scale-[0.97] disabled:opacity-70 transition-all duration-75 sm:w-auto"
         >
           {isPending ? <Spinner /> : <SearchIcon className="h-4 w-4" />}
           {isPending ? "Searching…" : "Search"}
@@ -159,10 +159,10 @@ export function ListingsSearch({
       {(searchParams.get("q") || searchParams.get("loc")) && (
         <div className="flex flex-wrap gap-1.5">
           {searchParams.get("q") && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-light-gray border border-apple-blue/20 px-2.5 py-0.5 text-xs font-medium text-apple-blue">
               <SearchIcon className="h-3 w-3" />
               {searchParams.get("q")}
-              <button type="button" onClick={handleClearQ} aria-label="Remove keyword filter" className="ml-0.5 hover:text-emerald-900">
+              <button type="button" onClick={handleClearQ} aria-label="Remove keyword filter" className="ml-0.5 hover:text-near-black">
                 <ClearIcon className="h-3 w-3" />
               </button>
             </span>

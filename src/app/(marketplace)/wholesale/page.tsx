@@ -96,7 +96,7 @@ function WholesaleCard({ listing }: { listing: WholesaleListing }) {
                 <button
                   type="button"
                   onClick={() => setExpanded((v) => !v)}
-                  className="mt-0.5 text-xs font-medium text-emerald-600 hover:text-emerald-700"
+                  className="mt-0.5 text-xs font-medium text-apple-blue hover:text-apple-blue"
                 >
                   {expanded ? "Show less" : "Read more"}
                 </button>
@@ -107,12 +107,12 @@ function WholesaleCard({ listing }: { listing: WholesaleListing }) {
 
         {/* Price + MOQ */}
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-1.5 text-center">
-            <p className="text-xs text-emerald-600 font-medium">Unit Price</p>
-            <p className="text-lg font-extrabold text-emerald-700">
+          <div className="rounded-lg bg-light-gray border border-apple-blue/10 px-3 py-1.5 text-center">
+            <p className="text-xs text-apple-blue font-medium">Unit Price</p>
+            <p className="text-lg font-extrabold text-apple-blue">
               ${listing.price.toLocaleString()}
             </p>
-            <p className="text-xs text-emerald-600">{listing.priceUnit}</p>
+            <p className="text-xs text-apple-blue">{listing.priceUnit}</p>
           </div>
           <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-1.5 text-center">
             <p className="text-xs text-amber-600 font-medium">Min. Order</p>
@@ -130,7 +130,7 @@ function WholesaleCard({ listing }: { listing: WholesaleListing }) {
             {listing.location}{listing.sublocation ? ` · ${listing.sublocation}` : ""}
           </span>
           {listing.delivery.available ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-light-gray border border-apple-blue/10 px-2 py-0.5 text-xs font-medium text-apple-blue">
               <svg viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
                 <path d="M1.5 3.5A.5.5 0 0 1 2 3h8a.5.5 0 0 1 .5.5V5h1.2a.5.5 0 0 1 .4.2l1.8 2.4a.5.5 0 0 1 .1.3V10a.5.5 0 0 1-.5.5H13a2 2 0 0 1-4 0H5a2 2 0 0 1-4 0H.5A.5.5 0 0 1 0 10V4a.5.5 0 0 1 .5-.5h1v.5H1.5v-.5Zm1 7a1 1 0 1 0 2 0 1 1 0 0 0-2 0Zm7.5 0a1 1 0 1 0 2 0 1 1 0 0 0-2 0Z" />
               </svg>
@@ -142,7 +142,7 @@ function WholesaleCard({ listing }: { listing: WholesaleListing }) {
         </div>
 
         {listing.delivery.available && listing.delivery.note && (
-          <p className="text-xs text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2 border border-emerald-100">
+          <p className="text-xs text-apple-blue bg-light-gray rounded-lg px-3 py-2 border border-apple-blue/10">
             {listing.delivery.note}
           </p>
         )}

@@ -174,7 +174,7 @@ export default function ListingsPage() {
               onChange={(e) => setDraftSearch(e.target.value)}
               placeholder="Search listings…"
               aria-label="Search by keyword"
-              className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors"
+              className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors"
             />
             {draftSearch && (
               <button type="button" onClick={() => { setDraftSearch(""); navigate({ search: "", location: draftLocation }); }} aria-label="Clear keyword" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -193,7 +193,7 @@ export default function ListingsPage() {
               onChange={(e) => setDraftLocation(e.target.value)}
               placeholder="City or location…"
               aria-label="Filter by location"
-              className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-400 transition-colors"
+              className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-9 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors"
             />
             {draftLocation && (
               <button type="button" onClick={() => { setDraftLocation(""); navigate({ search: draftSearch, location: "" }); }} aria-label="Clear location" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -202,7 +202,7 @@ export default function ListingsPage() {
             )}
           </div>
 
-          <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-[0.97] transition-all sm:w-auto">
+          <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-apple-blue active:scale-[0.97] transition-all sm:w-auto">
             <SearchIcon className="text-white" />
             Search
           </button>
@@ -211,7 +211,7 @@ export default function ListingsPage() {
         {(urlSearch || urlLocation) && (
           <div className="flex flex-wrap gap-1.5">
             {urlSearch && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-light-gray border border-apple-blue/20 px-2.5 py-0.5 text-xs font-medium text-apple-blue">
                 <SearchIcon className="h-3 w-3" />{urlSearch}
                 <button type="button" onClick={() => navigate({ search: "", location: urlLocation })} aria-label="Remove keyword filter"><ClearIcon className="h-3 w-3" /></button>
               </span>

@@ -4,7 +4,7 @@ export default function ContactLoading() {
   return (
     <div className="bg-white">
       {/* Hero */}
-      <section className="py-14 sm:py-20 bg-gradient-to-b from-emerald-50 to-white">
+      <section className="py-14 sm:py-20 bg-light-gray">
         <div className="mx-auto max-w-3xl px-4 text-center space-y-4">
           <Skeleton className="h-6 w-28 rounded-full mx-auto" />
           <Skeleton className="h-10 w-3/5 mx-auto" />
