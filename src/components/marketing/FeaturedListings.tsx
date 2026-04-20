@@ -1,9 +1,22 @@
 import Link from "next/link";
 import { ListingCard } from "@/components/marketplace/ListingCard";
-import { MOCK_LISTINGS } from "@/lib/mock/listings";
+import { getListings } from "@/lib/api/listings";
 
-export function FeaturedListings() {
-  const listings = MOCK_LISTINGS.slice(0, 8);
+export async function FeaturedListings() {
+  let listings: Awaited<ReturnType<typeof getListings>>["results"] = [];
+  try {
+    const res = await getListings({ featured: true, page_size: 8, ordering: "-created_at" });
+    listings = res.results;
+    // fallback: if no featured listings, show latest
+    if (listings.length === 0) {
+      const fallback = await getListings({ page_size: 8, ordering: "-created_at" });
+      listings = fallback.results;
+    }
+  } catch {
+    // silently skip — section just won't render
+  }
+
+  if (listings.length === 0) return null;
 
   return (
     <section className="bg-gray-50 py-16 sm:py-24">
