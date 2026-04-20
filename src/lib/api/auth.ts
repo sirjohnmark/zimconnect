@@ -21,7 +21,10 @@ export interface AuthUser {
   username: string;
   first_name: string;
   last_name: string;
+  /** Convenience full name — `first_name + " " + last_name` */
+  name: string;
   phone: string;
+  avatar?: string;
   role: "BUYER" | "SELLER" | "ADMIN" | "MODERATOR";
   profile_picture: string | null;
   bio: string;
@@ -58,6 +61,7 @@ function mockUser(overrides: Partial<AuthUser> & { id: string | number; email: s
     updated_at: new Date().toISOString(),
     ...overrides,
     id: typeof overrides.id === "string" ? parseInt(overrides.id, 10) || Date.now() : overrides.id,
+    name: `${overrides.first_name} ${overrides.last_name}`.trim(),
   };
 }
 
@@ -108,9 +112,10 @@ export async function loginUser(credentials: LoginInput): Promise<LoginResponse>
     return { tokens: { access: "mock-access", refresh: "mock-refresh" }, user };
   }
   const response = await api.post<LoginResponse>("/api/v1/auth/login/", credentials);
+  const user = normalizeUser(response.user);
   saveTokens(response.tokens.access, response.tokens.refresh);
-  saveUser(response.user);
-  return response;
+  saveUser(user);
+  return { ...response, user };
 }
 
 export async function refreshAccessToken(): Promise<string> {
@@ -137,26 +142,31 @@ export async function logoutUser(): Promise<void> {
   }
 }
 
+function normalizeUser(user: AuthUser): AuthUser {
+  return { ...user, name: user.name || `${user.first_name} ${user.last_name}`.trim(), avatar: user.avatar ?? user.profile_picture ?? undefined };
+}
+
 export async function getMe(): Promise<AuthUser> {
   if (USE_MOCK) {
     const user = getStoredUser();
     if (!user) throw new ApiError(401, "Unauthorized", "Not authenticated");
-    return user as unknown as AuthUser;
+    return normalizeUser(user as unknown as AuthUser);
   }
   const user = await api.get<AuthUser>("/api/v1/auth/profile/");
-  saveUser(user);
-  return user;
+  const normalized = normalizeUser(user);
+  saveUser(normalized);
+  return normalized;
 }
 
 export async function updateProfile(updates: Partial<Omit<AuthUser, "id" | "created_at" | "updated_at" | "is_active">>): Promise<AuthUser> {
   if (USE_MOCK) {
     const user = getStoredUser();
     if (!user) throw new ApiError(401, "Unauthorized", "Not authenticated");
-    const updated = { ...user, ...updates } as unknown as AuthUser;
+    const updated = normalizeUser({ ...user, ...updates } as unknown as AuthUser);
     saveUser(updated);
     return updated;
   }
-  const updated = await api.patch<AuthUser>("/api/v1/auth/profile/", updates);
+  const updated = normalizeUser(await api.patch<AuthUser>("/api/v1/auth/profile/", updates));
   saveUser(updated);
   return updated;
 }
