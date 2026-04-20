@@ -305,7 +305,7 @@ function MyJobCard({ job }: { job: JobListing }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function JobsDashboardPage() {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
   const [tab, setTab]     = useState<"employer" | "seeker">("seeker");
   const [jobs, setJobs]   = useState<JobListing[]>([]);
   const [cvs, setCvs]     = useState<CvProfile[]>([]);
@@ -317,7 +317,8 @@ export default function JobsDashboardPage() {
     setMounted(true);
   }, []);
 
-  if (!user) return null;
+  if (!authUser) return null;
+  const user = authUser;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -376,9 +377,9 @@ export default function JobsDashboardPage() {
               <div className="space-y-2">
                 {[1, 2].map((n) => <div key={n} className="h-14 animate-pulse rounded-xl bg-gray-100" />)}
               </div>
-            ) : getEmployerJobs(user.id).length > 0 ? (
+            ) : getEmployerJobs(String(user.id)).length > 0 ? (
               <div className="space-y-2">
-                {getEmployerJobs(user.id).map((job) => <MyJobCard key={job.id} job={job} />)}
+                {getEmployerJobs(String(user.id)).map((job) => <MyJobCard key={job.id} job={job} />)}
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 py-8 text-center">
