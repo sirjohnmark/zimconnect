@@ -338,8 +338,8 @@ export function Navbar() {
         aria-label="Navigation menu"
         className={cn(
           "fixed left-0 right-0 top-16 z-40 bg-white border-b border-gray-100 shadow-xl md:hidden overflow-y-auto max-h-[calc(100dvh-4rem)]",
-          "transition-all duration-200 ease-out origin-top",
-          open ? "opacity-100 scale-y-100" : "opacity-0 scale-y-95 pointer-events-none",
+          "transition-all duration-200 ease-out",
+          open ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none",
         )}
       >
         {isLoading ? (
@@ -348,28 +348,28 @@ export function Navbar() {
           </div>
         ) : isAuthenticated && user ? (
           /* ── Authenticated mobile menu ── */
-          <div className="px-4 py-4 space-y-4">
+          <div className="px-4 py-3 space-y-3">
 
             {/* User card */}
             <Link
               href="/dashboard/profile"
               onClick={close}
-              className="flex items-center gap-3 rounded-2xl bg-apple-blue px-4 py-3.5"
+              className="flex items-center gap-2.5 rounded-xl bg-apple-blue px-3 py-2.5"
             >
-              <UserAvatar name={getUserDisplayName(user)} avatar={user.profile_picture ?? undefined} size="md" />
+              <UserAvatar name={getUserDisplayName(user)} avatar={user.profile_picture ?? undefined} size="sm" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">{getUserDisplayName(user)}</p>
-                <p className="truncate text-xs text-white/50">{user.email}</p>
+                <p className="truncate text-xs font-semibold text-white">{getUserDisplayName(user)}</p>
+                <p className="truncate text-[11px] text-white/50">{user.email}</p>
               </div>
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-white/40 shrink-0">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-white/40 shrink-0">
                 <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
               </svg>
             </Link>
 
             {/* Dashboard grid */}
             <div>
-              <p className="px-1 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Dashboard</p>
-              <div className="grid grid-cols-4 gap-2">
+              <p className="px-1 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Dashboard</p>
+              <div className="grid grid-cols-4 gap-1.5">
                 {DASHBOARD_LINKS.map(({ label, href, icon }) => {
                   const isActive = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
                   return (
@@ -378,16 +378,16 @@ export function Navbar() {
                       href={href}
                       onClick={close}
                       className={cn(
-                        "flex flex-col items-center justify-center gap-1.5 rounded-xl p-3 text-center transition-colors",
+                        "flex flex-col items-center justify-center gap-1 rounded-lg p-2 text-center transition-colors",
                         isActive
                           ? "bg-light-gray text-apple-blue"
                           : "bg-gray-50 text-gray-600 hover:bg-gray-100",
                       )}
                     >
-                      <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", isActive ? "bg-apple-blue/10 text-apple-blue" : "bg-white text-gray-500 shadow-sm")}>
+                      <span className={cn("flex h-6 w-6 items-center justify-center rounded-md", isActive ? "bg-apple-blue/10 text-apple-blue" : "bg-white text-gray-500 shadow-sm")}>
                         {icon}
                       </span>
-                      <span className="text-[11px] font-medium leading-tight">{label}</span>
+                      <span className="text-[9px] font-medium leading-tight">{label}</span>
                     </Link>
                   );
                 })}
@@ -398,9 +398,9 @@ export function Navbar() {
             <Link
               href="/dashboard/listings/create"
               onClick={close}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-apple-blue px-4 py-3 text-sm font-semibold text-white hover:opacity-90 active:opacity-80 transition-colors"
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-apple-blue px-4 py-2 text-xs font-semibold text-white hover:opacity-90 active:opacity-80 transition-colors"
             >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
                 <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
               </svg>
               Post a Listing
@@ -408,7 +408,7 @@ export function Navbar() {
 
             {/* Site nav */}
             <div>
-              <p className="px-1 mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">Explore</p>
+              <p className="px-1 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Explore</p>
               <div className="space-y-0.5">
                 {NAV_LINKS.map(({ label, href }) => {
                   const base = href.split("#")[0];
@@ -419,7 +419,7 @@ export function Navbar() {
                       href={href}
                       onClick={close}
                       className={cn(
-                        "flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                        "flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-colors",
                         isActive ? "bg-light-gray text-apple-blue" : "text-gray-700 hover:bg-gray-50",
                       )}
                     >
@@ -433,7 +433,7 @@ export function Navbar() {
             {/* Sign out */}
             <button
               onClick={() => { close(); logout(); }}
-              className="flex w-full items-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+              className="flex w-full items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                 <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 0 1 5.25 2h5.5A2.25 2.25 0 0 1 13 4.25v2a.75.75 0 0 1-1.5 0v-2a.75.75 0 0 0-.75-.75h-5.5a.75.75 0 0 0-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 0 0 .75-.75v-2a.75.75 0 0 1 1.5 0v2A2.25 2.25 0 0 1 10.75 18h-5.5A2.25 2.25 0 0 1 3 15.75V4.25Z" clipRule="evenodd" />
@@ -444,7 +444,7 @@ export function Navbar() {
           </div>
         ) : (
           /* ── Unauthenticated mobile menu ── */
-          <div className="px-4 py-4 space-y-1">
+          <div className="px-4 py-3 space-y-0.5">
             {NAV_LINKS.map(({ label, href }) => {
               const base = href.split("#")[0];
               const isActive = pathname === base || (base !== "/home" && pathname.startsWith(base + "/"));
@@ -454,7 +454,7 @@ export function Navbar() {
                   href={href}
                   onClick={close}
                   className={cn(
-                    "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors",
+                    "flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-colors",
                     isActive ? "bg-light-gray text-apple-blue" : "text-gray-700 hover:bg-gray-50",
                   )}
                   aria-current={isActive ? "page" : undefined}
@@ -464,11 +464,11 @@ export function Navbar() {
               );
             })}
 
-            <div className="border-t border-gray-100 pt-3 mt-2 space-y-2">
-              <Link href="/login" onClick={close} className="flex items-center justify-center rounded-full border border-border-base px-4 py-3 text-sm font-medium text-gray-700 hover:bg-light-gray transition-colors">
+            <div className="border-t border-gray-100 pt-2.5 mt-2 space-y-1.5">
+              <Link href="/login" onClick={close} className="flex items-center justify-center rounded-full border border-border-base px-4 py-2 text-xs font-medium text-gray-700 hover:bg-light-gray transition-colors">
                 Sign In
               </Link>
-              <Link href="/register" onClick={close} className="flex items-center justify-center rounded-full bg-apple-blue px-4 py-3 text-sm font-normal text-white hover:opacity-90 transition-opacity">
+              <Link href="/register" onClick={close} className="flex items-center justify-center rounded-full bg-apple-blue px-4 py-2 text-xs font-normal text-white hover:opacity-90 transition-opacity">
                 Get Started Now
               </Link>
             </div>

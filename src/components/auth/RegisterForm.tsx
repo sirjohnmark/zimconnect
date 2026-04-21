@@ -23,12 +23,12 @@ const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
-function Steps({ current }: { current: 1 | 2 | 3 }) {
-  const steps = ["Details", "Verify", "Confirm"];
+function Steps({ current }: { current: 1 | 2 | 3 | 4 }) {
+  const steps = ["You", "Account", "Verify", "Confirm"];
   return (
     <div className="flex items-center gap-0 mb-6">
       {steps.map((label, i) => {
-        const step = (i + 1) as 1 | 2 | 3;
+        const step = (i + 1) as 1 | 2 | 3 | 4;
         const done = step < current;
         const active = step === current;
         return (
@@ -174,7 +174,7 @@ export function RegisterForm() {
   const { login } = useAuth();
   const redirectTo = searchParams.get("redirect") ?? "/dashboard";
 
-  const [step, setStep]             = useState<1 | 2 | 3>(1);
+  const [step, setStep]             = useState<1 | 2 | 3 | 4>(1);
   const [formData, setFormData]     = useState<RegisterInput | null>(null);
   const [verifyMethod, setMethod]   = useState<"email" | "phone">("email");
   const [otpDigits, setOtpDigits]   = useState<string[]>(Array(6).fill(""));
@@ -192,25 +192,40 @@ export function RegisterForm() {
   const {
     register,
     handleSubmit,
+    getValues,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
   });
 
   useEffect(() => {
-    if (step === 3 && otpComplete && !verifying && otpStatus === "idle") {
+    if (step === 4 && otpComplete && !verifying && otpStatus === "idle") {
       handleVerifyAndRegister();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otpComplete, step]);
 
-  // ── Step 1: collect details ───────────────────────────────────────────────
+  // ── Step 1: personal info (name/email/phone/username) ────────────────────
+
+  function onStep1Next() {
+    const { first_name, last_name, username, email, phone } = getValues();
+    const partial = { first_name, last_name, username, email, phone };
+    // Trigger validation for step-1 fields only
+    trigger(["first_name", "last_name", "username", "email"]).then((valid) => {
+      if (valid) {
+        setFormData((prev) => ({ ...prev, ...partial } as RegisterInput));
+        setStep(2);
+      }
+    });
+  }
+
+  // ── Step 2: role + password → collect full details ────────────────────────
 
   async function onDetailsSubmit(data: RegisterInput) {
     setFormError(null);
 
     if (!USE_MOCK) {
-      // Real API: create account now — server sends OTP automatically
       try {
         await registerAuth(data);
       } catch (err) {
@@ -227,10 +242,10 @@ export function RegisterForm() {
 
     setFormData(data);
     setMethod(data.phone ? "phone" : "email");
-    setStep(2);
+    setStep(3);
   }
 
-  // ── Step 2: send OTP ──────────────────────────────────────────────────────
+  // ── Step 3: send OTP ──────────────────────────────────────────────────────
 
   async function handleSendCode() {
     if (!formData) return;
@@ -248,7 +263,7 @@ export function RegisterForm() {
         else await sendPhoneOtp();
       }
 
-      setStep(3);
+      setStep(4);
       startResendCooldown();
     } catch (err) {
       setOtpError(err instanceof ApiError ? err.message : "Failed to send code. Please try again.");
@@ -321,7 +336,7 @@ export function RegisterForm() {
       setOtpStatus("idle");
       if (err instanceof ApiError && err.status === 409) {
         setFormError("An account with this email already exists.");
-        setStep(1);
+        setStep(2);
       } else if (err instanceof ApiError) {
         setOtpError(err.message);
       } else {
@@ -343,9 +358,9 @@ export function RegisterForm() {
 
       <Steps current={step} />
 
-      {/* ── Step 1: Account details ── */}
+      {/* ── Step 1: Personal info ── */}
       {step === 1 && (
-        <form onSubmit={handleSubmit(onDetailsSubmit)} noValidate className="space-y-4">
+        <div className="space-y-4">
           {formError && <Alert message={formError} />}
 
           <div className="grid grid-cols-2 gap-3">
@@ -397,7 +412,17 @@ export function RegisterForm() {
             error={errors.phone?.message}
           />
 
-          {/* Role selector */}
+          <Button type="button" fullWidth onClick={onStep1Next}>
+            Next
+          </Button>
+        </div>
+      )}
+
+      {/* ── Step 2: Role + password ── */}
+      {step === 2 && (
+        <form onSubmit={handleSubmit(onDetailsSubmit)} noValidate className="space-y-4">
+          {formError && <Alert message={formError} />}
+
           <div className="space-y-1.5">
             <span className="block text-sm font-medium text-gray-700">I want to <span className="text-red-500">*</span></span>
             {errors.role && <p className="text-xs text-red-600">{errors.role.message}</p>}
@@ -435,14 +460,23 @@ export function RegisterForm() {
             required
           />
 
-          <Button type="submit" fullWidth loading={isSubmitting}>
-            Continue
-          </Button>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Back
+            </button>
+            <Button type="submit" className="flex-1" loading={isSubmitting}>
+              Continue
+            </Button>
+          </div>
         </form>
       )}
 
-      {/* ── Step 2: Choose verify method ── */}
-      {step === 2 && formData && (
+      {/* ── Step 3: Choose verify method ── */}
+      {step === 3 && formData && (
         <div className="space-y-5">
           <p className="text-sm text-gray-600">
             Choose how you&apos;d like to verify your account. We&apos;ll send a 6-digit code.
@@ -507,7 +541,7 @@ export function RegisterForm() {
           <div className="flex gap-3 pt-1">
             <button
               type="button"
-              onClick={() => setStep(1)}
+              onClick={() => setStep(2)}
               className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Back
@@ -519,8 +553,8 @@ export function RegisterForm() {
         </div>
       )}
 
-      {/* ── Step 3: Enter OTP ── */}
-      {step === 3 && formData && (
+      {/* ── Step 4: Enter OTP ── */}
+      {step === 4 && formData && (
         <div className="space-y-5">
           {otpStatus === "success" ? (
             <div className="flex flex-col items-center gap-3 py-4">
@@ -567,7 +601,7 @@ export function RegisterForm() {
           <div className="flex items-center justify-between text-xs text-gray-500 pt-1">
             <button
               type="button"
-              onClick={() => { setStep(2); setOtpDigits(Array(6).fill("")); setOtpStatus("idle"); setOtpError(null); }}
+              onClick={() => { setStep(3); setOtpDigits(Array(6).fill("")); setOtpStatus("idle"); setOtpError(null); }}
               className="hover:text-gray-700 hover:underline"
             >
               ← Change method

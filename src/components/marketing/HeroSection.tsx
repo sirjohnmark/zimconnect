@@ -157,23 +157,23 @@ export function HeroSection() {
       </div>
 
       {/* ── Content ── */}
-      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid items-center gap-12 py-24 lg:min-h-[90vh] lg:grid-cols-[1fr_460px] lg:gap-16 lg:py-0">
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-8 py-12 sm:py-16 lg:min-h-[90vh] lg:grid-cols-[1fr_460px] lg:gap-16 lg:py-0">
 
           {/* ──── Left: Main copy ──── */}
           <div className="flex flex-col">
 
             {/* Live badge */}
-            <div className="mb-7 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-4 py-1.5 backdrop-blur-sm">
+            <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-apple-blue opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-apple-blue" />
               </span>
-              <span className="text-xs font-medium text-white/60">Zimbabwe&apos;s #1 Marketplace</span>
+              <span className="text-[11px] font-medium text-white/60">Zimbabwe&apos;s #1 Marketplace</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-[clamp(2.75rem,6vw,4.5rem)] font-semibold leading-[1.05] tracking-tight text-white">
+            <h1 className="text-[clamp(1.875rem,7vw,4.5rem)] font-semibold leading-[1.08] tracking-tight text-white">
               Buy and sell
               <br />
               <span
@@ -187,7 +187,7 @@ export function HeroSection() {
             </h1>
 
             {/* Subheadline */}
-            <p className="mt-6 max-w-md text-[17px] leading-relaxed text-white/50 font-normal">
+            <p className="mt-4 max-w-md text-sm sm:text-[17px] leading-relaxed text-white/50 font-normal">
               From electronics to property — Sanganai connects buyers and sellers
               across Zimbabwe. Free to list, fast to sell.
             </p>
@@ -195,10 +195,10 @@ export function HeroSection() {
             {/* Search bar */}
             <form
               onSubmit={handleSearch}
-              className="mt-8 flex max-w-[520px] overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] backdrop-blur-xl transition-all duration-200 focus-within:border-apple-blue/50 focus-within:bg-white/[0.10] focus-within:shadow-[0_0_0_3px_rgba(0,113,227,0.15)]"
+              className="mt-6 flex max-w-[520px] overflow-hidden rounded-xl sm:rounded-2xl border border-white/10 bg-white/[0.07] backdrop-blur-xl transition-all duration-200 focus-within:border-apple-blue/50 focus-within:bg-white/[0.10] focus-within:shadow-[0_0_0_3px_rgba(0,113,227,0.15)]"
             >
-              <span className="flex shrink-0 items-center pl-5 text-white/30" aria-hidden="true">
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <span className="flex shrink-0 items-center pl-4 text-white/30" aria-hidden="true">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                 </svg>
               </span>
@@ -207,12 +207,12 @@ export function HeroSection() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search listings — phones, cars, apartments…"
-                className="flex-1 min-w-0 bg-transparent px-4 py-4 text-sm text-white placeholder:text-white/30 focus:outline-none"
+                className="flex-1 min-w-0 bg-transparent px-3 py-3 sm:py-4 text-sm text-white placeholder:text-white/30 focus:outline-none"
               />
-              <div className="flex shrink-0 items-center p-2">
+              <div className="flex shrink-0 items-center p-1.5">
                 <button
                   type="submit"
-                  className="rounded-xl bg-apple-blue px-5 py-2.5 text-sm font-normal text-white hover:opacity-90 active:opacity-80 transition-opacity"
+                  className="rounded-lg bg-apple-blue px-4 py-2 text-sm font-normal text-white hover:opacity-90 active:opacity-80 transition-opacity"
                 >
                   Search
                 </button>
@@ -235,23 +235,23 @@ export function HeroSection() {
             </div>
 
             {/* CTA row */}
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-2.5">
               <Link
                 href="/listings"
-                className="rounded-full bg-apple-blue px-7 py-3 text-sm font-normal text-white hover:opacity-90 active:opacity-80 transition-opacity"
+                className="rounded-full bg-apple-blue px-6 py-2.5 text-sm font-normal text-white hover:opacity-90 active:opacity-80 transition-opacity"
               >
                 Browse Listings
               </Link>
               <Link
                 href="/register"
-                className="rounded-full border border-white/15 px-7 py-3 text-sm font-normal text-white/70 transition-all hover:border-white/30 hover:text-white"
+                className="rounded-full border border-white/15 px-6 py-2.5 text-sm font-normal text-white/70 transition-all hover:border-white/30 hover:text-white"
               >
                 Start Selling Free →
               </Link>
             </div>
 
             {/* Stats */}
-            <div className="mt-12 flex flex-wrap gap-x-10 gap-y-5 border-t border-white/10 pt-8">
+            <div className="mt-8 lg:mt-12 flex flex-wrap gap-x-8 gap-y-4 border-t border-white/10 pt-6 lg:pt-8">
               {STATS.map(({ value, label }) => (
                 <div key={label}>
                   <p className="text-2xl font-semibold text-white">{value}</p>
