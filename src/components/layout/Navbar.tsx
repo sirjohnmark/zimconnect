@@ -257,7 +257,7 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-gray-100 bg-white/95 backdrop-blur-sm shadow-sm">
+      <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/95 backdrop-blur-sm shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-8">
 
@@ -338,8 +338,8 @@ export function Navbar() {
         aria-label="Navigation menu"
         className={cn(
           "fixed left-0 right-0 top-16 z-40 bg-white border-b border-gray-100 shadow-xl md:hidden overflow-y-auto max-h-[calc(100dvh-4rem)]",
-          "transition-all duration-200 ease-out",
-          open ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none",
+          "transition-opacity duration-150 ease-out",
+          open ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
       >
         {isLoading ? (
@@ -348,13 +348,13 @@ export function Navbar() {
           </div>
         ) : isAuthenticated && user ? (
           /* ── Authenticated mobile menu ── */
-          <div className="px-4 py-3 space-y-3">
+          <div className="px-3 py-2 space-y-2">
 
             {/* User card */}
             <Link
               href="/dashboard/profile"
               onClick={close}
-              className="flex items-center gap-2.5 rounded-xl bg-apple-blue px-3 py-2.5"
+              className="flex items-center gap-2 rounded-lg bg-apple-blue px-3 py-2"
             >
               <UserAvatar name={getUserDisplayName(user)} avatar={user.profile_picture ?? undefined} size="sm" />
               <div className="min-w-0 flex-1">
@@ -444,7 +444,7 @@ export function Navbar() {
           </div>
         ) : (
           /* ── Unauthenticated mobile menu ── */
-          <div className="px-4 py-3 space-y-0.5">
+          <div className="px-3 py-2 space-y-0.5">
             {NAV_LINKS.map(({ label, href }) => {
               const base = href.split("#")[0];
               const isActive = pathname === base || (base !== "/home" && pathname.startsWith(base + "/"));
@@ -464,11 +464,11 @@ export function Navbar() {
               );
             })}
 
-            <div className="border-t border-gray-100 pt-2.5 mt-2 space-y-1.5">
-              <Link href="/login" onClick={close} className="flex items-center justify-center rounded-full border border-border-base px-4 py-2 text-xs font-medium text-gray-700 hover:bg-light-gray transition-colors">
+            <div className="border-t border-gray-100 pt-2 mt-1.5 space-y-1">
+              <Link href="/login" onClick={close} className="flex items-center justify-center rounded-lg border border-border-base px-4 py-1.5 text-xs font-medium text-gray-700 hover:bg-light-gray transition-colors">
                 Sign In
               </Link>
-              <Link href="/register" onClick={close} className="flex items-center justify-center rounded-full bg-apple-blue px-4 py-2 text-xs font-normal text-white hover:opacity-90 transition-opacity">
+              <Link href="/register" onClick={close} className="flex items-center justify-center rounded-lg bg-apple-blue px-4 py-1.5 text-xs font-normal text-white hover:opacity-90 transition-opacity">
                 Get Started Now
               </Link>
             </div>
