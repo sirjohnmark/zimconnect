@@ -249,8 +249,10 @@ export function Navbar() {
 
   useEffect(() => { setOpen(false); }, [pathname]);
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!open) return;
+    const prev = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => { document.documentElement.style.overflow = prev; };
   }, [open]);
 
   function close() { setOpen(false); }
@@ -320,28 +322,22 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Backdrop */}
-      <div
-        className={cn(
-          "fixed inset-0 top-16 z-30 bg-black/30 md:hidden transition-opacity duration-200",
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
-        )}
-        aria-hidden="true"
-        onClick={close}
-      />
+      {/* Backdrop + mobile panel — only mounted when open */}
+      {open && (
+        <>
+          <div
+            className="fixed inset-0 top-16 z-30 bg-black/40 md:hidden"
+            aria-hidden="true"
+            onClick={close}
+          />
 
-      {/* Slide-down mobile panel */}
-      <div
-        id="mobile-menu"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Navigation menu"
-        className={cn(
-          "fixed left-0 right-0 top-16 z-40 bg-white border-b border-gray-100 shadow-xl md:hidden overflow-y-auto max-h-[calc(100dvh-4rem)]",
-          "transition-opacity duration-150 ease-out",
-          open ? "opacity-100" : "opacity-0 pointer-events-none",
-        )}
-      >
+          <div
+            id="mobile-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            className="fixed left-0 right-0 top-16 z-40 bg-white border-b border-gray-100 shadow-xl md:hidden overflow-y-auto max-h-[calc(100dvh-4rem)]"
+          >
         {isLoading ? (
           <div className="space-y-2 px-4 py-4">
             {[1, 2, 3].map((n) => <div key={n} className="h-11 animate-pulse rounded-lg bg-gray-100" />)}
@@ -474,7 +470,9 @@ export function Navbar() {
             </div>
           </div>
         )}
-      </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
