@@ -19,11 +19,11 @@ export default function SavedPage() {
       if (ids.length === 0) { setListings([]); setMounted(true); return; }
 
       // Pull from data layer (merges localStorage + seed)
-      const { data } = await getListings({});
-      const saved = data.filter((l) => ids.includes(l.id));
+      const { results } = await getListings({});
+      const saved = results.filter((l) => ids.includes(String(l.id)));
       // Also check MOCK_LISTINGS for any that didn't come through
       const fromMock = MOCK_LISTINGS.filter(
-        (l) => ids.includes(l.id) && !saved.find((s) => s.id === l.id),
+        (l) => ids.includes(String(l.id)) && !saved.find((s) => String(s.id) === String(l.id)),
       );
       setListings([...saved, ...fromMock]);
       setMounted(true);
@@ -33,7 +33,7 @@ export default function SavedPage() {
 
   function handleRemove(id: string) {
     removeSaved(id);
-    setListings((prev) => prev.filter((l) => l.id !== id));
+    setListings((prev) => prev.filter((l) => String(l.id) !== id));
   }
 
   if (!mounted) {
@@ -83,7 +83,7 @@ export default function SavedPage() {
             <div key={listing.id} className="flex flex-col gap-2">
               <ListingCard listing={listing} />
               <button
-                onClick={() => handleRemove(listing.id)}
+                onClick={() => handleRemove(String(listing.id))}
                 className="w-full rounded-lg border border-rose-200 py-1.5 text-xs font-medium text-rose-500 hover:bg-rose-50 transition-colors"
               >
                 Remove from saved

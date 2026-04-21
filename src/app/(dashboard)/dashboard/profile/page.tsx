@@ -110,6 +110,7 @@ const INPUT_CLASS = cn(
 
 export default function ProfilePage() {
   const { user, isLoading, updateUser } = useAuth();
+  const userDisplayName = `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim() || user?.username || "U";
 
   const [name, setName]         = useState("");
   const [phone, setPhone]       = useState("");
@@ -123,10 +124,10 @@ export default function ProfilePage() {
   // Populate fields once user loads
   useEffect(() => {
     if (user) {
-      setName(user.name ?? "");
+      setName(`${user.first_name} ${user.last_name}`.trim() || user.username);
       setPhone(user.phone ?? "");
       setLocation(user.location ?? "");
-      setAvatar(user.avatar ?? "");
+      setAvatar(user.profile_picture ?? "");
     }
   }, [user]);
 
@@ -142,11 +143,13 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
+      const nameParts = name.trim().split(" ");
       await updateUser({
-        name: name.trim(),
+        first_name: nameParts[0] || "",
+        last_name: nameParts.slice(1).join(" ") || "",
         phone: phone.trim() || undefined,
         location: location.trim() || undefined,
-        avatar: avatar || undefined,
+        profile_picture: avatar || undefined,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -179,7 +182,7 @@ export default function ProfilePage() {
         {/* Avatar card */}
         <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <AvatarUpload
-            name={name || user?.name || "U"}
+            name={name || userDisplayName}
             avatar={avatar}
             onAvatarChange={setAvatar}
           />

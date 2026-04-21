@@ -1,5 +1,5 @@
-import type { Listing } from "@/types/listing";
-import type { PaginatedListings, GetListingsParams, CreateListingBody, UploadedImage } from "@/lib/api/listings";
+import type { Listing, ListingImage } from "@/types/listing";
+import type { PaginatedListings, GetListingsParams, CreateListingBody } from "@/lib/api/listings";
 import { MOCK_LISTINGS } from "@/lib/mock/listings";
 import { USE_MOCK } from "./use-mock";
 
@@ -35,24 +35,45 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-async function mockUploadImages(files: File[]): Promise<UploadedImage[]> {
+async function mockUploadImages(files: File[]): Promise<ListingImage[]> {
   const urls = await Promise.all(files.map(fileToDataUrl));
-  return urls.map((url) => ({ url }));
+  return urls.map((url, index) => ({
+    id: Date.now() + index,
+    image: url,
+    caption: "",
+    display_order: index,
+    is_primary: index === 0,
+  }));
 }
 
 async function mockCreateListing(body: CreateListingBody): Promise<Listing> {
   const listing: Listing = {
-    id: `local-${Date.now()}`,
+    id: Date.now(),
     title: body.title,
-    price: body.price,
-    location: body.location,
-    sublocation: body.sublocation,
-    condition: body.condition,
-    category: body.category,
+    slug: body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
     description: body.description,
-    images: body.images,
-    seller: body.seller,
-    delivery: body.delivery,
+    price: body.price,
+    currency: body.currency,
+    location: body.location,
+    condition: body.condition,
+    status: "DRAFT",
+    category: {
+      name: `Category ${body.category_id}`,
+      slug: String(body.category_id),
+    },
+    owner: {
+      id: 0,
+      username: "you",
+      profile_picture: null,
+    },
+    images: [],
+    primary_image: null,
+    is_featured: false,
+    views_count: 0,
+    rejection_reason: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    published_at: null,
   };
   saveListingToStore(listing);
   return listing;
@@ -61,7 +82,7 @@ async function mockCreateListing(body: CreateListingBody): Promise<Listing> {
 /** Score a listing against query words — counts how many words appear in the haystack. */
 function scoreListingMatch(l: Listing, words: string[]): number {
   if (words.length === 0) return 1;
-  const hay = [l.title, l.location, l.sublocation ?? "", l.description ?? "", l.category ?? ""]
+  const hay = [l.title, l.location, l.description ?? "", l.category.name, l.category.slug]
     .join(" ").toLowerCase();
   return words.filter((w) => hay.includes(w)).length;
 }
@@ -71,27 +92,27 @@ function scoreListingMatch(l: Listing, words: string[]): number {
 export function getAllListingsSync(
   params: GetListingsParams = {},
 ): PaginatedListings & { isFallback?: boolean } {
-  const { q = "", category = "", loc = "", page = 1, limit = 60 } = params;
+  const { search = "", category = "", location = "", page = 1, page_size = 60 } = params;
 
   const stored = getStoredListings();
-  const seedIds = new Set(MOCK_LISTINGS.map((l) => l.id));
-  const userListings = stored.filter((l) => !seedIds.has(l.id));
+  const seedIds = new Set(MOCK_LISTINGS.map((l) => String(l.id)));
+  const userListings = stored.filter((l) => !seedIds.has(String(l.id)));
   let pool = [...userListings, ...MOCK_LISTINGS];
 
   // Category filter always hard
-  if (category) pool = pool.filter((l) => l.category === category);
+  if (category) pool = pool.filter((l) => l.category.slug === category || l.category.name === category);
 
   // Location filter always hard
-  if (loc.trim()) {
-    const locTerm = loc.trim().toLowerCase();
+  if (location.trim()) {
+    const locTerm = location.trim().toLowerCase();
     pool = pool.filter(
       (l) =>
         l.location.toLowerCase().includes(locTerm) ||
-        l.sublocation?.toLowerCase().includes(locTerm),
+        l.category.name.toLowerCase().includes(locTerm),
     );
   }
 
-  const qWords = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const qWords = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
   // Score all items
   const scored = pool.map((l) => ({ l, score: scoreListingMatch(l, qWords) }));
@@ -108,8 +129,15 @@ export function getAllListingsSync(
 
   const data = results.map(({ l }) => l);
   const total = data.length;
-  const start = (page - 1) * limit;
-  return { data: data.slice(start, start + limit), total, page, limit, isFallback };
+  const start = (page - 1) * page_size;
+  const end = start + page_size;
+  return {
+    count: total,
+    next: end < total ? `page=${page + 1}` : null,
+    previous: page > 1 ? `page=${page - 1}` : null,
+    results: data.slice(start, end),
+    isFallback,
+  };
 }
 
 async function fromMock(params: GetListingsParams): Promise<PaginatedListings> {
@@ -131,15 +159,15 @@ export async function getListings(params: GetListingsParams = {}): Promise<Pagin
 export async function getListingById(id: string): Promise<Listing> {
   const all = [...getStoredListings(), ...MOCK_LISTINGS];
   if (USE_MOCK) {
-    const listing = all.find((l) => l.id === id);
+    const listing = all.find((l) => String(l.id) === id);
     if (!listing) throw new Error(`Listing "${id}" not found`);
     return listing;
   }
   try {
     const { getListing } = await import("@/lib/api/listings");
-    return await getListing(id);
+    return await getListing(Number(id));
   } catch {
-    const listing = all.find((l) => l.id === id);
+    const listing = all.find((l) => String(l.id) === id);
     if (!listing) throw new Error(`Listing "${id}" not found`);
     return listing;
   }
@@ -173,11 +201,11 @@ export async function createListing(body: CreateListingBody): Promise<Listing> {
   }
 }
 
-export async function uploadImages(files: File[]): Promise<UploadedImage[]> {
+export async function uploadImages(listingId: number, files: File[]): Promise<ListingImage[]> {
   if (USE_MOCK) return mockUploadImages(files);
   try {
     const { uploadImages: apiUpload } = await import("@/lib/api/listings");
-    return await apiUpload(files);
+    return await apiUpload(listingId, files);
   } catch {
     return mockUploadImages(files);
   }

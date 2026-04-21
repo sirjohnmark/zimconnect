@@ -43,7 +43,7 @@ export const createListingSchema = z.object({
     .min(1, "Price is required")
     .refine((v) => !isNaN(Number(v)) && Number(v) > 0, "Enter a valid price greater than 0"),
 
-  currency: z.enum(["USD", "ZWL"]).default("USD"),
+  currency: z.enum(["USD", "ZWL"], { error: "Select a currency" }),
 
   condition: z.enum(LISTING_CONDITIONS, { error: "Select a condition" }),
 

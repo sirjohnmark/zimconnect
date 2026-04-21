@@ -141,7 +141,7 @@ function SectionHeader({ eyebrow, title, href, linkLabel }: { eyebrow: string; t
 // ─── Compact listing card ─────────────────────────────────────────────────────
 
 function CompactListingCard({ listing }: { listing: Listing }) {
-  const image = listing.images[0]?.url;
+  const image = listing.images[0]?.image;
   return (
     <Link
       href={`/listings/${listing.id}`}
@@ -179,14 +179,14 @@ export default function DashboardPage() {
   useEffect(() => {
     setMounted(true);
     const ids = getSavedIds();
-    const found = MOCK_LISTINGS.filter((l) => ids.includes(l.id));
+    const found = MOCK_LISTINGS.filter((l) => ids.includes(String(l.id)));
     setSavedListings(found);
   }, []);
 
   const suggested = MOCK_LISTINGS.slice(0, 8);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const firstName = user?.name?.split(" ")[0] ?? "there";
+  const firstName = user?.first_name?.split(" ")[0] ?? user?.username ?? "there";
 
   const unreadNotifs = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
   const unreadMessages = MOCK_CONVERSATIONS.reduce((sum, c) => sum + c.unread, 0);

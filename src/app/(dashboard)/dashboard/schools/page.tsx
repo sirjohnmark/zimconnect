@@ -172,7 +172,7 @@ export default function SchoolDashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    const profile = getMySchool(user.id);
+    const profile = getMySchool(String(user.id));
     setExisting(profile);
     if (profile) {
       setName(profile.name);
@@ -217,7 +217,7 @@ export default function SchoolDashboardPage() {
 
     setSaving(true);
     saveSchool({
-      ownerId: user.id,
+      ownerId: String(user.id),
       name: name.trim(),
       tagline: tagline.trim() || undefined,
       description: description.trim(),
@@ -243,7 +243,7 @@ export default function SchoolDashboardPage() {
 
     setSaving(false);
     setSaved(true);
-    setExisting(getMySchool(user.id));
+    setExisting(getMySchool(String(user.id)));
     setTimeout(() => setSaved(false), 3000);
   }
 

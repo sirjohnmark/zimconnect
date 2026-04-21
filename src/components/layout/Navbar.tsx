@@ -119,6 +119,10 @@ function UserAvatar({ name, avatar, size = "sm" }: { name: string; avatar?: stri
   );
 }
 
+function getUserDisplayName(user: NonNullable<ReturnType<typeof useAuth>["user"]>): string {
+  return `${user.first_name} ${user.last_name}`.trim() || user.username;
+}
+
 // ─── Desktop dropdown (authenticated) ────────────────────────────────────────
 
 function DesktopAuthSection({ onClose }: { onClose: () => void }) {
@@ -148,6 +152,8 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
   }
 
   if (isAuthenticated && user) {
+    const userDisplayName = getUserDisplayName(user);
+
     return (
       <div className="relative" ref={menuRef}>
         <button
@@ -156,8 +162,8 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
           aria-expanded={menuOpen}
           aria-haspopup="true"
         >
-          <UserAvatar name={user.name} avatar={user.avatar} />
-          <span className="max-w-[120px] truncate">{user.name}</span>
+          <UserAvatar name={userDisplayName} avatar={user.profile_picture ?? undefined} />
+          <span className="max-w-[120px] truncate">{userDisplayName}</span>
           <ChevronIcon open={menuOpen} />
         </button>
 
@@ -165,9 +171,9 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
           <div className="absolute right-0 top-full mt-1.5 w-56 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden">
             {/* User card */}
             <div className="flex items-center gap-3 bg-light-gray px-4 py-3 border-b border-apple-blue/10">
-              <UserAvatar name={user.name} avatar={user.avatar} size="md" />
+              <UserAvatar name={userDisplayName} avatar={user.profile_picture ?? undefined} size="md" />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-900">{user.name}</p>
+                <p className="truncate text-sm font-semibold text-gray-900">{userDisplayName}</p>
                 <p className="truncate text-xs text-gray-500">{user.email}</p>
               </div>
             </div>
@@ -297,7 +303,7 @@ export function Navbar() {
             <div className="md:hidden flex items-center gap-2">
               {isAuthenticated && user && (
                 <Link href="/dashboard" onClick={close} aria-label="Dashboard">
-                  <UserAvatar name={user.name} avatar={user.avatar} />
+                  <UserAvatar name={getUserDisplayName(user)} avatar={user.profile_picture ?? undefined} />
                 </Link>
               )}
               <button
@@ -350,9 +356,9 @@ export function Navbar() {
               onClick={close}
               className="flex items-center gap-3 rounded-2xl bg-apple-blue px-4 py-3.5"
             >
-              <UserAvatar name={user.name} avatar={user.avatar} size="md" />
+              <UserAvatar name={getUserDisplayName(user)} avatar={user.profile_picture ?? undefined} size="md" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-white">{user.name}</p>
+                <p className="truncate text-sm font-semibold text-white">{getUserDisplayName(user)}</p>
                 <p className="truncate text-xs text-white/50">{user.email}</p>
               </div>
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-white/40 shrink-0">

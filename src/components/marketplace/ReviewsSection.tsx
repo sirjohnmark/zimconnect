@@ -257,13 +257,15 @@ export function ReviewsSection({ listingId, sellerName }: ReviewsSectionProps) {
   const [reviews, setReviews]   = useState<Review[]>([]);
   const [mounted, setMounted]   = useState(false);
   const [alreadyReviewed, setAlready] = useState(false);
+  const userDisplayName = `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim() || user?.username || "";
+  const userId = user ? String(user.id) : null;
 
   useEffect(() => {
     const r = getReviewsForListing(listingId);
     setReviews(r);
-    if (user) setAlready(hasReviewed(listingId, user.id));
+    if (userId) setAlready(hasReviewed(listingId, userId));
     setMounted(true);
-  }, [listingId, user]);
+  }, [listingId, user, userId]);
 
   const stats = mounted ? getSellerStats(sellerName) : null;
 
@@ -323,8 +325,8 @@ export function ReviewsSection({ listingId, sellerName }: ReviewsSectionProps) {
           listingId={listingId}
           sellerId={sellerName}
           sellerName={sellerName}
-          buyerId={user.id}
-          buyerName={user.name}
+          buyerId={userId ?? ""}
+          buyerName={userDisplayName}
           onSubmitted={handleNewReview}
         />
       )}
@@ -337,7 +339,7 @@ export function ReviewsSection({ listingId, sellerName }: ReviewsSectionProps) {
         </div>
       )}
 
-      {!isLoading && user && alreadyReviewed && reviews.some((r) => r.buyerId === user.id) && (
+      {!isLoading && userId && alreadyReviewed && reviews.some((r) => r.buyerId === userId) && (
         <div className="rounded-xl border border-apple-blue/10 bg-light-gray px-4 py-3 text-xs text-apple-blue font-medium">
           ✓ You have already reviewed this listing.
         </div>
@@ -352,7 +354,7 @@ export function ReviewsSection({ listingId, sellerName }: ReviewsSectionProps) {
       ) : (
         <div className="space-y-4">
           {reviews.map((r) => (
-            <ReviewCard key={r.id} review={r} currentUserId={user?.id ?? "anonymous"} />
+            <ReviewCard key={r.id} review={r} currentUserId={userId ?? "anonymous"} />
           ))}
         </div>
       )}

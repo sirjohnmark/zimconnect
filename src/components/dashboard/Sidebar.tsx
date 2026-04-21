@@ -153,6 +153,7 @@ function NavLink({ item, badge, onClick }: { item: NavItem; badge?: number; onCl
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const { user, logout } = useAuth();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const userDisplayName = `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim() || user?.username || "U";
 
   useEffect(() => {
     // Lazy import to avoid SSR issues
@@ -203,14 +204,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         {user && (
           <Link href="/dashboard/profile" className="mb-2 flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors">
             <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-sm font-bold text-apple-blue overflow-hidden">
-              {user.avatar ? (
-                <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+              {user.profile_picture ? (
+                <Image src={user.profile_picture} alt={userDisplayName} fill className="object-cover" />
               ) : (
-                user.name.charAt(0).toUpperCase()
+                userDisplayName.charAt(0).toUpperCase()
               )}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-gray-900">{user.name}</p>
+              <p className="truncate text-sm font-medium text-gray-900">{userDisplayName}</p>
               <p className="truncate text-xs text-gray-400">{user.email}</p>
             </div>
           </Link>
