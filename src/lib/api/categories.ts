@@ -29,3 +29,25 @@ export async function getCategoryTree(): Promise<Category[]> {
 export async function getCategory(id: number): Promise<Category> {
   return api.get<Category>(`/api/v1/categories/${id}/`, { next: CACHE });
 }
+
+export interface CategoryInput {
+  name: string;
+  slug: string;
+  description?: string;
+  parent?: number | null;
+  icon?: string;
+  display_order?: number;
+  is_active?: boolean;
+}
+
+export async function createCategory(data: CategoryInput): Promise<Category> {
+  return api.post<Category>("/api/v1/categories/", data);
+}
+
+export async function updateCategory(id: number, data: Partial<CategoryInput>): Promise<Category> {
+  return api.patch<Category>(`/api/v1/categories/${id}/`, data);
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  return api.delete<void>(`/api/v1/categories/${id}/`);
+}

@@ -190,6 +190,25 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             onClick={onNavClick}
           />
         ))}
+        {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
+          <>
+            <div className="my-3 border-t border-gray-100" />
+            <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Admin</p>
+            <NavLink
+              item={{
+                label: "Categories",
+                href: "/dashboard/categories",
+                icon: (
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                    <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 10a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+                    <path d="M14.5 10a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z" />
+                  </svg>
+                ),
+              }}
+              onClick={onNavClick}
+            />
+          </>
+        )}
         <div className="my-3 border-t border-gray-100" />
         <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
           Account
