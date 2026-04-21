@@ -7,9 +7,25 @@ import type { Category } from "@/types/category";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setCategories(MOCK_CATEGORIES);
+    let cancelled = false;
+
+    async function fetchCategories() {
+      try {
+        const { getCategories } = await import("@/lib/api/categories");
+        const res = await getCategories({ page_size: 100 });
+        if (!cancelled) setCategories(res.results);
+      } catch {
+        if (!cancelled) setCategories(MOCK_CATEGORIES);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchCategories();
+    return () => { cancelled = true; };
   }, []);
 
   const totalListings = categories.reduce((sum, c) => sum + (c.count ?? 0), 0);
@@ -24,7 +40,7 @@ export default function CategoriesPage() {
         </p>
       </div>
 
-      {categories.length === 0 ? (
+      {loading || categories.length === 0 ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100" />
