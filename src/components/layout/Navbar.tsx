@@ -82,23 +82,7 @@ const DASHBOARD_LINKS = [
   },
 ] as const;
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-function MenuIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-5 w-5">
-      <path d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="h-5 w-5">
-      <path d="M18 6 6 18M6 6l12 12" />
-    </svg>
-  );
-}
+// ─── Small helpers ────────────────────────────────────────────────────────────
 
 function ChevronIcon({ open }: { open: boolean }) {
   return (
@@ -107,8 +91,6 @@ function ChevronIcon({ open }: { open: boolean }) {
     </svg>
   );
 }
-
-// ─── User avatar ──────────────────────────────────────────────────────────────
 
 function UserAvatar({ name, avatar, size = "sm" }: { name: string; avatar?: string; size?: "sm" | "md" }) {
   const sz = size === "sm" ? "h-7 w-7 text-xs" : "h-10 w-10 text-sm";
@@ -123,7 +105,7 @@ function getUserDisplayName(user: NonNullable<ReturnType<typeof useAuth>["user"]
   return `${user.first_name} ${user.last_name}`.trim() || user.username;
 }
 
-// ─── Desktop dropdown (authenticated) ────────────────────────────────────────
+// ─── Desktop auth dropdown ────────────────────────────────────────────────────
 
 function DesktopAuthSection({ onClose }: { onClose: () => void }) {
   const { isLoading, isAuthenticated, user, logout } = useAuth();
@@ -139,7 +121,6 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Close dropdown on route change
   useEffect(() => { setMenuOpen(false); }, [pathname]);
 
   if (isLoading) {
@@ -152,8 +133,7 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
   }
 
   if (isAuthenticated && user) {
-    const userDisplayName = getUserDisplayName(user);
-
+    const name = getUserDisplayName(user);
     return (
       <div className="relative" ref={menuRef}>
         <button
@@ -162,23 +142,20 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
           aria-expanded={menuOpen}
           aria-haspopup="true"
         >
-          <UserAvatar name={userDisplayName} avatar={user.profile_picture ?? undefined} />
-          <span className="max-w-[120px] truncate">{userDisplayName}</span>
+          <UserAvatar name={name} avatar={user.profile_picture ?? undefined} />
+          <span className="max-w-[120px] truncate">{name}</span>
           <ChevronIcon open={menuOpen} />
         </button>
 
         {menuOpen && (
           <div className="absolute right-0 top-full mt-1.5 w-56 rounded-2xl border border-gray-100 bg-white shadow-xl overflow-hidden">
-            {/* User card */}
             <div className="flex items-center gap-3 bg-light-gray px-4 py-3 border-b border-apple-blue/10">
-              <UserAvatar name={userDisplayName} avatar={user.profile_picture ?? undefined} size="md" />
+              <UserAvatar name={name} avatar={user.profile_picture ?? undefined} size="md" />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-900">{userDisplayName}</p>
+                <p className="truncate text-sm font-semibold text-gray-900">{name}</p>
                 <p className="truncate text-xs text-gray-500">{user.email}</p>
               </div>
             </div>
-
-            {/* Dashboard links */}
             <div className="py-1.5">
               {DASHBOARD_LINKS.map(({ label, href, icon }) => {
                 const isActive = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
@@ -198,7 +175,6 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
                 );
               })}
             </div>
-
             <div className="border-t border-gray-100 py-1.5">
               <Link
                 href="/dashboard/listings/create"
@@ -227,7 +203,6 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
     );
   }
 
-  // Unauthenticated
   return (
     <div className="flex items-center gap-3">
       <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-near-black transition-colors">
@@ -240,30 +215,176 @@ function DesktopAuthSection({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Mobile drawer content ────────────────────────────────────────────────────
+
+function MobileMenu({ onClose }: { onClose: () => void }) {
+  const { isLoading, isAuthenticated, user, logout } = useAuth();
+  const pathname = usePathname();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2 p-4">
+        {[1, 2, 3].map((n) => <div key={n} className="h-10 animate-pulse rounded-lg bg-gray-100" />)}
+      </div>
+    );
+  }
+
+  if (isAuthenticated && user) {
+    const name = getUserDisplayName(user);
+    return (
+      <div className="p-3 space-y-2">
+
+        {/* User card */}
+        <Link
+          href="/dashboard/profile"
+          onClick={onClose}
+          className="flex items-center gap-2.5 rounded-xl bg-apple-blue px-3 py-2.5"
+        >
+          <UserAvatar name={name} avatar={user.profile_picture ?? undefined} size="sm" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-white">{name}</p>
+            <p className="truncate text-[11px] text-white/60">{user.email}</p>
+          </div>
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-white/50 shrink-0">
+            <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+          </svg>
+        </Link>
+
+        {/* Dashboard grid */}
+        <div>
+          <p className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Dashboard</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {DASHBOARD_LINKS.map(({ label, href, icon }) => {
+              const isActive = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={onClose}
+                  className={cn(
+                    "flex flex-col items-center gap-1 rounded-xl p-2 text-center transition-colors",
+                    isActive ? "bg-apple-blue/10 text-apple-blue" : "bg-gray-50 text-gray-600",
+                  )}
+                >
+                  <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", isActive ? "bg-apple-blue text-white" : "bg-white text-gray-500 shadow-sm")}>
+                    {icon}
+                  </span>
+                  <span className="text-[10px] font-medium leading-tight">{label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Post listing */}
+        <Link
+          href="/dashboard/listings/create"
+          onClick={onClose}
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-apple-blue px-4 py-2.5 text-xs font-semibold text-white"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+            <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+          </svg>
+          Post a Listing
+        </Link>
+
+        {/* Nav links */}
+        <div>
+          <p className="px-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Explore</p>
+          {NAV_LINKS.map(({ label, href }) => {
+            const base = href.split("#")[0];
+            const isActive = pathname === base || (base !== "/home" && pathname.startsWith(base + "/"));
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={onClose}
+                className={cn(
+                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  isActive ? "bg-apple-blue/10 text-apple-blue" : "text-gray-700 hover:bg-gray-50",
+                )}
+              >
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Sign out */}
+        <button
+          onClick={() => { onClose(); logout(); }}
+          className="flex w-full items-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+            <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 0 1 5.25 2h5.5A2.25 2.25 0 0 1 13 4.25v2a.75.75 0 0 1-1.5 0v-2a.75.75 0 0 0-.75-.75h-5.5a.75.75 0 0 0-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 0 0 .75-.75v-2a.75.75 0 0 1 1.5 0v2A2.25 2.25 0 0 1 10.75 18h-5.5A2.25 2.25 0 0 1 3 15.75V4.25Z" clipRule="evenodd" />
+            <path fillRule="evenodd" d="M19 10a.75.75 0 0 0-.75-.75H8.704l1.048-1.04a.75.75 0 1 0-1.056-1.062l-2.5 2.5a.75.75 0 0 0 0 1.062l2.5 2.5a.75.75 0 1 0 1.056-1.062l-1.048-1.038h9.546A.75.75 0 0 0 19 10Z" clipRule="evenodd" />
+          </svg>
+          Sign out
+        </button>
+      </div>
+    );
+  }
+
+  // Unauthenticated
+  return (
+    <div className="p-3 space-y-1">
+      {NAV_LINKS.map(({ label, href }) => {
+        const base = href.split("#")[0];
+        const isActive = pathname === base || (base !== "/home" && pathname.startsWith(base + "/"));
+        return (
+          <Link
+            key={href}
+            href={href}
+            onClick={onClose}
+            className={cn(
+              "flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              isActive ? "bg-apple-blue/10 text-apple-blue" : "text-gray-700 hover:bg-gray-50",
+            )}
+          >
+            {label}
+          </Link>
+        );
+      })}
+      <div className="border-t border-gray-100 pt-2 space-y-2">
+        <Link
+          href="/login"
+          onClick={onClose}
+          className="flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Sign In
+        </Link>
+        <Link
+          href="/register"
+          onClick={onClose}
+          className="flex items-center justify-center rounded-xl bg-apple-blue px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+        >
+          Get Started Free
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ─── Navbar ───────────────────────────────────────────────────────────────────
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const { isLoading, isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
+  // Close on navigation
   useEffect(() => { setOpen(false); }, [pathname]);
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    return () => { document.documentElement.style.overflow = prev; };
-  }, [open]);
 
   function close() { setOpen(false); }
+  function toggle() { setOpen((v) => !v); }
 
   return (
     <>
+      {/* ── Header: always z-50, always clickable ── */}
       <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/95 backdrop-blur-sm shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between gap-8">
+          <div className="flex h-14 items-center justify-between gap-4">
 
-            {/* Logo */}
             <Link href="/home" onClick={close} className="shrink-0 flex items-center gap-2" aria-label="Sanganai home">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-apple-blue">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -275,7 +396,7 @@ export function Navbar() {
               <span className="text-lg font-semibold tracking-tight text-near-black">Sanganai</span>
             </Link>
 
-            {/* Desktop nav links */}
+            {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-1 flex-1" aria-label="Main navigation">
               {NAV_LINKS.map(({ label, href }) => {
                 const base = href.split("#")[0];
@@ -296,182 +417,64 @@ export function Navbar() {
               })}
             </nav>
 
-            {/* Desktop auth */}
             <div className="hidden md:flex items-center">
               <DesktopAuthSection onClose={close} />
             </div>
 
-            {/* Mobile: avatar shortcut (when authenticated) + hamburger */}
+            {/* Mobile right side */}
             <div className="md:hidden flex items-center gap-2">
               {isAuthenticated && user && (
                 <Link href="/dashboard" onClick={close} aria-label="Dashboard">
                   <UserAvatar name={getUserDisplayName(user)} avatar={user.profile_picture ?? undefined} />
                 </Link>
               )}
+              {/* Hamburger / Close — plain button, no tricks */}
               <button
-                className="flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100 transition-colors"
-                onClick={() => setOpen((v) => !v)}
-                aria-label={open ? "Close navigation menu" : "Open navigation menu"}
-                aria-expanded={open}
-                aria-controls="mobile-menu"
+                type="button"
+                onClick={toggle}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                aria-label={open ? "Close menu" : "Open menu"}
               >
-                {open ? <CloseIcon /> : <MenuIcon />}
+                {open ? (
+                  /* X icon */
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="h-5 w-5">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                ) : (
+                  /* Hamburger */
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" className="h-5 w-5">
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Backdrop + mobile panel — only mounted when open */}
+      {/*
+        ── Mobile overlay ──
+        Fixed full-screen div at z-40 (below header z-50).
+        Clicking this outer div closes the menu (backdrop click).
+        The inner white panel calls e.stopPropagation() so tapping
+        inside the panel does NOT bubble up and close the menu.
+      */}
       {open && (
-        <>
-          <div
-            className="fixed inset-0 top-16 z-30 bg-black/40 md:hidden"
-            aria-hidden="true"
-            onClick={close}
-          />
+        <div
+          className="fixed inset-0 z-40 md:hidden"
+          onClick={close}
+        >
+          {/* Dim backdrop */}
+          <div className="absolute inset-0 bg-black/40" />
 
+          {/* Drawer panel — sits below the 56px header */}
           <div
-            id="mobile-menu"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Navigation menu"
-            className="fixed left-0 right-0 top-16 z-40 bg-white border-b border-gray-100 shadow-xl md:hidden overflow-y-auto max-h-[calc(100dvh-4rem)]"
+            className="absolute left-0 right-0 top-14 bg-white shadow-2xl overflow-y-auto max-h-[calc(100dvh-3.5rem)]"
+            onClick={(e) => e.stopPropagation()}
           >
-        {isLoading ? (
-          <div className="space-y-2 px-4 py-4">
-            {[1, 2, 3].map((n) => <div key={n} className="h-11 animate-pulse rounded-lg bg-gray-100" />)}
+            <MobileMenu onClose={close} />
           </div>
-        ) : isAuthenticated && user ? (
-          /* ── Authenticated mobile menu ── */
-          <div className="px-3 py-2 space-y-2">
-
-            {/* User card */}
-            <Link
-              href="/dashboard/profile"
-              onClick={close}
-              className="flex items-center gap-2 rounded-lg bg-apple-blue px-3 py-2"
-            >
-              <UserAvatar name={getUserDisplayName(user)} avatar={user.profile_picture ?? undefined} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-semibold text-white">{getUserDisplayName(user)}</p>
-                <p className="truncate text-[11px] text-white/50">{user.email}</p>
-              </div>
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-white/40 shrink-0">
-                <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-              </svg>
-            </Link>
-
-            {/* Dashboard grid */}
-            <div>
-              <p className="px-1 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Dashboard</p>
-              <div className="grid grid-cols-4 gap-1.5">
-                {DASHBOARD_LINKS.map(({ label, href, icon }) => {
-                  const isActive = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={close}
-                      className={cn(
-                        "flex flex-col items-center justify-center gap-1 rounded-lg p-2 text-center transition-colors",
-                        isActive
-                          ? "bg-light-gray text-apple-blue"
-                          : "bg-gray-50 text-gray-600 hover:bg-gray-100",
-                      )}
-                    >
-                      <span className={cn("flex h-6 w-6 items-center justify-center rounded-md", isActive ? "bg-apple-blue/10 text-apple-blue" : "bg-white text-gray-500 shadow-sm")}>
-                        {icon}
-                      </span>
-                      <span className="text-[9px] font-medium leading-tight">{label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Post a listing CTA */}
-            <Link
-              href="/dashboard/listings/create"
-              onClick={close}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-apple-blue px-4 py-2 text-xs font-semibold text-white hover:opacity-90 active:opacity-80 transition-colors"
-            >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-                <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
-              </svg>
-              Post a Listing
-            </Link>
-
-            {/* Site nav */}
-            <div>
-              <p className="px-1 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Explore</p>
-              <div className="space-y-0.5">
-                {NAV_LINKS.map(({ label, href }) => {
-                  const base = href.split("#")[0];
-                  const isActive = pathname === base || (base !== "/home" && pathname.startsWith(base + "/"));
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      onClick={close}
-                      className={cn(
-                        "flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-colors",
-                        isActive ? "bg-light-gray text-apple-blue" : "text-gray-700 hover:bg-gray-50",
-                      )}
-                    >
-                      {label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Sign out */}
-            <button
-              onClick={() => { close(); logout(); }}
-              className="flex w-full items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                <path fillRule="evenodd" d="M3 4.25A2.25 2.25 0 0 1 5.25 2h5.5A2.25 2.25 0 0 1 13 4.25v2a.75.75 0 0 1-1.5 0v-2a.75.75 0 0 0-.75-.75h-5.5a.75.75 0 0 0-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 0 0 .75-.75v-2a.75.75 0 0 1 1.5 0v2A2.25 2.25 0 0 1 10.75 18h-5.5A2.25 2.25 0 0 1 3 15.75V4.25Z" clipRule="evenodd" />
-                <path fillRule="evenodd" d="M19 10a.75.75 0 0 0-.75-.75H8.704l1.048-1.04a.75.75 0 1 0-1.056-1.062l-2.5 2.5a.75.75 0 0 0 0 1.062l2.5 2.5a.75.75 0 1 0 1.056-1.062l-1.048-1.038h9.546A.75.75 0 0 0 19 10Z" clipRule="evenodd" />
-              </svg>
-              Sign out
-            </button>
-          </div>
-        ) : (
-          /* ── Unauthenticated mobile menu ── */
-          <div className="px-3 py-2 space-y-0.5">
-            {NAV_LINKS.map(({ label, href }) => {
-              const base = href.split("#")[0];
-              const isActive = pathname === base || (base !== "/home" && pathname.startsWith(base + "/"));
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={close}
-                  className={cn(
-                    "flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-colors",
-                    isActive ? "bg-light-gray text-apple-blue" : "text-gray-700 hover:bg-gray-50",
-                  )}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-
-            <div className="border-t border-gray-100 pt-2 mt-1.5 space-y-1">
-              <Link href="/login" onClick={close} className="flex items-center justify-center rounded-lg border border-border-base px-4 py-1.5 text-xs font-medium text-gray-700 hover:bg-light-gray transition-colors">
-                Sign In
-              </Link>
-              <Link href="/register" onClick={close} className="flex items-center justify-center rounded-lg bg-apple-blue px-4 py-1.5 text-xs font-normal text-white hover:opacity-90 transition-opacity">
-                Get Started Now
-              </Link>
-            </div>
-          </div>
-        )}
-          </div>
-        </>
+        </div>
       )}
     </>
   );
