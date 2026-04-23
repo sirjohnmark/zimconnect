@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { CategoryCard } from "@/components/marketplace/CategoryCard";
-import { MOCK_CATEGORIES } from "@/lib/mock/categories";
 import type { Category } from "@/types/category";
 
 export default function CategoriesPage() {
@@ -18,7 +17,7 @@ export default function CategoriesPage() {
         const res = await getCategories({ page_size: 100 });
         if (!cancelled) setCategories(res.results);
       } catch {
-        if (!cancelled) setCategories(MOCK_CATEGORIES);
+        // API unavailable — show empty state
       } finally {
         if (!cancelled) setLoading(false);
       }
