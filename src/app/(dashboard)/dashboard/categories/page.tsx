@@ -196,11 +196,17 @@ export default function AdminCategoriesPage() {
       )}
 
       {success && <p className="text-xs font-semibold text-green-600">{success}</p>}
+      {error && error !== "unavailable" && <p className="text-xs text-red-500">{error}</p>}
 
       {/* List */}
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse bg-gray-50 m-3 rounded-xl" />)
+        ) : error === "unavailable" ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm font-semibold text-amber-700">We are currently unavailable</p>
+            <p className="mt-1 text-xs text-amber-500">Please come back in a few minutes.</p>
+          </div>
         ) : categories.length === 0 ? (
           <div className="py-10 text-center text-sm text-gray-400">No categories yet.</div>
         ) : (
