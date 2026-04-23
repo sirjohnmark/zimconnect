@@ -28,8 +28,9 @@ export default function AdminCategoriesPage() {
       const { getCategories } = await import("@/lib/api/categories");
       const res = await getCategories({ page_size: 100 });
       setCategories(res.results);
+      setError("");
     } catch {
-      setError("Failed to load categories.");
+      setError("unavailable");
     } finally {
       setLoading(false);
     }
