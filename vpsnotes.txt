@@ -1,7 +1,6 @@
 ssh sanganai@187.124.216.181
 cd /home/sanganai/zimconnect
 source venv/bin/activate
-git branch (tradelink)
 git pull origin tradelink
 pip install -r requirements.txt
 python manage.py migrate
