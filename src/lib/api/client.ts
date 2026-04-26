@@ -1,10 +1,10 @@
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-// In the browser use relative paths so the Next.js rewrite proxy handles them (avoids CORS).
-// On the server (SSR/ISR) use the full API URL directly.
+// Browser: relative paths — Next.js rewrite proxy forwards to the backend (no CORS).
+// Server (SSR/ISR): absolute URL so fetch bypasses the proxy entirely.
 const BASE_URL =
   typeof window === "undefined"
-    ? (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000")
+    ? (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "")
     : "";
 
 // ─── Error types ─────────────────────────────────────────────────────────────
@@ -100,8 +100,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   if (!res.ok) {
-    // API envelope: { error: { code, message, details } }
-    // Fallback: { message: "..." } or plain status text
+    // Parse DRF and custom API error envelopes:
+    // { error: { message } } | { message } | { detail } | { field: [msg, ...] }
     let message = `${res.status} ${res.statusText}`;
     if (typeof data === "object" && data !== null) {
       const d = data as Record<string, unknown>;
@@ -110,6 +110,15 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         message = errObj["message"] as string;
       } else if (typeof d["message"] === "string") {
         message = d["message"] as string;
+      } else if (typeof d["detail"] === "string") {
+        message = d["detail"] as string;
+      } else {
+        // Collect DRF field-level errors: { email: ["...", ...], ... }
+        const fieldErrors = Object.entries(d)
+          .filter(([, v]) => Array.isArray(v))
+          .map(([k, v]) => `${k}: ${(v as unknown[]).join(", ")}`)
+          .join(" | ");
+        if (fieldErrors) message = fieldErrors;
       }
     }
     throw new ApiError(res.status, res.statusText, message, data);

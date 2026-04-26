@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) throw new Error("BACKEND_URL or NEXT_PUBLIC_API_URL must be set");
 
 const nextConfig: NextConfig = {
   reactCompiler: true,

@@ -6,7 +6,7 @@ import { getMe, loginUser, logoutUser, registerUser, updateProfile } from "@/lib
 import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
-import { getStoredUser } from "@/lib/auth/auth";
+import { getStoredUser, getAccessToken } from "@/lib/auth/auth";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
@@ -60,6 +60,11 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
       return;
     }
 
+    if (!getAccessToken()) {
+      dispatch({ type: "CLEAR_USER" });
+      return;
+    }
+
     let cancelled = false;
     dispatch({ type: "LOADING" });
 
@@ -69,7 +74,7 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
       })
       .catch((err) => {
         if (cancelled) return;
-        if (err instanceof ApiError && err.status === 401) {
+        if (err instanceof ApiError && (err.status === 401 || err.status === 400)) {
           dispatch({ type: "CLEAR_USER" });
         } else if (err instanceof NetworkError) {
           dispatch({ type: "CLEAR_USER" });
