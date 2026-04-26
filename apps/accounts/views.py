@@ -1,8 +1,4 @@
-﻿“””
-Account views — registration, login, logout, token refresh, profile.
-“””
-
-import logging
+﻿import logging
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
