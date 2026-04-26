@@ -11,7 +11,9 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${API_URL}/api/:path*`,
+        // Django requires trailing slashes; the rewrite appends "/" so browser
+        // requests don't hit Django's APPEND_SLASH 301 redirect.
+        destination: `${API_URL}/api/:path*/`,
       },
       {
         source: "/ws/:path*",

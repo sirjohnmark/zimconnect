@@ -48,23 +48,23 @@ export interface StartConversationBody {
 // ─── Endpoints ────────────────────────────────────────────────────────────────
 
 export async function getConversations(page = 1): Promise<PaginatedConversations> {
-  return api.get<PaginatedConversations>("/api/v1/inbox/", { params: { page } });
+  return api.get<PaginatedConversations>("/api/v1/inbox", { params: { page } });
 }
 
 export async function getConversation(id: number): Promise<Conversation> {
-  return api.get<Conversation>(`/api/v1/inbox/${id}/`);
+  return api.get<Conversation>(`/api/v1/inbox/${id}`);
 }
 
 export async function startConversation(body: StartConversationBody): Promise<Conversation> {
-  return api.post<Conversation>("/api/v1/inbox/", body);
+  return api.post<Conversation>("/api/v1/inbox", body);
 }
 
 export async function sendMessage(conversationId: number, content: string): Promise<Message> {
-  return api.post<Message>(`/api/v1/inbox/${conversationId}/messages/`, { content });
+  return api.post<Message>(`/api/v1/inbox/${conversationId}/messages`, { content });
 }
 
 export async function markMessageRead(messageId: number): Promise<void> {
-  await api.post<{ message: string }>(`/api/v1/inbox/messages/${messageId}/mark-read/`, {});
+  await api.post<{ message: string }>(`/api/v1/inbox/messages/${messageId}/mark-read`, {});
 }
 
 export async function getUnreadCount(): Promise<number> {

@@ -16,18 +16,18 @@ export interface PaginatedCategories {
 const CACHE: NextFetchRequestConfig = { revalidate: 600 };
 
 export async function getCategories(params: GetCategoriesParams = {}): Promise<PaginatedCategories> {
-  return api.get<PaginatedCategories>("/api/v1/categories/", {
+  return api.get<PaginatedCategories>("/api/v1/categories", {
     params: params as Record<string, string | number | undefined | null>,
     next: CACHE,
   });
 }
 
 export async function getCategoryTree(): Promise<Category[]> {
-  return api.get<Category[]>("/api/v1/categories/tree/", { next: CACHE });
+  return api.get<Category[]>("/api/v1/categories/tree", { next: CACHE });
 }
 
 export async function getCategory(id: number): Promise<Category> {
-  return api.get<Category>(`/api/v1/categories/${id}/`, { next: CACHE });
+  return api.get<Category>(`/api/v1/categories/${id}`, { next: CACHE });
 }
 
 export interface CategoryInput {
@@ -41,13 +41,13 @@ export interface CategoryInput {
 }
 
 export async function createCategory(data: CategoryInput): Promise<Category> {
-  return api.post<Category>("/api/v1/categories/", data);
+  return api.post<Category>("/api/v1/categories", data);
 }
 
 export async function updateCategory(id: number, data: Partial<CategoryInput>): Promise<Category> {
-  return api.patch<Category>(`/api/v1/categories/${id}/`, data);
+  return api.patch<Category>(`/api/v1/categories/${id}`, data);
 }
 
 export async function deleteCategory(id: number): Promise<void> {
-  return api.delete<void>(`/api/v1/categories/${id}/`);
+  return api.delete<void>(`/api/v1/categories/${id}`);
 }

@@ -85,7 +85,7 @@ export async function registerUser(data: RegisterInput): Promise<AuthUser> {
     saveAccount({ id: String(user.id), name: `${data.first_name} ${data.last_name}`, email: data.email, password: data.password });
     return user;
   }
-  return api.post<AuthUser>("/api/v1/auth/register/", {
+  return api.post<AuthUser>("/api/v1/auth/register", {
     email: data.email,
     username: data.username,
     password: data.password,
@@ -113,7 +113,7 @@ export async function loginUser(credentials: LoginInput): Promise<LoginResponse>
     setSessionCookie(user.role);
     return { tokens: { access: "mock-access", refresh: "mock-refresh" }, user };
   }
-  const response = await api.post<LoginResponse>("/api/v1/auth/login/", credentials);
+  const response = await api.post<LoginResponse>("/api/v1/auth/login", credentials);
   const user = normalizeUser(response.user);
   saveTokens(response.tokens.access, response.tokens.refresh);
   saveUser(user);
@@ -125,7 +125,7 @@ export async function refreshAccessToken(): Promise<string> {
   if (USE_MOCK) return "mock-access";
   const refresh = getRefreshToken();
   if (!refresh) throw new ApiError(401, "Unauthorized", "No refresh token available.");
-  const { access } = await api.post<{ access: string }>("/api/v1/auth/token/refresh/", { refresh });
+  const { access } = await api.post<{ access: string }>("/api/v1/auth/token/refresh", { refresh });
   saveTokens(access, refresh);
   return access;
 }
@@ -139,7 +139,7 @@ export async function logoutUser(): Promise<void> {
   }
   const refresh = getRefreshToken();
   try {
-    await api.post<void>("/api/v1/auth/logout/", { refresh });
+    await api.post<void>("/api/v1/auth/logout", { refresh });
   } finally {
     clearStoredUser();
     clearTokens();
@@ -157,7 +157,7 @@ export async function getMe(): Promise<AuthUser> {
     if (!user) throw new ApiError(401, "Unauthorized", "Not authenticated");
     return normalizeUser(user as unknown as AuthUser);
   }
-  const user = await api.get<AuthUser>("/api/v1/auth/profile/");
+  const user = await api.get<AuthUser>("/api/v1/auth/profile");
   const normalized = normalizeUser(user);
   saveUser(normalized);
   return normalized;
@@ -171,7 +171,7 @@ export async function updateProfile(updates: Partial<Omit<AuthUser, "id" | "crea
     saveUser(updated);
     return updated;
   }
-  const updated = normalizeUser(await api.patch<AuthUser>("/api/v1/auth/profile/", updates));
+  const updated = normalizeUser(await api.patch<AuthUser>("/api/v1/auth/profile", updates));
   saveUser(updated);
   return updated;
 }
@@ -188,27 +188,27 @@ export async function changePassword(currentPassword: string, newPassword: strin
     updateStoredPassword(id, newPassword);
     return;
   }
-  await api.post<void>("/api/v1/auth/change-password/", { current_password: currentPassword, new_password: newPassword });
+  await api.post<void>("/api/v1/auth/change-password", { current_password: currentPassword, new_password: newPassword });
 }
 
 // ─── OTP ──────────────────────────────────────────────────────────────────────
 
 export async function sendEmailOtp(): Promise<void> {
   if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/email/send-otp/", {});
+  await api.post<void>("/api/v1/auth/email/send-otp", {});
 }
 
 export async function verifyEmailOtp(otp: string): Promise<void> {
   if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/email/verify/", { otp });
+  await api.post<void>("/api/v1/auth/email/verify", { otp });
 }
 
 export async function sendPhoneOtp(): Promise<void> {
   if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/phone/send-otp/", {});
+  await api.post<void>("/api/v1/auth/phone/send-otp", {});
 }
 
 export async function verifyPhoneOtp(otp: string): Promise<void> {
   if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/phone/verify/", { otp });
+  await api.post<void>("/api/v1/auth/phone/verify", { otp });
 }

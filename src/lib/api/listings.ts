@@ -41,21 +41,21 @@ export interface UploadedImage {
 // ─── Endpoints ────────────────────────────────────────────────────────────────
 
 export async function getListings(params: GetListingsParams = {}): Promise<PaginatedListings> {
-  return api.get<PaginatedListings>("/api/v1/listings/", {
+  return api.get<PaginatedListings>("/api/v1/listings", {
     params: params as Record<string, string | number | boolean | undefined | null>,
     next: { revalidate: 60 },
   });
 }
 
 export async function getListing(id: number): Promise<Listing> {
-  return api.get<Listing>(`/api/v1/listings/${id}/`, {
+  return api.get<Listing>(`/api/v1/listings/${id}`, {
     next: { revalidate: 60, tags: [`listing-${id}`] },
   });
 }
 
 export async function getListingBySlug(slug: string): Promise<Listing> {
   // The API doesn't have a slug endpoint; search by slug in the listings list
-  const res = await api.get<PaginatedListings>("/api/v1/listings/", {
+  const res = await api.get<PaginatedListings>("/api/v1/listings", {
     params: { search: slug },
     next: { revalidate: 60, tags: [`listing-slug-${slug}`] },
   });
@@ -65,25 +65,25 @@ export async function getListingBySlug(slug: string): Promise<Listing> {
 }
 
 export async function getMyListings(params: GetListingsParams = {}): Promise<PaginatedListings> {
-  return api.get<PaginatedListings>("/api/v1/listings/my-listings/", {
+  return api.get<PaginatedListings>("/api/v1/listings/my-listings", {
     params: params as Record<string, string | number | boolean | undefined | null>,
   });
 }
 
 export async function createListing(body: CreateListingBody): Promise<Listing> {
-  return api.post<Listing>("/api/v1/listings/", body);
+  return api.post<Listing>("/api/v1/listings", body);
 }
 
 export async function updateListing(id: number, body: Partial<CreateListingBody>): Promise<Listing> {
-  return api.patch<Listing>(`/api/v1/listings/${id}/`, body);
+  return api.patch<Listing>(`/api/v1/listings/${id}`, body);
 }
 
 export async function publishListing(id: number): Promise<void> {
-  await api.post<{ message: string }>(`/api/v1/listings/${id}/publish/`, {});
+  await api.post<{ message: string }>(`/api/v1/listings/${id}/publish`, {});
 }
 
 export async function deleteListing(id: number): Promise<void> {
-  return api.delete<void>(`/api/v1/listings/${id}/`);
+  return api.delete<void>(`/api/v1/listings/${id}`);
 }
 
 export async function uploadImages(listingId: number, files: File[]): Promise<ListingImage[]> {
@@ -109,5 +109,5 @@ export async function uploadImages(listingId: number, files: File[]): Promise<Li
 }
 
 export async function deleteImage(imageId: number): Promise<void> {
-  return api.delete<void>(`/api/v1/listings/images/${imageId}/`);
+  return api.delete<void>(`/api/v1/listings/images/${imageId}`);
 }

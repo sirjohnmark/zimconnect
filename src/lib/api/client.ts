@@ -1,11 +1,23 @@
 // ─── Config ───────────────────────────────────────────────────────────────────
+//
+// Use the real backend URL in BOTH browser and server environments.
+// Do NOT leave browser requests as relative "/api/..." unless your Next.js
+// rewrite proxy is confirmed working.
+//
+// Required env vars:
+//
+// .env.local
+// NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+// BACKEND_URL=http://127.0.0.1:8000
+//
+// Production
+// NEXT_PUBLIC_API_URL=https://YOUR-DJANGO-BACKEND-DOMAIN
+// BACKEND_URL=https://YOUR-DJANGO-BACKEND-DOMAIN
 
-// Browser: relative paths — Next.js rewrite proxy forwards to the backend (no CORS).
-// Server (SSR/ISR): absolute URL so fetch bypasses the proxy entirely.
 const BASE_URL =
-  typeof window === "undefined"
-    ? (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "")
-    : "";
+  process.env.NEXT_PUBLIC_API_URL ??
+  process.env.BACKEND_URL ??
+  "";
 
 // ─── Error types ─────────────────────────────────────────────────────────────
 
@@ -37,45 +49,102 @@ export class NetworkError extends Error {
 export interface RequestOptions extends Omit<RequestInit, "body"> {
   /** Query string params — appended to the URL automatically. */
   params?: Record<string, string | number | boolean | undefined | null> | object;
+
   /** JSON body — serialised and Content-Type set automatically. */
   body?: unknown;
+
   /**
    * Next.js fetch cache option.
-   * Pass `{ revalidate: 60 }` or `{ tags: ["listings"] }` for ISR / on-demand revalidation.
+   * Pass `{ revalidate: 60 }` or `{ tags: ["listings"] }`
+   * for ISR / on-demand revalidation.
    */
   next?: NextFetchRequestConfig;
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function joinUrl(baseUrl: string, path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  if (!baseUrl) {
+    throw new NetworkError(
+      "Missing NEXT_PUBLIC_API_URL. Set it to your Django backend URL.",
+    );
+  }
+
+  const cleanBase = baseUrl.replace(/\/+$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+
+  return `${cleanBase}${cleanPath}`;
+}
+
+function ensureTrailingSlash(url: string): string {
+  const parsed = new URL(url);
+
+  // Do not add trailing slash after file-like URLs.
+  // API endpoints should normally get a slash for Django/DRF.
+  if (!parsed.pathname.endsWith("/")) {
+    parsed.pathname += "/";
+  }
+
+  return parsed.toString();
+}
+
+function getClientAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return localStorage.getItem("sanganai_access");
+  } catch {
+    return null;
+  }
+}
+
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { params, body, next, headers: extraHeaders, ...rest } = options;
+async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  const {
+    params,
+    body,
+    next,
+    headers: extraHeaders,
+    ...rest
+  } = options;
 
-  // Build URL — on the server use absolute URL, in the browser use relative path (proxied by Next.js)
-  const rawUrl = path.startsWith("http") ? path : `${BASE_URL}${path}`;
-  const url = new URL(rawUrl, typeof window !== "undefined" ? window.location.href : "http://localhost");
+  let rawUrl = joinUrl(BASE_URL, path);
+  rawUrl = ensureTrailingSlash(rawUrl);
+
+  const url = new URL(rawUrl);
+
   if (params) {
-    for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
+    for (const [key, value] of Object.entries(
+      params as Record<string, unknown>,
+    )) {
       if (value !== undefined && value !== null) {
         url.searchParams.set(key, String(value));
       }
     }
   }
 
-  // Build headers
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     Accept: "application/json",
+    ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
     ...(extraHeaders as Record<string, string>),
   };
 
-  // Inject Bearer token when available (client-side only)
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("sanganai_access");
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+  const token = getClientAccessToken();
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   let res: Response;
+
   try {
     res = await fetch(url.toString(), {
       ...rest,
@@ -86,53 +155,63 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     });
   } catch (err) {
     throw new NetworkError(
-      "Unable to reach the server. Check your connection or try again later.",
+      "Unable to reach the server. Check your connection, backend URL, or CORS settings.",
       err,
     );
   }
 
-  // Parse body — always attempt JSON, fall back to text
-  let data: unknown;
+  let data: unknown = null;
   const contentType = res.headers.get("content-type") ?? "";
-  if (contentType.includes("application/json")) {
-    data = await res.json();
-  } else {
-    data = await res.text();
+
+  try {
+    if (contentType.includes("application/json")) {
+      data = await res.json();
+    } else {
+      data = await res.text();
+    }
+  } catch {
+    data = null;
   }
 
-  // Don't follow redirects — surface them as errors to avoid loops
+  // Surface redirects instead of silently following them into a loop.
   if (res.status >= 300 && res.status < 400) {
     const location = res.headers.get("location") ?? "(no location header)";
+
     throw new ApiError(
       res.status,
       res.statusText,
-      `Unexpected redirect to ${location}. The API endpoint may be misconfigured.`,
+      `Unexpected redirect to ${location}. Check your API URL, Django slash settings, HTTPS settings, or domain redirects.`,
       data,
     );
   }
 
   if (!res.ok) {
-    // Parse DRF and custom API error envelopes:
-    // { error: { message } } | { message } | { detail } | { field: [msg, ...] }
     let message = `${res.status} ${res.statusText}`;
+
     if (typeof data === "object" && data !== null) {
       const d = data as Record<string, unknown>;
-      const errObj = d["error"] as Record<string, unknown> | undefined;
-      if (typeof errObj?.["message"] === "string") {
-        message = errObj["message"] as string;
-      } else if (typeof d["message"] === "string") {
-        message = d["message"] as string;
-      } else if (typeof d["detail"] === "string") {
-        message = d["detail"] as string;
+      const errObj = d.error as Record<string, unknown> | undefined;
+
+      if (typeof errObj?.message === "string") {
+        message = errObj.message;
+      } else if (typeof d.message === "string") {
+        message = d.message;
+      } else if (typeof d.detail === "string") {
+        message = d.detail;
       } else {
-        // Collect DRF field-level errors: { email: ["...", ...], ... }
         const fieldErrors = Object.entries(d)
-          .filter(([, v]) => Array.isArray(v))
-          .map(([k, v]) => `${k}: ${(v as unknown[]).join(", ")}`)
+          .filter(([, value]) => Array.isArray(value))
+          .map(([key, value]) => `${key}: ${(value as unknown[]).join(", ")}`)
           .join(" | ");
-        if (fieldErrors) message = fieldErrors;
+
+        if (fieldErrors) {
+          message = fieldErrors;
+        }
       }
+    } else if (typeof data === "string" && data.trim()) {
+      message = data;
     }
+
     throw new ApiError(res.status, res.statusText, message, data);
   }
 
@@ -142,23 +221,59 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 // ─── HTTP helpers ─────────────────────────────────────────────────────────────
 
 export const api = {
-  get<T>(path: string, options?: Omit<RequestOptions, "body">): Promise<T> {
-    return request<T>(path, { ...options, method: "GET" });
+  get<T>(
+    path: string,
+    options?: Omit<RequestOptions, "body">,
+  ): Promise<T> {
+    return request<T>(path, {
+      ...options,
+      method: "GET",
+    });
   },
 
-  post<T>(path: string, body: unknown, options?: RequestOptions): Promise<T> {
-    return request<T>(path, { ...options, method: "POST", body });
+  post<T>(
+    path: string,
+    body: unknown,
+    options?: RequestOptions,
+  ): Promise<T> {
+    return request<T>(path, {
+      ...options,
+      method: "POST",
+      body,
+    });
   },
 
-  put<T>(path: string, body: unknown, options?: RequestOptions): Promise<T> {
-    return request<T>(path, { ...options, method: "PUT", body });
+  put<T>(
+    path: string,
+    body: unknown,
+    options?: RequestOptions,
+  ): Promise<T> {
+    return request<T>(path, {
+      ...options,
+      method: "PUT",
+      body,
+    });
   },
 
-  patch<T>(path: string, body: unknown, options?: RequestOptions): Promise<T> {
-    return request<T>(path, { ...options, method: "PATCH", body });
+  patch<T>(
+    path: string,
+    body: unknown,
+    options?: RequestOptions,
+  ): Promise<T> {
+    return request<T>(path, {
+      ...options,
+      method: "PATCH",
+      body,
+    });
   },
 
-  delete<T>(path: string, options?: RequestOptions): Promise<T> {
-    return request<T>(path, { ...options, method: "DELETE" });
+  delete<T>(
+    path: string,
+    options?: RequestOptions,
+  ): Promise<T> {
+    return request<T>(path, {
+      ...options,
+      method: "DELETE",
+    });
   },
 };
