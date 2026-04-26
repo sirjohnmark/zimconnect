@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import { api } from "./client";
 import type { Category } from "@/types/category";
 
@@ -13,7 +14,8 @@ export interface PaginatedCategories {
   results: Category[];
 }
 
-const CACHE: NextFetchRequestConfig = { revalidate: 600 };
+const CATEGORIES_TAG = "categories";
+const CACHE: NextFetchRequestConfig = { revalidate: 600, tags: [CATEGORIES_TAG] };
 
 export async function getCategories(params: GetCategoriesParams = {}): Promise<PaginatedCategories> {
   return api.get<PaginatedCategories>("/api/v1/categories", {
@@ -41,13 +43,18 @@ export interface CategoryInput {
 }
 
 export async function createCategory(data: CategoryInput): Promise<Category> {
-  return api.post<Category>("/api/v1/categories", data);
+  const result = await api.post<Category>("/api/v1/categories", data);
+  revalidateTag(CATEGORIES_TAG);
+  return result;
 }
 
 export async function updateCategory(id: number, data: Partial<CategoryInput>): Promise<Category> {
-  return api.patch<Category>(`/api/v1/categories/${id}`, data);
+  const result = await api.patch<Category>(`/api/v1/categories/${id}`, data);
+  revalidateTag(CATEGORIES_TAG);
+  return result;
 }
 
 export async function deleteCategory(id: number): Promise<void> {
-  return api.delete<void>(`/api/v1/categories/${id}`);
+  await api.delete<void>(`/api/v1/categories/${id}`);
+  revalidateTag(CATEGORIES_TAG);
 }
