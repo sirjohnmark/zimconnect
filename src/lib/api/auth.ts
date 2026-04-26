@@ -11,6 +11,7 @@ import {
   getRefreshToken,
   clearTokens,
 } from "@/lib/auth/auth";
+import { setSessionCookie, clearSessionCookie } from "@/lib/auth/cookies";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -109,12 +110,14 @@ export async function loginUser(credentials: LoginInput): Promise<LoginResponse>
     const accountId = parseInt(account.id, 10) || Date.now();
     const user = stored ?? mockUser({ id: accountId, email: account.email, username: account.email.split("@")[0], first_name: account.name.split(" ")[0] ?? account.name, last_name: account.name.split(" ")[1] ?? "" });
     saveUser(user);
+    setSessionCookie(user.role);
     return { tokens: { access: "mock-access", refresh: "mock-refresh" }, user };
   }
   const response = await api.post<LoginResponse>("/api/v1/auth/login/", credentials);
   const user = normalizeUser(response.user);
   saveTokens(response.tokens.access, response.tokens.refresh);
   saveUser(user);
+  setSessionCookie(user.role);
   return { ...response, user };
 }
 
@@ -131,6 +134,7 @@ export async function logoutUser(): Promise<void> {
   if (USE_MOCK) {
     clearStoredUser();
     clearTokens();
+    clearSessionCookie();
     return;
   }
   const refresh = getRefreshToken();
@@ -139,6 +143,7 @@ export async function logoutUser(): Promise<void> {
   } finally {
     clearStoredUser();
     clearTokens();
+    clearSessionCookie();
   }
 }
 

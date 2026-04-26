@@ -7,6 +7,7 @@ import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
 import { getStoredUser, getAccessToken } from "@/lib/auth/auth";
+import { setSessionCookie } from "@/lib/auth/cookies";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
@@ -56,7 +57,13 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
   useEffect(() => {
     if (USE_MOCK) {
       const user = getStoredUser();
-      dispatch(user ? { type: "SET_USER", user: user as unknown as AuthUser } : { type: "CLEAR_USER" });
+      if (user) {
+        const authUser = user as unknown as AuthUser;
+        dispatch({ type: "SET_USER", user: authUser });
+        setSessionCookie(authUser.role);
+      } else {
+        dispatch({ type: "CLEAR_USER" });
+      }
       return;
     }
 
@@ -70,7 +77,10 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
 
     getMe()
       .then((user) => {
-        if (!cancelled) dispatch({ type: "SET_USER", user });
+        if (!cancelled) {
+          dispatch({ type: "SET_USER", user });
+          setSessionCookie(user.role);
+        }
       })
       .catch((err) => {
         if (cancelled) return;

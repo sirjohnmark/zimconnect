@@ -81,6 +81,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       ...rest,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
+      redirect: "manual",
       ...(next ? { next } : {}),
     });
   } catch (err) {
@@ -97,6 +98,17 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     data = await res.json();
   } else {
     data = await res.text();
+  }
+
+  // Don't follow redirects — surface them as errors to avoid loops
+  if (res.status >= 300 && res.status < 400) {
+    const location = res.headers.get("location") ?? "(no location header)";
+    throw new ApiError(
+      res.status,
+      res.statusText,
+      `Unexpected redirect to ${location}. The API endpoint may be misconfigured.`,
+      data,
+    );
   }
 
   if (!res.ok) {
