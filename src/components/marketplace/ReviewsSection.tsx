@@ -61,7 +61,7 @@ function RatingBar({ label, count, total }: { label: string; count: number; tota
       </svg>
       <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
         <div
-          className="h-full rounded-full bg-amber-400 transition-all duration-500"
+          className="h-full rounded-full bg-amber-400 transition-all duration-200"
           style={{ width: `${pct}%` }}
         />
       </div>

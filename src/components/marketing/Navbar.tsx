@@ -98,7 +98,7 @@ export function Navbar() {
       {/* ── Full-screen mobile drawer ── */}
       <div
         className={cn(
-          "fixed inset-0 z-50 md:hidden transition-all duration-300",
+          "fixed inset-0 z-50 md:hidden transition-all duration-200",
           open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
         )}
         aria-modal="true"
@@ -118,7 +118,7 @@ export function Navbar() {
         {/* Drawer content */}
         <div
           className={cn(
-            "relative flex h-full flex-col px-6 pt-4 pb-10 transition-transform duration-300",
+            "relative flex h-full flex-col px-6 pt-4 pb-10 transition-transform duration-200",
             open ? "translate-y-0" : "-translate-y-4",
           )}
         >
