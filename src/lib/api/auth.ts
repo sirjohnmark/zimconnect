@@ -45,7 +45,7 @@ export interface LoginResponse {
 
 // ─── Mock helpers ─────────────────────────────────────────────────────────────
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
 function mockUser(overrides: Partial<AuthUser> & { id: string | number; email: string; username: string; first_name: string; last_name: string }): AuthUser {
   return {

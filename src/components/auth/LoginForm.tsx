@@ -55,7 +55,6 @@ export function LoginForm() {
     try {
       await login(data);
       router.push(redirectTo);
-      router.refresh();
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 404) {

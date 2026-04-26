@@ -17,13 +17,14 @@ export interface SessionCookie {
 
 function setCookie(name: string, value: string, maxAge: number): void {
   if (typeof window === "undefined") return;
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax; secure`;
+  const secure = window.location.protocol === "https:";
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? "; Secure" : ""}`;
 }
 
 function removeCookie(name: string): void {
   if (typeof window === "undefined") return;
-  // Set max-age=0 to delete the cookie
-  document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax; secure`;
+  const secure = window.location.protocol === "https:";
+  document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax${secure ? "; Secure" : ""}`;
 }
 
 export function setSessionCookie(role: string): void {

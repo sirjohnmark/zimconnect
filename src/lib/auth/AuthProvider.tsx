@@ -9,7 +9,7 @@ import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
 import { getStoredUser, getAccessToken } from "@/lib/auth/auth";
 import { setSessionCookie } from "@/lib/auth/cookies";
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
 // ─── State (discriminated union) ─────────────────────────────────────────────
 
