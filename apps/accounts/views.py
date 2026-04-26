@@ -1,6 +1,8 @@
-﻿"""
-Account views â€” registration, login, logout, token refresh, profile.
-"""
+﻿“””
+Account views — registration, login, logout, token refresh, profile.
+“””
+
+import logging
 
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
@@ -21,6 +23,7 @@ from apps.accounts.serializers import (
     UserRegistrationSerializer,
     UserUpdateSerializer,
 )
+from apps.accounts.tasks import send_email_otp_task, send_otp_task, send_welcome_email
 from apps.common.throttling import (
     EmailOTPSendThrottle,
     EmailOTPVerifyThrottle,
@@ -29,6 +32,8 @@ from apps.common.throttling import (
     OTPVerifyThrottle,
     RegisterRateThrottle,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class RegisterView(APIView):
@@ -45,13 +50,13 @@ class RegisterView(APIView):
         request=UserRegistrationSerializer,
         responses={
             201: OpenApiResponse(response=UserProfileSerializer, description="User created"),
-            400: OpenApiResponse(description="Validation error (duplicate email/username, password mismatch)"),
+            400: OpenApiResponse(description="Validation error (missing fields, password mismatch)"),
+            409: OpenApiResponse(description="Email or username already in use"),
             429: OpenApiResponse(description="Rate limit exceeded"),
         },
     )
     def post(self, request: Request) -> Response:
         serializer = UserRegistrationSerializer(data=request.data)
-        serializer.validate_email = serializer.validate_email  # keeps IDE happy
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
@@ -65,12 +70,13 @@ class RegisterView(APIView):
             phone=data["phone"],
         )
 
-        # Fire OTP tasks in the background so registration stays fast
-        from apps.accounts.tasks import send_email_otp_task, send_otp_task
-
-        if user.phone:
-            send_otp_task.delay(user.pk)
-        send_email_otp_task.delay(user.pk)
+        try:
+            send_welcome_email.delay(user.pk)
+            if user.phone:
+                send_otp_task.delay(user.pk)
+            send_email_otp_task.delay(user.pk)
+        except Exception:
+            logger.exception("post-registration tasks failed for user %d", user.pk)
 
         profile = UserProfileSerializer(user).data
         return Response(profile, status=status.HTTP_201_CREATED)

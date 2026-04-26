@@ -58,11 +58,6 @@ def create_user(
         **kwargs,
     )
 
-    # Fire welcome email in the background
-    from apps.accounts.tasks import send_welcome_email
-
-    send_welcome_email.delay(user.pk)
-
     logger.info("user_registered email=%s role=%s user_id=%d", email, role, user.pk)
     return user
 

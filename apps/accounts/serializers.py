@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from apps.common.constants import UserRole
+from apps.common.exceptions import ConflictError
 
 User = get_user_model()
 
@@ -28,13 +29,13 @@ class UserRegistrationSerializer(serializers.Serializer):
     def validate_email(self, value: str) -> str:
         email = value.lower().strip()
         if User.objects.filter(email=email).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
+            raise ConflictError("An account with this email already exists.")
         return email
 
     def validate_username(self, value: str) -> str:
         username = value.strip()
         if User.objects.filter(username=username).exists():
-            raise serializers.ValidationError("A user with this username already exists.")
+            raise ConflictError("A user with this username already exists.")
         return username
 
     def validate(self, attrs: dict) -> dict:

@@ -80,3 +80,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
+
+# ──────────────────────────────────────────────
+# Celery — run tasks synchronously (no Redis/worker needed)
+# ──────────────────────────────────────────────
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
