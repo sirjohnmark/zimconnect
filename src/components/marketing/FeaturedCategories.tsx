@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { CategoryCard } from "@/components/marketplace/CategoryCard";
-import { MOCK_CATEGORIES } from "@/lib/mock/categories";
+import { getCategories } from "@/lib/api/categories";
 
-export function FeaturedCategories() {
-  const categories = MOCK_CATEGORIES.slice(0, 8);
+export async function FeaturedCategories() {
+  const { results: categories } = await getCategories({ page_size: 8 }).catch(() => ({ results: [] }));
 
   return (
     <section className="bg-light-gray py-14 sm:py-20">

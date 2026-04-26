@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { CategoryCard } from "@/components/marketplace/CategoryCard";
-import { MOCK_CATEGORIES } from "@/lib/mock/categories";
+import { getCategories } from "@/lib/api/categories";
 import type { Category } from "@/types/category";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    setCategories(MOCK_CATEGORIES);
+    getCategories({ page_size: 100 })
+      .then((res) => setCategories(res.results))
+      .catch(() => setCategories([]));
   }, []);
 
   const totalListings = categories.reduce((sum, c) => sum + (c.count ?? 0), 0);
