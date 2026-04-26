@@ -77,7 +77,7 @@ export function Navbar() {
                 href={sellHref}
                 className="rounded-full bg-apple-blue px-3 py-1 text-xs font-normal text-white hover:opacity-90 transition-opacity"
               >
-                + Sell
+                Get Started
               </Link>
             </div>
 
@@ -190,7 +190,7 @@ export function Navbar() {
                 onClick={() => setOpen(false)}
                 className="flex items-center justify-center rounded-full bg-apple-blue py-3.5 text-sm font-normal text-white hover:opacity-90 transition-opacity"
               >
-                + Post a Listing
+                Get Started
               </Link>
             </div>
           </div>
