@@ -1,4 +1,3 @@
-import { revalidateTag } from "next/cache";
 import { api } from "./client";
 import type { Category } from "@/types/category";
 
@@ -14,22 +13,73 @@ export interface PaginatedCategories {
   results: Category[];
 }
 
-const CATEGORIES_TAG = "categories";
-const CACHE: NextFetchRequestConfig = { revalidate: 600, tags: [CATEGORIES_TAG] };
+const CACHE: NextFetchRequestConfig = {
+  revalidate: 600,
+  tags: ["categories"],
+};
 
-export async function getCategories(params: GetCategoriesParams = {}): Promise<PaginatedCategories> {
-  return api.get<PaginatedCategories>("/api/v1/categories", {
+function decodeHtml(value: string): string {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'");
+}
+
+function normalizeCategory(category: Category): Category {
+  return {
+    ...category,
+    name:
+      typeof category.name === "string"
+        ? decodeHtml(category.name)
+        : category.name,
+  };
+}
+
+/**
+ * Use this when you need the full paginated DRF response:
+ * { count, next, previous, results }
+ */
+export async function getCategoriesPage(
+  params: GetCategoriesParams = {},
+): Promise<PaginatedCategories> {
+  const data = await api.get<PaginatedCategories>("/api/v1/categories/", {
     params: params as Record<string, string | number | undefined | null>,
     next: CACHE,
   });
+
+  return {
+    ...data,
+    results: data.results.map(normalizeCategory),
+  };
+}
+
+/**
+ * Use this for normal frontend listing/dropdowns.
+ * Returns Category[] directly.
+ */
+export async function getCategories(
+  params: GetCategoriesParams = {},
+): Promise<Category[]> {
+  const data = await getCategoriesPage(params);
+  return data.results;
 }
 
 export async function getCategoryTree(): Promise<Category[]> {
-  return api.get<Category[]>("/api/v1/categories/tree", { next: CACHE });
+  const data = await api.get<Category[]>("/api/v1/categories/tree/", {
+    next: CACHE,
+  });
+
+  return data.map(normalizeCategory);
 }
 
 export async function getCategory(id: number): Promise<Category> {
-  return api.get<Category>(`/api/v1/categories/${id}`, { next: CACHE });
+  const data = await api.get<Category>(`/api/v1/categories/${id}/`, {
+    next: CACHE,
+  });
+
+  return normalizeCategory(data);
 }
 
 export interface CategoryInput {
@@ -42,19 +92,23 @@ export interface CategoryInput {
   is_active?: boolean;
 }
 
+/**
+ * Client-safe create/update/delete.
+ * These DO NOT call revalidateTag because this file may be used by client components.
+ */
 export async function createCategory(data: CategoryInput): Promise<Category> {
-  const result = await api.post<Category>("/api/v1/categories", data);
-  revalidateTag(CATEGORIES_TAG);
-  return result;
+  const result = await api.post<Category>("/api/v1/categories/", data);
+  return normalizeCategory(result);
 }
 
-export async function updateCategory(id: number, data: Partial<CategoryInput>): Promise<Category> {
-  const result = await api.patch<Category>(`/api/v1/categories/${id}`, data);
-  revalidateTag(CATEGORIES_TAG);
-  return result;
+export async function updateCategory(
+  id: number,
+  data: Partial<CategoryInput>,
+): Promise<Category> {
+  const result = await api.patch<Category>(`/api/v1/categories/${id}/`, data);
+  return normalizeCategory(result);
 }
 
 export async function deleteCategory(id: number): Promise<void> {
-  await api.delete<void>(`/api/v1/categories/${id}`);
-  revalidateTag(CATEGORIES_TAG);
+  await api.delete<void>(`/api/v1/categories/${id}/`);
 }

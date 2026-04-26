@@ -7,6 +7,5 @@ export interface GetCategoriesOptions {
 
 export async function getCategories(options: GetCategoriesOptions = {}): Promise<Category[]> {
   const { getCategories: getApiCategories } = await import("@/lib/api/categories");
-  const response = await getApiCategories(options);
-  return response.results;
+  return await getApiCategories(options);
 }

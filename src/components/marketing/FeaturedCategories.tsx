@@ -3,7 +3,7 @@ import { CategoryCard } from "@/components/marketplace/CategoryCard";
 import { getCategories } from "@/lib/api/categories";
 
 export async function FeaturedCategories() {
-  const { results: categories } = await getCategories({ page_size: 8 }).catch(() => ({ results: [] }));
+  const categories = await getCategories({ page_size: 8 }).catch(() => []);
 
   return (
     <section className="bg-light-gray py-14 sm:py-20">

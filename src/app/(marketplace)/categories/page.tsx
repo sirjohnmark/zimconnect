@@ -16,7 +16,7 @@ export default function CategoriesPage() {
     async function fetchCategories() {
       try {
         const res = await getCategories({ page_size: 100 });
-        if (!cancelled) setCategories(res.results);
+        if (!cancelled) setCategories(res);
       } catch {
         if (!cancelled) setUnavailable(true);
       } finally {

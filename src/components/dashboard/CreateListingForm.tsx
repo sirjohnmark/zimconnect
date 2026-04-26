@@ -129,7 +129,7 @@ export function CreateListingForm() {
 
   useEffect(() => {
     getCategories({ page_size: 100 })
-      .then((res) => setCategories(res.results))
+      .then((res) => setCategories(res))
       .catch(() => { /* categories load silently — user still sees empty select */ });
   }, []);
 
