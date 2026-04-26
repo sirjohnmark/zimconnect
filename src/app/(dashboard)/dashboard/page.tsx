@@ -4,24 +4,20 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth/useAuth";
-import { MOCK_LISTINGS } from "@/lib/mock/listings";
+import { getListings, getMyListings, getListing } from "@/lib/api/listings";
+import { getConversations, getUnreadCount } from "@/lib/api/inbox";
+import { getDashboardAnalytics } from "@/lib/api/analytics";
 import { getSavedIds } from "@/lib/mock/saved";
 import { EngagementChart, CategoryChart } from "@/components/dashboard/AnalyticsChart";
 import { cn } from "@/lib/utils";
 import type { Listing } from "@/types/listing";
+import type { Conversation } from "@/lib/api/inbox";
+import type { DashboardAnalytics } from "@/lib/api/analytics";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Notification {
-  id: string;
-  icon: "message" | "eye" | "star" | "bell";
-  text: string;
-  time: string;
-  read: boolean;
-}
-
-interface Conversation {
-  id: string;
+interface ConversationPreview {
+  id: number;
   name: string;
   initial: string;
   preview: string;
@@ -30,96 +26,41 @@ interface Conversation {
   listingTitle: string;
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: "n1", icon: "message", text: "Farai Ncube sent you a message about your Toyota listing.", time: "2 min ago", read: false },
-  { id: "n2", icon: "eye",     text: "Your Samsung Galaxy listing was viewed 24 times today.", time: "1 hr ago",  read: false },
-  { id: "n3", icon: "star",    text: "Someone saved your 2-Bedroom Apartment listing.",        time: "3 hrs ago", read: true },
-  { id: "n4", icon: "bell",    text: "New listings in Electronics match your saved search.",   time: "Yesterday", read: true },
-];
+function formatRelativeTime(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1)  return "Just now";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return days === 1 ? "Yesterday" : `${days}d`;
+}
 
-const MOCK_CONVERSATIONS: Conversation[] = [
-  {
-    id: "c1",
-    name: "Farai Ncube",
-    initial: "F",
-    preview: "Is the price negotiable? I can come view it tomorrow.",
-    time: "2 min",
-    unread: 2,
-    listingTitle: "Toyota Corolla 2019",
-  },
-  {
-    id: "c2",
-    name: "Chiedza Mpofu",
-    initial: "C",
-    preview: "Does it come with the original charger?",
-    time: "1 hr",
-    unread: 1,
-    listingTitle: "Samsung Galaxy S24 Ultra",
-  },
-  {
-    id: "c3",
-    name: "Tinashe Dube",
-    initial: "T",
-    preview: "I'm interested. What's the earliest you can meet?",
-    time: "Yesterday",
-    unread: 0,
-    listingTitle: "Dell XPS 15 Laptop",
-  },
-  {
-    id: "c4",
-    name: "Rumbidzai Choto",
-    initial: "R",
-    preview: "Thank you, I'll let you know by end of day.",
-    time: "2 days",
-    unread: 0,
-    listingTitle: "2-Bedroom Apartment",
-  },
-];
-
-// ─── Notification icon ────────────────────────────────────────────────────────
-
-function NotifIcon({ type }: { type: Notification["icon"] }) {
-  const icons = {
-    message: (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-        <path fillRule="evenodd" d="M3.43 2.524A41.29 41.29 0 0 1 10 2c2.236 0 4.43.18 6.57.524 1.437.231 2.43 1.49 2.43 2.902v5.148c0 1.413-.993 2.67-2.43 2.902a41.202 41.202 0 0 1-5.183.501.78.78 0 0 0-.528.224l-3.202 3.203A.75.75 0 0 1 6.375 17v-2.136a41.415 41.415 0 0 1-2.945-.34C1.993 14.271 1 13.012 1 11.6V5.426c0-1.413.993-2.67 2.43-2.902Z" clipRule="evenodd" />
-      </svg>
-    ),
-    eye: (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-        <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-        <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41Z" clipRule="evenodd" />
-      </svg>
-    ),
-    star: (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-        <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401Z" clipRule="evenodd" />
-      </svg>
-    ),
-    bell: (
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-        <path fillRule="evenodd" d="M4 8a6 6 0 1 1 11.999.001L16 8v4.586l1.707 1.707A1 1 0 0 1 17 16H3a1 1 0 0 1-.707-1.707L4 12.586V8Zm6 10a2 2 0 0 1-2-2h4a2 2 0 0 1-2 2Z" clipRule="evenodd" />
-      </svg>
-    ),
+function toPreview(conv: Conversation, myId: number): ConversationPreview {
+  const other = conv.participants.find((p) => p.id !== myId) ?? conv.participants[0];
+  const name = other?.username ?? "Unknown";
+  return {
+    id: conv.id,
+    name,
+    initial: (name[0] ?? "?").toUpperCase(),
+    preview: conv.last_message?.content ?? "",
+    time: formatRelativeTime(conv.updated_at),
+    unread: conv.unread_count,
+    listingTitle: conv.listing?.title ?? "",
   };
-  const colors = {
-    message: "bg-blue-50 text-blue-500",
-    eye:     "bg-purple-50 text-purple-500",
-    star:    "bg-amber-50 text-amber-500",
-    bell:    "bg-light-gray text-apple-blue",
-  };
-  return (
-    <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", colors[type])}>
-      {icons[type]}
-    </span>
-  );
 }
 
 // ─── Section header ───────────────────────────────────────────────────────────
 
-function SectionHeader({ eyebrow, title, href, linkLabel }: { eyebrow: string; title: string; href?: string; linkLabel?: string }) {
+function SectionHeader({ eyebrow, title, href, linkLabel }: {
+  eyebrow: string;
+  title: string;
+  href?: string;
+  linkLabel?: string;
+}) {
   return (
     <div className="flex items-end justify-between mb-5">
       <div>
@@ -127,7 +68,10 @@ function SectionHeader({ eyebrow, title, href, linkLabel }: { eyebrow: string; t
         <h2 className="text-lg font-bold text-gray-900">{title}</h2>
       </div>
       {href && linkLabel && (
-        <Link href={href} className="inline-flex items-center gap-1 text-sm font-semibold text-apple-blue hover:text-apple-blue transition-colors shrink-0">
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1 text-sm font-semibold text-apple-blue hover:text-apple-blue transition-colors shrink-0"
+        >
           {linkLabel}
           <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -141,10 +85,10 @@ function SectionHeader({ eyebrow, title, href, linkLabel }: { eyebrow: string; t
 // ─── Compact listing card ─────────────────────────────────────────────────────
 
 function CompactListingCard({ listing }: { listing: Listing }) {
-  const image = listing.images[0]?.image;
+  const image = listing.primary_image ?? listing.images[0]?.image;
   return (
     <Link
-      href={`/listings/${listing.id}`}
+      href={`/listings/${listing.slug ?? listing.id}`}
       className="group flex flex-col rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200"
     >
       <div className="relative aspect-[4/3] w-full bg-gray-100 overflow-hidden">
@@ -162,34 +106,72 @@ function CompactListingCard({ listing }: { listing: Listing }) {
         <p className="text-xs text-gray-400 truncate">{listing.location}</p>
         <p className="mt-0.5 text-sm font-semibold text-gray-900 line-clamp-1">{listing.title}</p>
         <p className="mt-1 text-sm font-bold text-apple-blue">
-          {listing.currency ?? "USD"} {listing.price.toLocaleString()}
+          {listing.currency} {parseFloat(listing.price).toLocaleString()}
         </p>
       </div>
     </Link>
   );
 }
 
+// ─── Skeleton card ────────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+  return <div className="aspect-[4/3] animate-pulse rounded-2xl bg-gray-100" />;
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [savedListings, setSavedListings] = useState<Listing[]>([]);
-  const [mounted, setMounted] = useState(false);
+
+  const [activeListings, setActiveListings] = useState<number | null>(null);
+  const [totalViews, setTotalViews]         = useState<number | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState<number | null>(null);
+  const [conversations, setConversations]   = useState<ConversationPreview[]>([]);
+  const [suggested, setSuggested]           = useState<Listing[]>([]);
+  const [savedListings, setSavedListings]   = useState<Listing[]>([]);
+  const [analytics, setAnalytics]           = useState<DashboardAnalytics | null>(null);
+  const [loading, setLoading]               = useState(true);
 
   useEffect(() => {
-    setMounted(true);
-    const ids = getSavedIds();
-    const found = MOCK_LISTINGS.filter((l) => ids.includes(String(l.id)));
-    setSavedListings(found);
-  }, []);
+    if (!user) return;
 
-  const suggested = MOCK_LISTINGS.slice(0, 8);
+    // Saved IDs come from localStorage (no API yet for bookmarks)
+    const savedIds = getSavedIds();
+
+    Promise.allSettled([
+      getMyListings({ page_size: 1 }),
+      getUnreadCount(),
+      getConversations(1),
+      getListings({ page_size: 8, ordering: "-created_at" }),
+      getDashboardAnalytics(),
+      ...savedIds.map((id) => getListing(parseInt(id, 10))),
+    ]).then((results) => {
+      const [myListings, unread, convs, suggested, analyticsRes, ...savedResults] = results;
+
+      if (myListings.status === "fulfilled")  setActiveListings(myListings.value.count);
+      if (unread.status    === "fulfilled")   setUnreadMessages(unread.value);
+      if (convs.status     === "fulfilled") {
+        setConversations(convs.value.results.slice(0, 4).map((c) => toPreview(c, user.id)));
+      }
+      if (suggested.status === "fulfilled")   setSuggested(suggested.value.results);
+      if (analyticsRes.status === "fulfilled") {
+        setAnalytics(analyticsRes.value);
+        setTotalViews(analyticsRes.value.total_views);
+      }
+
+      const saved = savedResults
+        .filter((r): r is PromiseFulfilledResult<Listing> => r.status === "fulfilled")
+        .map((r) => r.value);
+      setSavedListings(saved);
+
+      setLoading(false);
+    });
+  }, [user]);
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const firstName = user?.first_name?.split(" ")[0] ?? user?.username ?? "there";
-
-  const unreadNotifs = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
-  const unreadMessages = MOCK_CONVERSATIONS.reduce((sum, c) => sum + c.unread, 0);
+  const firstName = user?.first_name || user?.username || "there";
 
   return (
     <div className="space-y-10 pb-10">
@@ -220,10 +202,10 @@ export default function DashboardPage() {
       {/* ── Stats row ── */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
-          { label: "Active Listings", value: "12",              color: "text-apple-blue" },
-          { label: "Total Views",     value: "3,240",           color: "text-blue-600"   },
-          { label: "Unread Messages", value: String(unreadMessages), color: "text-amber-600" },
-          { label: "Saved Items",     value: mounted ? String(savedListings.length) : "—", color: "text-purple-600" },
+          { label: "Active Listings", value: activeListings !== null ? String(activeListings) : "—", color: "text-apple-blue"  },
+          { label: "Total Views",     value: totalViews    !== null ? totalViews.toLocaleString() : "—", color: "text-blue-600" },
+          { label: "Unread Messages", value: unreadMessages !== null ? String(unreadMessages) : "—",   color: "text-amber-600" },
+          { label: "Saved Items",     value: loading ? "—" : String(savedListings.length),              color: "text-purple-600" },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
@@ -234,8 +216,11 @@ export default function DashboardPage() {
 
       {/* ── Charts ── */}
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <EngagementChart />
-        <CategoryChart />
+        <EngagementChart
+          weekly={analytics?.weekly ?? []}
+          monthly={analytics?.monthly ?? []}
+        />
+        <CategoryChart data={analytics?.by_category ?? []} />
       </div>
 
       {/* ── Main grid: left wide + right narrow ── */}
@@ -247,11 +232,9 @@ export default function DashboardPage() {
           {/* Saved Listings */}
           <section>
             <SectionHeader eyebrow="Bookmarked" title="Saved Listings" href="/dashboard/saved" linkLabel="View all" />
-            {!mounted ? (
+            {loading ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-gray-100" />
-                ))}
+                {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
               </div>
             ) : savedListings.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
@@ -274,71 +257,84 @@ export default function DashboardPage() {
           {/* Suggested Listings */}
           <section>
             <SectionHeader eyebrow="Picked for you" title="Suggested Listings" href="/listings" linkLabel="View all" />
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-              {suggested.map((l) => <CompactListingCard key={l.id} listing={l} />)}
-            </div>
+            {loading ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : suggested.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                {suggested.map((l) => <CompactListingCard key={l.id} listing={l} />)}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 py-12 text-center">
+                <p className="text-sm font-semibold text-gray-500">No listings available yet.</p>
+                <Link href="/listings" className="mt-4 rounded-lg bg-apple-blue px-5 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
+                  Browse Marketplace
+                </Link>
+              </div>
+            )}
           </section>
         </div>
 
         {/* ── Right column ── */}
         <div className="space-y-8">
 
-          {/* Notifications */}
-          <section>
-            <SectionHeader
-              eyebrow="Updates"
-              title={`Notifications ${unreadNotifs > 0 ? `(${unreadNotifs})` : ""}`}
-              href="/dashboard/notifications"
-              linkLabel="See all"
-            />
-            <div className="rounded-2xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50">
-              {MOCK_NOTIFICATIONS.map((n) => (
-                <div key={n.id} className={cn("flex items-start gap-3 px-4 py-3.5", !n.read && "bg-light-gray/40")}>
-                  <NotifIcon type={n.icon} />
-                  <div className="min-w-0 flex-1">
-                    <p className={cn("text-sm leading-snug", n.read ? "text-gray-600" : "text-gray-900 font-medium")}>{n.text}</p>
-                    <p className="mt-1 text-xs text-gray-400">{n.time}</p>
-                  </div>
-                  {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-apple-blue" />}
-                </div>
-              ))}
-            </div>
-          </section>
-
           {/* Inbox */}
           <section>
             <SectionHeader
               eyebrow="Messages"
-              title={`Inbox ${unreadMessages > 0 ? `(${unreadMessages})` : ""}`}
+              title={`Inbox${unreadMessages ? ` (${unreadMessages})` : ""}`}
               href="/dashboard/messages"
               linkLabel="Open inbox"
             />
-            <div className="rounded-2xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50">
-              {MOCK_CONVERSATIONS.map((c) => (
-                <Link
-                  key={c.id}
-                  href="/dashboard/messages"
-                  className={cn("flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors", c.unread > 0 && "bg-blue-50/40")}
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-sm font-bold text-apple-blue">
-                    {c.initial}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={cn("text-sm truncate", c.unread > 0 ? "font-semibold text-gray-900" : "font-medium text-gray-700")}>{c.name}</p>
-                      <span className="text-xs text-gray-400 shrink-0">{c.time}</span>
+            {loading ? (
+              <div className="rounded-2xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-3 px-4 py-3.5">
+                    <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-gray-100" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-24 animate-pulse rounded bg-gray-100" />
+                      <div className="h-3 w-40 animate-pulse rounded bg-gray-100" />
                     </div>
-                    <p className="text-xs text-gray-400 truncate">{c.listingTitle}</p>
-                    <p className={cn("text-sm truncate mt-0.5", c.unread > 0 ? "text-gray-800" : "text-gray-500")}>{c.preview}</p>
                   </div>
-                  {c.unread > 0 && (
-                    <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-apple-blue text-[11px] font-bold text-white">
-                      {c.unread}
+                ))}
+              </div>
+            ) : conversations.length > 0 ? (
+              <div className="rounded-2xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50">
+                {conversations.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/dashboard/messages`}
+                    className={cn("flex items-start gap-3 px-4 py-3.5 hover:bg-gray-50 transition-colors", c.unread > 0 && "bg-blue-50/40")}
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-sm font-bold text-apple-blue">
+                      {c.initial}
                     </span>
-                  )}
-                </Link>
-              ))}
-            </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={cn("text-sm truncate", c.unread > 0 ? "font-semibold text-gray-900" : "font-medium text-gray-700")}>{c.name}</p>
+                        <span className="text-xs text-gray-400 shrink-0">{c.time}</span>
+                      </div>
+                      {c.listingTitle && <p className="text-xs text-gray-400 truncate">{c.listingTitle}</p>}
+                      <p className={cn("text-sm truncate mt-0.5", c.unread > 0 ? "text-gray-800" : "text-gray-500")}>{c.preview}</p>
+                    </div>
+                    {c.unread > 0 && (
+                      <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-apple-blue text-[11px] font-bold text-white">
+                        {c.unread}
+                      </span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 py-10 text-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-8 w-8 text-gray-300 mb-2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+                </svg>
+                <p className="text-sm font-semibold text-gray-500">No messages yet</p>
+                <p className="text-xs text-gray-400 mt-1">Buyers will contact you here.</p>
+              </div>
+            )}
           </section>
 
         </div>

@@ -14,41 +14,7 @@ import {
   Legend,
 } from "recharts";
 import { cn } from "@/lib/utils";
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const WEEKLY_DATA = [
-  { label: "Mon", views: 42,  messages: 3,  saves: 5  },
-  { label: "Tue", views: 68,  messages: 7,  saves: 9  },
-  { label: "Wed", views: 55,  messages: 4,  saves: 6  },
-  { label: "Thu", views: 91,  messages: 12, saves: 14 },
-  { label: "Fri", views: 134, messages: 18, saves: 21 },
-  { label: "Sat", views: 187, messages: 24, saves: 30 },
-  { label: "Sun", views: 112, messages: 15, saves: 18 },
-];
-
-const MONTHLY_DATA = [
-  { label: "Jan", views: 820,  messages: 64,  saves: 98  },
-  { label: "Feb", views: 932,  messages: 78,  saves: 112 },
-  { label: "Mar", views: 1100, messages: 95,  saves: 143 },
-  { label: "Apr", views: 980,  messages: 82,  saves: 127 },
-  { label: "May", views: 1340, messages: 118, saves: 175 },
-  { label: "Jun", views: 1560, messages: 143, saves: 210 },
-  { label: "Jul", views: 1420, messages: 128, saves: 190 },
-  { label: "Aug", views: 1780, messages: 162, saves: 238 },
-  { label: "Sep", views: 1650, messages: 150, saves: 221 },
-  { label: "Oct", views: 1920, messages: 178, saves: 262 },
-  { label: "Nov", views: 2100, messages: 195, saves: 290 },
-  { label: "Dec", views: 2380, messages: 220, saves: 330 },
-];
-
-const CATEGORY_DATA = [
-  { label: "Electronics", listings: 4, views: 680  },
-  { label: "Vehicles",    listings: 2, views: 412  },
-  { label: "Property",    listings: 3, views: 524  },
-  { label: "Fashion",     listings: 1, views: 98   },
-  { label: "Services",    listings: 2, views: 310  },
-];
+import type { EngagementPoint, CategoryPoint } from "@/lib/api/analytics";
 
 // ─── Custom tooltip ───────────────────────────────────────────────────────────
 
@@ -104,11 +70,30 @@ function Tabs<T extends string>({
   );
 }
 
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+function ChartEmptyState({ height, message }: { height: number; message: string }) {
+  return (
+    <div
+      className="flex items-center justify-center rounded-xl border-2 border-dashed border-gray-100 bg-gray-50"
+      style={{ height }}
+    >
+      <p className="text-sm text-gray-400 text-center px-4">{message}</p>
+    </div>
+  );
+}
+
 // ─── Views & engagement chart ─────────────────────────────────────────────────
 
-export function EngagementChart() {
+export function EngagementChart({
+  weekly,
+  monthly,
+}: {
+  weekly: EngagementPoint[];
+  monthly: EngagementPoint[];
+}) {
   const [range, setRange] = useState<"weekly" | "monthly">("weekly");
-  const data = range === "weekly" ? WEEKLY_DATA : MONTHLY_DATA;
+  const data = range === "weekly" ? weekly : monthly;
 
   return (
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
@@ -125,43 +110,46 @@ export function EngagementChart() {
         />
       </div>
 
-      <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <defs>
-            <linearGradient id="gradViews" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#10b981" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="gradMessages" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="gradSaves" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#f43f5e" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend
-            iconType="circle"
-            iconSize={8}
-            wrapperStyle={{ fontSize: 11, paddingTop: 12 }}
-          />
-          <Area type="monotone" dataKey="views"    name="Views"    stroke="#10b981" strokeWidth={2} fill="url(#gradViews)"    dot={false} activeDot={{ r: 4 }} />
-          <Area type="monotone" dataKey="messages" name="Messages" stroke="#6366f1" strokeWidth={2} fill="url(#gradMessages)" dot={false} activeDot={{ r: 4 }} />
-          <Area type="monotone" dataKey="saves"    name="Saves"    stroke="#f43f5e" strokeWidth={2} fill="url(#gradSaves)"    dot={false} activeDot={{ r: 4 }} />
-        </AreaChart>
-      </ResponsiveContainer>
+      {data.length === 0 ? (
+        <ChartEmptyState
+          height={220}
+          message="No engagement data yet. Post a listing to start tracking views, messages, and saves."
+        />
+      ) : (
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="gradViews" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#10b981" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="gradMessages" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="gradSaves" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor="#f43f5e" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
+            <Area type="monotone" dataKey="views"    name="Views"    stroke="#10b981" strokeWidth={2} fill="url(#gradViews)"    dot={false} activeDot={{ r: 4 }} />
+            <Area type="monotone" dataKey="messages" name="Messages" stroke="#6366f1" strokeWidth={2} fill="url(#gradMessages)" dot={false} activeDot={{ r: 4 }} />
+            <Area type="monotone" dataKey="saves"    name="Saves"    stroke="#f43f5e" strokeWidth={2} fill="url(#gradSaves)"    dot={false} activeDot={{ r: 4 }} />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }
 
 // ─── Category breakdown chart ─────────────────────────────────────────────────
 
-export function CategoryChart() {
+export function CategoryChart({ data }: { data: CategoryPoint[] }) {
   return (
     <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
       <div className="mb-5">
@@ -170,15 +158,22 @@ export function CategoryChart() {
         <p className="text-xs text-gray-400 mt-0.5">How your listings perform across categories</p>
       </div>
 
-      <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={CATEGORY_DATA} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="views" name="Views" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={48} />
-        </BarChart>
-      </ResponsiveContainer>
+      {data.length === 0 ? (
+        <ChartEmptyState
+          height={200}
+          message="No category data yet."
+        />
+      ) : (
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="views" name="Views" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={48} />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }
