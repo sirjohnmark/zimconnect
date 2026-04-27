@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getMe, loginUser, logoutUser, registerUser, updateProfile } from "@/lib/api/auth";
 import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
+import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
 import { getStoredUser, setMemoryToken } from "@/lib/auth/auth";
 
@@ -37,7 +38,7 @@ interface AuthContextValue {
   login: (credentials: LoginInput) => Promise<LoginResponse>;
   register: (data: RegisterInput) => Promise<AuthUser>;
   logout: () => Promise<void>;
-  updateUser: (updates: Partial<Omit<AuthUser, "id" | "created_at" | "updated_at" | "is_active">>) => Promise<AuthUser>;
+  updateUser: (updates: ProfileUpdatePayload) => Promise<AuthUser>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -129,7 +130,7 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     }
   }, [logoutRedirect, router]);
 
-  const updateUser = useCallback(async (updates: Partial<Omit<AuthUser, "id" | "created_at" | "updated_at" | "is_active">>): Promise<AuthUser> => {
+  const updateUser = useCallback(async (updates: ProfileUpdatePayload): Promise<AuthUser> => {
     const updated = await updateProfile(updates);
     dispatch({ type: "SET_USER", user: updated });
     return updated;

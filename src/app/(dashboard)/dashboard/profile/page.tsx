@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
 import { getAccessToken } from "@/lib/auth/auth";
 import { cn } from "@/lib/utils";
+import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 
 // ─── File validation ──────────────────────────────────────────────────────────
 
@@ -161,7 +162,7 @@ export default function ProfilePage() {
       setBio(user.bio ?? "");
       setPhone(user.phone ?? "");
       setLocation(user.location ?? "");
-      setAvatarPreview(user.profile_picture ?? user.avatar ?? "");
+      setAvatarPreview(user.profile_picture ?? "");
     }
   }, [user]);
 
@@ -195,7 +196,7 @@ export default function ProfilePage() {
         profilePicture = undefined;
       }
 
-      await updateUser({
+      const payload: ProfileUpdatePayload = {
         first_name:      firstName.trim(),
         last_name:       lastName.trim(),
         username:        username.trim(),
@@ -203,7 +204,8 @@ export default function ProfilePage() {
         phone:           phone.trim() || undefined,
         location:        location.trim() || undefined,
         profile_picture: profilePicture,
-      });
+      };
+      await updateUser(payload);
 
       setAvatarFile(null);
       setSaved(true);

@@ -18,6 +18,8 @@ export type ListingOwner = {
 };
 
 export type ListingCategory = {
+  /** Present in the nested listing response — use when pre-populating an edit form. */
+  id?: number;
   name: string;
   slug: string;
 };

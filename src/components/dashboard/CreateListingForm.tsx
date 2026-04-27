@@ -134,8 +134,8 @@ export function CreateListingForm() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    getCategories({ page_size: 100 })
-      .then((res) => setCategories(res))
+    getCategories({ page_size: 200 })
+      .then((res) => setCategories(res.filter((c) => c.is_active)))
       .catch(() => { /* categories load silently — user still sees empty select */ });
   }, []);
 

@@ -3,6 +3,7 @@
 import { useAuthContext } from "./AuthProvider";
 import type { AuthState } from "./AuthProvider";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
+import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
 
 // ─── Public hook ──────────────────────────────────────────────────────────────
@@ -22,8 +23,8 @@ export interface UseAuthReturn {
   register: (data: RegisterInput) => Promise<AuthUser>;
   /** Clears auth state, calls /api/auth/logout, and redirects. */
   logout: () => Promise<void>;
-  /** Update profile fields and refresh auth state. */
-  updateUser: (updates: Partial<Omit<AuthUser, "id">>) => Promise<AuthUser>;
+  /** Update profile fields and refresh auth state. Only writable fields are accepted. */
+  updateUser: (updates: ProfileUpdatePayload) => Promise<AuthUser>;
 }
 
 export function useAuth(): UseAuthReturn {

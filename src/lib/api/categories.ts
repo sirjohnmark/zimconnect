@@ -103,6 +103,8 @@ export interface CategoryInput {
   description?: string;
   parent?: number | null;
   icon?: string;
+  /** URL of the category hero image, or empty string to clear. */
+  image?: string | null;
   display_order?: number;
   is_active?: boolean;
 }

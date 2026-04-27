@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth/useAuth";
 import type { Category } from "@/types/category";
 import type { CategoryInput } from "@/lib/api/categories";
 
-const EMPTY: CategoryInput = { name: "", slug: "", description: "", icon: "", display_order: 0, is_active: true, parent: null };
+const EMPTY: CategoryInput = { name: "", slug: "", description: "", icon: "", image: null, display_order: 0, is_active: true, parent: null };
 
 function slugify(val: string) {
   return val.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -40,7 +40,16 @@ export default function AdminCategoriesPage() {
 
   function startEdit(cat: Category) {
     setEditId(cat.id);
-    setForm({ name: cat.name, slug: cat.slug, description: cat.description, icon: cat.icon, display_order: cat.display_order, is_active: cat.is_active, parent: cat.parent });
+    setForm({
+      name: cat.name,
+      slug: cat.slug,
+      description: cat.description,
+      icon: cat.icon,
+      image: cat.image,
+      display_order: cat.display_order,
+      is_active: cat.is_active,
+      parent: cat.parent,
+    });
     setError("");
     setSuccess("");
   }
@@ -167,6 +176,33 @@ export default function AdminCategoriesPage() {
                 className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue"
               />
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-gray-700">Image URL</label>
+            <input
+              value={form.image ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, image: e.target.value || null }))}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue"
+              placeholder="https://…"
+            />
+            <p className="text-xs text-gray-400">Hero image shown on the category browse page. Leave blank to use no image.</p>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-gray-700">Parent Category</label>
+            <select
+              value={form.parent ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, parent: e.target.value ? Number(e.target.value) : null }))}
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue"
+            >
+              <option value="">— None (top-level) —</option>
+              {categories
+                .filter((c) => c.id !== editId)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+            </select>
           </div>
 
           <div className="flex items-center gap-2">

@@ -12,6 +12,13 @@ import {
 } from "@/lib/auth/auth";
 import { clearSessionCookie } from "@/lib/auth/cookies";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
+import {
+  mapUser,
+  buildProfilePayload,
+} from "./mappers";
+import type { BackendUser, ProfileUpdatePayload } from "./mappers";
+
+export type { ProfileUpdatePayload };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,11 +28,11 @@ export interface AuthUser {
   username: string;
   first_name: string;
   last_name: string;
-  /** Convenience full name — `first_name + " " + last_name` */
+  /** Always present after normalisation — derived from first_name + last_name. */
   name: string;
   phone: string;
-  avatar?: string;
   role: "BUYER" | "SELLER" | "ADMIN" | "MODERATOR";
+  /** Canonical backend image field. Use this everywhere; there is no `avatar` alias. */
   profile_picture: string | null;
   bio: string;
   location: string;
@@ -112,11 +119,11 @@ export async function loginUser(credentials: LoginInput): Promise<LoginResponse>
     saveUser(user);
     return { tokens: { access: "mock-access", refresh: "mock-refresh" }, user };
   }
-  const response = await api.post<LoginResponse>("/api/v1/auth/login", credentials);
+  const response = await api.post<{ tokens: { access: string; refresh: string }; user: BackendUser }>("/api/v1/auth/login", credentials);
   const user = normalizeUser(response.user);
   await saveTokens(response.tokens.access, response.tokens.refresh, user.role);
   saveUser(user);
-  return { ...response, user };
+  return { tokens: response.tokens, user };
 }
 
 export async function refreshAccessToken(): Promise<string> {
@@ -140,31 +147,33 @@ export async function logoutUser(): Promise<void> {
   }
 }
 
-function normalizeUser(user: AuthUser): AuthUser {
-  return { ...user, name: user.name || `${user.first_name} ${user.last_name}`.trim(), avatar: user.avatar ?? user.profile_picture ?? undefined };
+function normalizeUser(raw: BackendUser): AuthUser {
+  return mapUser(raw) as AuthUser;
 }
 
 export async function getMe(): Promise<AuthUser> {
   if (USE_MOCK) {
     const user = getStoredUser();
     if (!user) throw new ApiError(401, "Unauthorized", "Not authenticated");
-    return normalizeUser(user as unknown as AuthUser);
+    return normalizeUser(user as unknown as BackendUser);
   }
-  const user = await api.get<AuthUser>("/api/v1/auth/profile");
-  const normalized = normalizeUser(user);
+  const raw = await api.get<BackendUser>("/api/v1/auth/profile");
+  const normalized = normalizeUser(raw);
   saveUser(normalized);
   return normalized;
 }
 
-export async function updateProfile(updates: Partial<Omit<AuthUser, "id" | "created_at" | "updated_at" | "is_active">>): Promise<AuthUser> {
+export async function updateProfile(updates: ProfileUpdatePayload): Promise<AuthUser> {
+  const payload = buildProfilePayload(updates);
   if (USE_MOCK) {
     const user = getStoredUser();
     if (!user) throw new ApiError(401, "Unauthorized", "Not authenticated");
-    const updated = normalizeUser({ ...user, ...updates } as unknown as AuthUser);
+    const updated = normalizeUser({ ...(user as unknown as BackendUser), ...payload });
     saveUser(updated);
     return updated;
   }
-  const updated = normalizeUser(await api.patch<AuthUser>("/api/v1/auth/profile", updates));
+  const raw = await api.patch<BackendUser>("/api/v1/auth/profile", payload);
+  const updated = normalizeUser(raw);
   saveUser(updated);
   return updated;
 }
