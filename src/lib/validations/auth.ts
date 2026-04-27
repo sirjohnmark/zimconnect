@@ -37,9 +37,7 @@ export const registerSchema = z.object({
     .refine((v) => !v || /^(\+?263|0)[0-9]{9}$/.test(v.replace(/\s/g, "")), {
       message: "Enter a valid Zimbabwean number (e.g. 0771234567)",
     }),
-  role: z.enum(["BUYER", "SELLER"] as const, {
-    error: "Please select a role",
-  }),
+  role: z.enum(["BUYER", "SELLER"] as const),
   password: z
     .string()
     .min(1, "Password is required")

@@ -197,6 +197,7 @@ export function RegisterForm() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
+    defaultValues: { role: "BUYER" },
   });
 
   useEffect(() => {
@@ -422,24 +423,6 @@ export function RegisterForm() {
       {step === 2 && (
         <form onSubmit={handleSubmit(onDetailsSubmit)} noValidate className="space-y-4">
           {formError && <Alert message={formError} />}
-
-          <div className="space-y-1.5">
-            <span className="block text-sm font-medium text-gray-700">I want to <span className="text-red-500">*</span></span>
-            {errors.role && <p className="text-xs text-red-600">{errors.role.message}</p>}
-            <div className="grid grid-cols-2 gap-3">
-              {(["BUYER", "SELLER"] as const).map((r) => (
-                <label key={r} className="cursor-pointer">
-                  <input {...register("role")} type="radio" value={r} className="sr-only" />
-                  <span className={cn(
-                    "flex items-center gap-2 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors",
-                    "has-[:checked]:border-apple-blue has-[:checked]:bg-light-gray border-gray-200 hover:border-gray-300",
-                  )}>
-                    {r === "BUYER" ? "🛍️ Buy goods" : "🏪 Sell goods"}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
 
           <Input
             {...register("password")}
