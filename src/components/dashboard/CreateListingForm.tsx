@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth/useAuth";
+import { VerificationGate } from "@/components/ui/VerificationGate";
 import {
   createListingSchema,
   type CreateListingInput,
@@ -121,6 +123,10 @@ const STEP_LABELS: Record<SubmitStep, string> = {
 
 export function CreateListingForm() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isMock = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+  const isVerified = isMock || (user?.is_verified ?? false) || (user?.email_verified ?? false);
+
   const [formError, setFormError]   = useState<string | null>(null);
   const [images, setImages]         = useState<ImagePreview[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
@@ -145,6 +151,8 @@ export function CreateListingForm() {
 
   const descriptionValue = useWatch({ control, name: "description" }) ?? "";
   const isSubmitting = step !== "idle";
+
+  if (!isVerified) return <VerificationGate action="post a listing" />;
 
   async function onSubmit(data: CreateListingInput) {
     if (images.length === 0) {

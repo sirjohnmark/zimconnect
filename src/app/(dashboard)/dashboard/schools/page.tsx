@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
+import { VerificationGate } from "@/components/ui/VerificationGate";
 import { getMySchool, saveSchool, type SchoolProfile, type SchoolType, type SchoolLevel, type SchoolCurriculum } from "@/lib/mock/schools";
 import { cn } from "@/lib/utils";
 
@@ -138,6 +139,8 @@ const INPUT = "w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm te
 
 export default function SchoolDashboardPage() {
   const { user } = useAuth();
+  const isMock = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+  const isVerified = isMock || (user?.is_verified ?? false) || (user?.email_verified ?? false);
 
   // form state
   const [name, setName]         = useState("");
@@ -252,6 +255,18 @@ export default function SchoolDashboardPage() {
       <div className="max-w-2xl space-y-6">
         <div className="h-7 w-40 animate-pulse rounded-md bg-gray-200" />
         {[1, 2, 3].map((n) => <div key={n} className="h-32 animate-pulse rounded-2xl bg-gray-100" />)}
+      </div>
+    );
+  }
+
+  if (!isVerified) {
+    return (
+      <div className="max-w-2xl space-y-6">
+        <div>
+          <BackButton href="/dashboard" label="Dashboard" className="-ml-1 mb-2" />
+          <h1 className="text-xl font-semibold text-gray-900">List Your School</h1>
+        </div>
+        <VerificationGate action="list a school" />
       </div>
     );
   }

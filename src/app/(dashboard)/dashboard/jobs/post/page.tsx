@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
-import { postJob, getVerification, type JobType, type JobIndustry } from "@/lib/mock/jobs";
+import { postJob, type JobType, type JobIndustry } from "@/lib/mock/jobs";
+import { VerificationGate } from "@/components/ui/VerificationGate";
 import { cn } from "@/lib/utils";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -160,8 +161,8 @@ export default function PostJobPage() {
 
   if (!user) return null;
 
-  const verification = getVerification(String(user.id));
-  const isVerified   = verification?.status === "verified";
+  const isMock     = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+  const isVerified = isMock || user.is_verified || user.email_verified;
 
   function validate(): boolean {
     const e: FormErrors = {};
@@ -212,6 +213,18 @@ export default function PostJobPage() {
     setTimeout(() => router.push("/dashboard/jobs"), 1500);
   }
 
+  if (!isVerified) {
+    return (
+      <div className="max-w-2xl space-y-6">
+        <div>
+          <BackButton href="/dashboard/jobs" label="Back to Jobs" className="-ml-1 mb-2" />
+          <h1 className="text-xl font-bold text-gray-900">Post a Job</h1>
+        </div>
+        <VerificationGate action="post a job" />
+      </div>
+    );
+  }
+
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center gap-4">
@@ -233,19 +246,6 @@ export default function PostJobPage() {
         <h1 className="text-xl font-bold text-gray-900">Post a Job</h1>
         <p className="mt-1 text-sm text-gray-500">Fill in the details below to publish your job listing.</p>
       </div>
-
-      {/* Verification nudge */}
-      {!isVerified && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 mt-0.5 shrink-0 text-amber-600">
-            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-          </svg>
-          <p className="text-xs text-amber-800">
-            Your account is not yet verified. You can still post jobs, but a <strong>Verified</strong> badge builds candidate trust.{" "}
-            <a href="/dashboard/jobs" className="underline font-semibold">Get verified →</a>
-          </p>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} noValidate className="space-y-8">
 
