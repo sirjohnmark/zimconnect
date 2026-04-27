@@ -193,22 +193,60 @@ export async function changePassword(currentPassword: string, newPassword: strin
 
 // ─── OTP ──────────────────────────────────────────────────────────────────────
 
-export async function sendEmailOtp(): Promise<void> {
-  if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/email/send-otp", {});
+export type OtpMethod = "email" | "sms";
+
+export interface SendOtpPayload {
+  method: OtpMethod;
+  email?: string;
+  phone?: string;
 }
 
-export async function verifyEmailOtp(otp: string): Promise<void> {
-  if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/email/verify", { otp });
+export interface VerifyOtpPayload {
+  method: OtpMethod;
+  code: string;
+  email?: string;
+  phone?: string;
 }
 
-export async function sendPhoneOtp(): Promise<void> {
+/**
+ * POST /api/v1/send-otp
+ * Sends a 6-digit OTP via email or SMS.
+ * Contact identifier (email/phone) is included so the endpoint works
+ * even before a session token has been issued.
+ */
+export async function sendOtp(method: OtpMethod, email?: string, phone?: string): Promise<void> {
   if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/phone/send-otp", {});
+  const payload: SendOtpPayload = { method };
+  if (method === "email" && email) payload.email = email;
+  if (method === "sms"   && phone) payload.phone = phone;
+  await api.post<void>("/api/v1/send-otp", payload);
 }
 
-export async function verifyPhoneOtp(otp: string): Promise<void> {
+/**
+ * POST /api/v1/verify-otp
+ * Verifies the submitted OTP code.
+ * Throws ApiError(400) for invalid code, ApiError(410) for expired code.
+ */
+export async function verifyOtpCode(
+  code: string,
+  method: OtpMethod,
+  email?: string,
+  phone?: string,
+): Promise<void> {
   if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/phone/verify", { otp });
+  const payload: VerifyOtpPayload = { method, code };
+  if (method === "email" && email) payload.email = email;
+  if (method === "sms"   && phone) payload.phone = phone;
+  await api.post<void>("/api/v1/verify-otp", payload);
 }
+
+// ─── Legacy aliases (kept for any other callers) ──────────────────────────────
+
+/** @deprecated Use sendOtp("email", email) */
+export const sendEmailOtp  = (email?: string) => sendOtp("email", email);
+/** @deprecated Use sendOtp("sms", undefined, phone) */
+export const sendPhoneOtp  = (phone?: string) => sendOtp("sms", undefined, phone);
+/** @deprecated Use verifyOtpCode(otp, "email", email) */
+export const verifyEmailOtp = (otp: string, email?: string) => verifyOtpCode(otp, "email", email);
+/** @deprecated Use verifyOtpCode(otp, "sms", undefined, phone) */
+export const verifyPhoneOtp = (otp: string, phone?: string) => verifyOtpCode(otp, "sms", undefined, phone);

@@ -8,10 +8,7 @@ import Link from "next/link";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useAuthContext } from "@/lib/auth/AuthProvider";
-import {
-  sendEmailOtp, verifyEmailOtp,
-  sendPhoneOtp, verifyPhoneOtp,
-} from "@/lib/api/auth";
+import { sendOtp, verifyOtpCode, type OtpMethod } from "@/lib/api/auth";
 import { generateAndStoreOtp, verifyOtp } from "@/lib/auth/auth";
 import { ApiError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
@@ -191,6 +188,7 @@ export function RegisterForm() {
   const [step, setStep]             = useState<1 | 2 | 3 | 4>(1);
   const [formData, setFormData]     = useState<RegisterInput | null>(null);
   const [verifyMethod, setMethod]   = useState<"email" | "phone">("email");
+  const apiMethod = (m: "email" | "phone"): OtpMethod => m === "phone" ? "sms" : "email";
   const [otpDigits, setOtpDigits]   = useState<string[]>(Array(6).fill(""));
   const [otpStatus, setOtpStatus]   = useState<OtpStatus>("idle");
   const [sentCode, setSentCode]     = useState<string | null>(null);
@@ -274,8 +272,11 @@ export function RegisterForm() {
         await new Promise((r) => setTimeout(r, 800));
         setSentCode(code);
       } else {
-        if (verifyMethod === "email") await sendEmailOtp();
-        else await sendPhoneOtp();
+        await sendOtp(
+          apiMethod(verifyMethod),
+          verifyMethod === "email" ? formData.email : undefined,
+          verifyMethod === "phone" ? formData.phone : undefined,
+        );
       }
 
       setStep(4);
@@ -296,8 +297,11 @@ export function RegisterForm() {
       setSentCode(code);
     } else {
       try {
-        if (verifyMethod === "email") await sendEmailOtp();
-        else await sendPhoneOtp();
+        await sendOtp(
+          apiMethod(verifyMethod),
+          verifyMethod === "email" ? formData.email : undefined,
+          verifyMethod === "phone" ? formData.phone : undefined,
+        );
       } catch {
         return;
       }
@@ -337,8 +341,12 @@ export function RegisterForm() {
         await registerAuth(formData);
       } else {
         // Real API: verify OTP then login to get tokens
-        if (verifyMethod === "email") await verifyEmailOtp(otpCode);
-        else await verifyPhoneOtp(otpCode);
+        await verifyOtpCode(
+          otpCode,
+          apiMethod(verifyMethod),
+          verifyMethod === "email" ? formData.email : undefined,
+          verifyMethod === "phone" ? formData.phone : undefined,
+        );
 
         setOtpStatus("success");
         await login({ email: formData.email, password: formData.password });
