@@ -93,11 +93,9 @@ export default function ListingsPage() {
   const [total,    setTotal]    = useState(0);
   const [hasNext,  setHasNext]  = useState(false);
   const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const res = await getListings({
         search:   urlSearch   || undefined,
@@ -110,7 +108,7 @@ export default function ListingsPage() {
       setTotal(res.count);
       setHasNext(res.next !== null);
     } catch {
-      setError("Failed to load listings. Please try again.");
+      setListings([]);
     } finally {
       setLoading(false);
     }
@@ -225,14 +223,6 @@ export default function ListingsPage() {
           </div>
         )}
       </form>
-
-      {/* Error */}
-      {error && (
-        <div className="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-          <button type="button" onClick={fetchListings} className="ml-auto text-xs font-medium underline">Retry</button>
-        </div>
-      )}
 
       {/* Results */}
       {loading ? (
