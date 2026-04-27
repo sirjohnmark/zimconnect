@@ -19,12 +19,27 @@ const CACHE: NextFetchRequestConfig = {
 };
 
 function decodeHtml(value: string): string {
+  // Named entities
+  const named: Record<string, string> = {
+    "&amp;":  "&",
+    "&lt;":   "<",
+    "&gt;":   ">",
+    "&quot;": '"',
+    "&apos;": "'",
+    "&#039;": "'",
+    "&nbsp;": " ",
+  };
   return value
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'");
+    .replace(/&[a-zA-Z]+;|&#\d+;|&#x[0-9a-fA-F]+;/g, (entity) => {
+      if (named[entity]) return named[entity];
+      // Decimal numeric entity — e.g. &#60;
+      const dec = entity.match(/^&#(\d+);$/);
+      if (dec) return String.fromCodePoint(Number(dec[1]));
+      // Hex numeric entity — e.g. &#x3C;
+      const hex = entity.match(/^&#x([0-9a-fA-F]+);$/i);
+      if (hex) return String.fromCodePoint(parseInt(hex[1], 16));
+      return entity;
+    });
 }
 
 function normalizeCategory(category: Category): Category {

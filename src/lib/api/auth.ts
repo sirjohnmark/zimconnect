@@ -6,12 +6,11 @@ import {
   saveAccount,
   findAccountByEmail,
   updateStoredPassword,
-  getStoredPassword,
+  verifyStoredPassword,
   saveTokens,
-  getRefreshToken,
   clearTokens,
 } from "@/lib/auth/auth";
-import { setSessionCookie, clearSessionCookie } from "@/lib/auth/cookies";
+import { clearSessionCookie } from "@/lib/auth/cookies";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -82,7 +81,7 @@ export async function registerUser(data: RegisterInput): Promise<AuthUser> {
       phone: data.phone ?? "",
       role: data.role,
     });
-    saveAccount({ id: String(user.id), name: `${data.first_name} ${data.last_name}`, email: data.email, password: data.password });
+    await saveAccount({ id: String(user.id), name: `${data.first_name} ${data.last_name}`, email: data.email, password: data.password });
     return user;
   }
   return api.post<AuthUser>("/api/v1/auth/register", {
@@ -103,46 +102,40 @@ export async function loginUser(credentials: LoginInput): Promise<LoginResponse>
     if (!account) {
       throw new ApiError(404, "Not Found", "No account found with this email. Please create an account first.");
     }
-    if (account.password !== credentials.password) {
+    const passwordValid = await verifyStoredPassword(account.id, credentials.password);
+    if (!passwordValid) {
       throw new ApiError(401, "Unauthorized", "Incorrect password. Please try again.");
     }
     const stored = getStoredUser();
     const accountId = parseInt(account.id, 10) || Date.now();
     const user = stored ?? mockUser({ id: accountId, email: account.email, username: account.email.split("@")[0], first_name: account.name.split(" ")[0] ?? account.name, last_name: account.name.split(" ")[1] ?? "" });
     saveUser(user);
-    setSessionCookie(user.role);
     return { tokens: { access: "mock-access", refresh: "mock-refresh" }, user };
   }
   const response = await api.post<LoginResponse>("/api/v1/auth/login", credentials);
   const user = normalizeUser(response.user);
-  saveTokens(response.tokens.access, response.tokens.refresh);
+  await saveTokens(response.tokens.access, response.tokens.refresh, user.role);
   saveUser(user);
-  setSessionCookie(user.role);
   return { ...response, user };
 }
 
 export async function refreshAccessToken(): Promise<string> {
   if (USE_MOCK) return "mock-access";
-  const refresh = getRefreshToken();
-  if (!refresh) throw new ApiError(401, "Unauthorized", "No refresh token available.");
-  const { access } = await api.post<{ access: string }>("/api/v1/auth/token/refresh", { refresh });
-  saveTokens(access, refresh);
+  // The refresh token lives in an HttpOnly cookie — exchange it via the internal route
+  const res = await fetch("/api/auth/refresh", { method: "POST" });
+  if (!res.ok) throw new ApiError(401, "Unauthorized", "Session expired. Please log in again.");
+  const { access } = await res.json() as { access: string };
   return access;
 }
 
 export async function logoutUser(): Promise<void> {
-  if (USE_MOCK) {
-    clearStoredUser();
-    clearTokens();
-    clearSessionCookie();
-    return;
-  }
-  const refresh = getRefreshToken();
   try {
-    await api.post<void>("/api/v1/auth/logout", { refresh });
+    if (!USE_MOCK) {
+      await api.post<void>("/api/v1/auth/logout", {});
+    }
   } finally {
     clearStoredUser();
-    clearTokens();
+    await clearTokens();
     clearSessionCookie();
   }
 }
@@ -181,11 +174,9 @@ export async function changePassword(currentPassword: string, newPassword: strin
     const user = getStoredUser();
     if (!user) throw new ApiError(401, "Unauthorized", "Not authenticated");
     const id = String((user as unknown as AuthUser).id);
-    const stored = getStoredPassword(id);
-    if (stored !== currentPassword) {
-      throw new ApiError(400, "Bad Request", "Current password is incorrect.");
-    }
-    updateStoredPassword(id, newPassword);
+    const valid = await verifyStoredPassword(id, currentPassword);
+    if (!valid) throw new ApiError(400, "Bad Request", "Current password is incorrect.");
+    await updateStoredPassword(id, newPassword);
     return;
   }
   await api.post<void>("/api/v1/auth/change-password", { current_password: currentPassword, new_password: newPassword });

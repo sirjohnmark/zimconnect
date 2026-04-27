@@ -4,7 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
+import { getAccessToken } from "@/lib/auth/auth";
 import { cn } from "@/lib/utils";
+
+// ─── File validation ──────────────────────────────────────────────────────────
+
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_IMAGE_BYTES      = 5 * 1024 * 1024; // 5 MB
+
+function validateImageFile(file: File): string | null {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type))
+    return "Only JPEG, PNG, or WebP images are allowed.";
+  if (file.size > MAX_IMAGE_BYTES)
+    return "Image must be under 5 MB.";
+  return null;
+}
 
 // ─── Avatar upload ────────────────────────────────────────────────────────────
 
@@ -13,11 +27,13 @@ function AvatarUpload({
   avatar,
   onFileChange,
   onRemove,
+  onError,
 }: {
   name: string;
   avatar?: string;
   onFileChange: (file: File, preview: string) => void;
   onRemove: () => void;
+  onError: (msg: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const initial = name.charAt(0).toUpperCase();
@@ -25,12 +41,14 @@ function AvatarUpload({
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = "";
+    const err = validateImageFile(file);
+    if (err) { onError(err); return; }
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") onFileChange(file, reader.result);
     };
     reader.readAsDataURL(file);
-    e.target.value = "";
   }
 
   return (
@@ -90,17 +108,29 @@ const INPUT = cn(
 // ─── Upload avatar to backend ─────────────────────────────────────────────────
 
 async function uploadAvatar(file: File): Promise<string> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("sanganai_access") : null;
-  const form = new FormData();
+  // Validate before sending — defence in depth alongside server-side checks
+  const err = validateImageFile(file);
+  if (err) throw new Error(err);
+
+  const token = getAccessToken(); // read from in-memory store, never localStorage
+  const form  = new FormData();
   form.append("avatar", file);
-  const res = await fetch("/api/v1/auth/avatar", {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    body: form,
-  });
-  if (!res.ok) throw new Error("Avatar upload failed");
-  const data = await res.json() as { url: string };
-  return data.url;
+
+  const controller = new AbortController();
+  const timeoutId  = setTimeout(() => controller.abort(), 30_000); // 30 s for upload
+  try {
+    const res = await fetch("/api/v1/auth/avatar", {
+      method:  "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body:    form,
+      signal:  controller.signal,
+    });
+    if (!res.ok) throw new Error("Avatar upload failed");
+    const data = await res.json() as { url: string };
+    return data.url;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -210,8 +240,9 @@ export default function ProfilePage() {
           <AvatarUpload
             name={`${firstName} ${lastName}`.trim() || displayName}
             avatar={avatarPreview}
-            onFileChange={(file, preview) => { setAvatarFile(file); setAvatarPreview(preview); }}
+            onFileChange={(file, preview) => { setAvatarFile(file); setAvatarPreview(preview); setError(null); }}
             onRemove={() => { setAvatarFile(null); setAvatarPreview(""); }}
+            onError={(msg) => setError(msg)}
           />
         </div>
 

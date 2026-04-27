@@ -1,5 +1,19 @@
 import { api } from "./client";
 import { getAccessToken } from "@/lib/auth/auth";
+
+// ─── File validation ──────────────────────────────────────────────────────────
+
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_IMAGE_BYTES      = 10 * 1024 * 1024; // 10 MB per image for listings
+
+function validateImageFiles(files: File[]): void {
+  for (const file of files) {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type))
+      throw new Error(`"${file.name}" is not a supported image type. Use JPEG, PNG, or WebP.`);
+    if (file.size > MAX_IMAGE_BYTES)
+      throw new Error(`"${file.name}" exceeds the 10 MB size limit.`);
+  }
+}
 import type { Listing, ListingCondition, ListingCurrency, ListingImage } from "@/types/listing";
 
 // ─── Param / response types ───────────────────────────────────────────────────
@@ -87,25 +101,41 @@ export async function deleteListing(id: number): Promise<void> {
 }
 
 export async function uploadImages(listingId: number, files: File[]): Promise<ListingImage[]> {
+  // Validate types and sizes before uploading (VULN-08 fix)
+  validateImageFiles(files);
+
+  // Require the API URL to be explicitly configured — no http://localhost fallback (VULN-09 fix)
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) throw new Error("NEXT_PUBLIC_API_URL is not configured");
+
   const form = new FormData();
   files.forEach((file) => form.append("images", file));
 
-  const token = getAccessToken();
+  const token   = getAccessToken();
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/listings/${listingId}/images/`,
-    { method: "POST", headers, body: form },
-  );
+  const controller = new AbortController();
+  const timeoutId  = setTimeout(() => controller.abort(), 60_000); // 60 s for batch upload
+  try {
+    const res = await fetch(`${apiUrl}/api/v1/listings/${listingId}/images/`, {
+      method: "POST",
+      headers,
+      body:   form,
+      signal: controller.signal,
+    });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Image upload failed: ${res.status} ${text}`);
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Image upload failed (${res.status}). Please try again.`);
+      void text; // prevent unused warning
+    }
+
+    const data = await res.json() as { images: ListingImage[] };
+    return data.images;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data = await res.json() as { images: ListingImage[] };
-  return data.images;
 }
 
 export async function deleteImage(imageId: number): Promise<void> {

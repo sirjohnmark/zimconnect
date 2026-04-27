@@ -1,22 +1,73 @@
 import type { NextConfig } from "next";
 
+// ─── Guards ───────────────────────────────────────────────────────────────────
+
 const API_URL = process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL;
 if (!API_URL) throw new Error("BACKEND_URL or NEXT_PUBLIC_API_URL must be set");
+
+// VULN-14: Prevent mock mode from ever being active in production builds
+if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_USE_MOCK === "true") {
+  throw new Error(
+    "NEXT_PUBLIC_USE_MOCK must not be 'true' in production. " +
+    "Set it to 'false' in your .env.production file.",
+  );
+}
+
+// ─── Content-Security-Policy ──────────────────────────────────────────────────
+
+const CSP = [
+  "default-src 'self'",
+  // Next.js requires 'unsafe-inline' and 'unsafe-eval' for its runtime
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://api.sanganai.co.zw https://picsum.photos https://via.placeholder.com",
+  "font-src 'self'",
+  "connect-src 'self' https://api.sanganai.co.zw",
+  "media-src 'none'",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
+const SECURITY_HEADERS = [
+  { key: "Content-Security-Policy",            value: CSP },
+  { key: "X-Content-Type-Options",             value: "nosniff" },
+  { key: "X-Frame-Options",                    value: "DENY" },
+  { key: "X-XSS-Protection",                   value: "1; mode=block" },
+  { key: "Referrer-Policy",                    value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy",                  value: "camera=(), microphone=(), geolocation=(), payment=()" },
+  {
+    key:   "Strict-Transport-Security",
+    // 2 years, include subdomains, submit to preload list
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+];
+
+// ─── Config ───────────────────────────────────────────────────────────────────
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
 
-  // Proxy /api/* → Django backend to avoid CORS in development and production
+  async headers() {
+    return [
+      {
+        source:  "/(.*)",
+        headers: SECURITY_HEADERS,
+      },
+    ];
+  },
+
   async rewrites() {
     return [
       {
-        source: "/api/:path*",
-        // Django requires trailing slashes; the rewrite appends "/" so browser
-        // requests don't hit Django's APPEND_SLASH 301 redirect.
-        destination: `${API_URL}/api/:path*/`,
+        // Scoped to /api/v1/ so internal Next.js routes at /api/auth/* are NOT proxied
+        source:      "/api/v1/:path*",
+        destination: `${API_URL}/api/v1/:path*/`,
       },
       {
-        source: "/ws/:path*",
+        source:      "/ws/:path*",
         destination: `${API_URL}/ws/:path*`,
       },
     ];
@@ -24,18 +75,9 @@ const nextConfig: NextConfig = {
 
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "api.sanganai.co.zw",
-      },
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
-      },
-      {
-        protocol: "https",
-        hostname: "via.placeholder.com",
-      },
+      { protocol: "https", hostname: "api.sanganai.co.zw" },
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "via.placeholder.com" },
     ],
   },
 };

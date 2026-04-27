@@ -197,6 +197,9 @@ export function RegisterForm() {
   const [sending, setSending]       = useState(false);
   const [verifying, setVerifying]   = useState(false);
   const [resendCooldown, setCooldown] = useState(0);
+  // VULN-13: track failed OTP attempts to prevent brute-force
+  const [otpAttempts, setOtpAttempts] = useState(0);
+  const MAX_OTP_ATTEMPTS = 5;
 
   const otpCode     = otpDigits.join("");
   const otpComplete = otpDigits.every((d) => d !== "");
@@ -279,6 +282,7 @@ export function RegisterForm() {
         );
       }
 
+      setOtpAttempts(0); // reset attempt counter each time a new code is sent
       setStep(4);
       startResendCooldown();
     } catch (err) {
@@ -324,6 +328,15 @@ export function RegisterForm() {
 
   async function handleVerifyAndRegister() {
     if (!formData || !otpComplete) return;
+
+    // VULN-13: block after too many failed attempts
+    if (otpAttempts >= MAX_OTP_ATTEMPTS) {
+      setOtpError("Too many failed attempts. Please request a new code.");
+      setOtpDigits(Array(6).fill(""));
+      setStep(3);
+      return;
+    }
+
     setVerifying(true);
     setOtpError(null);
 
@@ -332,11 +345,18 @@ export function RegisterForm() {
         const result = verifyOtp(otpCode);
         if (!result.valid) {
           setOtpStatus("error");
-          setOtpError(result.reason ?? "Incorrect code. Please try again.");
-          setTimeout(() => { setOtpDigits(Array(6).fill("")); setOtpStatus("idle"); }, 1000);
+          const newAttempts = otpAttempts + 1;
+          setOtpAttempts(newAttempts);
+          if (newAttempts >= MAX_OTP_ATTEMPTS) {
+            setOtpError("Too many failed attempts. Please request a new code.");
+            setTimeout(() => { setOtpDigits(Array(6).fill("")); setOtpStatus("idle"); setStep(3); }, 1000);
+          } else {
+            setOtpError(result.reason ?? "Incorrect code. Please try again.");
+            setTimeout(() => { setOtpDigits(Array(6).fill("")); setOtpStatus("idle"); }, 1000);
+          }
           return;
         }
-        // Mock: account already staged, just log in
+        setOtpAttempts(0);
         setOtpStatus("success");
         await registerAuth(formData);
       } else {
@@ -348,6 +368,7 @@ export function RegisterForm() {
           verifyMethod === "phone" ? formData.phone : undefined,
         );
 
+        setOtpAttempts(0);
         setOtpStatus("success");
         await login({ email: formData.email, password: formData.password });
       }
@@ -357,13 +378,20 @@ export function RegisterForm() {
       router.refresh();
     } catch (err) {
       setOtpStatus("idle");
-      if (err instanceof ApiError && err.status === 409) {
+      const newAttempts = otpAttempts + 1;
+      setOtpAttempts(newAttempts);
+
+      if (newAttempts >= MAX_OTP_ATTEMPTS) {
+        setOtpError("Too many failed attempts. Please request a new code.");
+        setOtpDigits(Array(6).fill(""));
+        setStep(3);
+      } else if (err instanceof ApiError && err.status === 409) {
         setFormError("An account with this email already exists.");
         setStep(2);
       } else if (err instanceof ApiError && (err.status === 410 || err.message.toLowerCase().includes("expir"))) {
         setOtpError("Code expired. Please request a new one.");
       } else if (err instanceof ApiError && (err.status === 400 || err.status === 401)) {
-        setOtpError("Invalid code. Please check and try again.");
+        setOtpError(`Invalid code. Please check and try again. (${MAX_OTP_ATTEMPTS - newAttempts} attempt${MAX_OTP_ATTEMPTS - newAttempts !== 1 ? "s" : ""} remaining)`);
       } else if (err instanceof ApiError) {
         setOtpError(err.message);
       } else {

@@ -6,8 +6,7 @@ import { getMe, loginUser, logoutUser, registerUser, updateProfile } from "@/lib
 import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
-import { getStoredUser, getAccessToken } from "@/lib/auth/auth";
-import { setSessionCookie } from "@/lib/auth/cookies";
+import { getStoredUser, setMemoryToken } from "@/lib/auth/auth";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
@@ -58,47 +57,54 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     if (USE_MOCK) {
       const user = getStoredUser();
       if (user) {
-        const authUser = user as unknown as AuthUser;
-        dispatch({ type: "SET_USER", user: authUser });
-        setSessionCookie(authUser.role);
+        setMemoryToken("mock-access");
+        dispatch({ type: "SET_USER", user: user as unknown as AuthUser });
       } else {
         dispatch({ type: "CLEAR_USER" });
       }
       return;
     }
 
-    if (!getAccessToken()) {
-      dispatch({ type: "CLEAR_USER" });
-      return;
-    }
-
     let cancelled = false;
     dispatch({ type: "LOADING" });
 
-    getMe()
-      .then((user) => {
-        if (!cancelled) {
-          dispatch({ type: "SET_USER", user });
-          setSessionCookie(user.role);
+    async function initSession() {
+      // Try to restore the access token via the HttpOnly refresh cookie
+      try {
+        const res = await fetch("/api/auth/refresh", { method: "POST" });
+        if (res.ok) {
+          const { access } = await res.json() as { access: string };
+          setMemoryToken(access);
+        } else {
+          if (!cancelled) dispatch({ type: "CLEAR_USER" });
+          return;
         }
-      })
-      .catch((err) => {
+      } catch {
+        if (!cancelled) dispatch({ type: "CLEAR_USER" });
+        return;
+      }
+
+      try {
+        const user = await getMe();
+        if (!cancelled) dispatch({ type: "SET_USER", user });
+      } catch (err) {
         if (cancelled) return;
-        if (err instanceof ApiError && (err.status === 401 || err.status === 400)) {
-          dispatch({ type: "CLEAR_USER" });
-        } else if (err instanceof NetworkError) {
+        if (err instanceof ApiError || err instanceof NetworkError) {
           dispatch({ type: "CLEAR_USER" });
         } else {
           console.error("[auth] unexpected error fetching profile:", err);
           dispatch({ type: "CLEAR_USER" });
         }
-      });
+      }
+    }
 
+    initSession();
     return () => { cancelled = true; };
   }, []);
 
   const login = useCallback(async (credentials: LoginInput): Promise<LoginResponse> => {
     const response = await loginUser(credentials);
+    if (USE_MOCK) setMemoryToken("mock-access");
     dispatch({ type: "SET_USER", user: response.user });
     return response;
   }, []);
