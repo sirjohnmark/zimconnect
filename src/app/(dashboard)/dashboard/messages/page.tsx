@@ -375,7 +375,8 @@ export default function MessagesPage() {
       setHasMore(data.next !== null);
       setPage(p);
     } catch {
-      setError("Failed to load conversations. Please try again.");
+      // API unavailable — show empty state instead of error
+      setConversations([]);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -456,17 +457,6 @@ export default function MessagesPage() {
           <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
             {loading ? (
               <ListSkeleton />
-            ) : error ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4 text-center gap-3">
-                <p className="text-sm text-red-600">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => loadConversations(1)}
-                  className="text-xs font-medium text-apple-blue hover:underline"
-                >
-                  Try again
-                </button>
-              </div>
             ) : filtered.length === 0 ? (
               conversations.length === 0
                 ? <EmptyInbox />
