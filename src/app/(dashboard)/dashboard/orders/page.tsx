@@ -63,12 +63,11 @@ function SkeletonRow() {
 export default function OrdersPage() {
   const [orders, setOrders]   = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(false);
 
   useEffect(() => {
     getMyOrders()
       .then((res) => setOrders(res.results))
-      .catch(() => setError(true))
+      .catch(() => setOrders([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -84,7 +83,7 @@ export default function OrdersPage() {
       <div>
         <BackButton href="/dashboard" label="Dashboard" className="-ml-1 mb-2" />
         <h1 className="text-xl font-semibold text-gray-900">My Orders</h1>
-        {!loading && !error && (
+        {!loading && (
           <p className="mt-1 text-sm text-gray-500">
             {total} order{total !== 1 ? "s" : ""} — {completed} completed, {active} active
           </p>
@@ -106,23 +105,8 @@ export default function OrdersPage() {
         ))}
       </div>
 
-      {/* Error state */}
-      {error && (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-red-100 bg-red-50 py-10 text-center">
-          <p className="text-sm font-semibold text-red-600">Failed to load orders</p>
-          <p className="text-xs text-red-400 mt-1">Check your connection and try again.</p>
-          <button
-            onClick={() => { setError(false); setLoading(true); getMyOrders().then((r) => setOrders(r.results)).catch(() => setError(true)).finally(() => setLoading(false)); }}
-            className="mt-4 rounded-lg bg-red-600 px-5 py-2 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
       {/* Orders list */}
-      {!error && (
-        loading || orders.length > 0 ? (
+      {loading || orders.length > 0 ? (
           <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
             {/* Table header — desktop only */}
             <div className="hidden sm:grid sm:grid-cols-[1fr_140px_100px_120px_80px] gap-4 border-b border-gray-100 bg-gray-50 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
@@ -190,7 +174,6 @@ export default function OrdersPage() {
               Browse Listings
             </Link>
           </div>
-        )
       )}
 
       <p className="text-xs text-gray-400 text-center">
