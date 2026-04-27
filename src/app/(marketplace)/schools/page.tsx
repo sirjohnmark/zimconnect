@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
-import { getSchools, type SchoolProfile, type SchoolType, type SchoolLevel, type SchoolCurriculum } from "@/lib/mock/schools";
+import { getSchoolsFromApi } from "@/lib/api/schools";
+import type { SchoolProfile, SchoolType, SchoolLevel, SchoolCurriculum } from "@/lib/mock/schools";
 import { cn } from "@/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -248,11 +249,20 @@ export default function SchoolsPage() {
   const [levelFilter, setLevel]       = useState<"all" | SchoolLevel>("all");
   const [curriculumFilter, setCurric] = useState<"all" | SchoolCurriculum>("all");
   const [cityFilter, setCity]         = useState("all");
-  const [mounted, setMounted]         = useState(false);
+  const [loading, setLoading]         = useState(true);
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
-    setSchools(getSchools());
-    setMounted(true);
+    let cancelled = false;
+    setLoading(true);
+    getSchoolsFromApi({ page_size: 200 })
+      .then((res) => {
+        if (!cancelled) { setSchools(res.results); setLoading(false); }
+      })
+      .catch(() => {
+        if (!cancelled) { setUnavailable(true); setLoading(false); }
+      });
+    return () => { cancelled = true; };
   }, []);
 
   const cities = ["all", ...Array.from(new Set(schools.map((s) => s.city))).sort()];
@@ -297,7 +307,9 @@ export default function SchoolsPage() {
       <div>
         <BackButton href="/categories" label="Categories" className="-ml-1 mb-1" />
         <h1 className="text-xl font-semibold text-gray-900">Schools Directory</h1>
-        <p className="mt-0.5 text-sm text-gray-500">{schools.length} schools listed across Zimbabwe</p>
+        {!loading && !unavailable && (
+          <p className="mt-0.5 text-sm text-gray-500">{schools.length} school{schools.length !== 1 ? "s" : ""} listed across Zimbabwe</p>
+        )}
       </div>
 
       {/* Search & filters */}
@@ -417,7 +429,7 @@ export default function SchoolsPage() {
       )}
 
       {/* Grid */}
-      {!mounted ? (
+      {loading ? (
         <div className="grid gap-5 sm:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="rounded-2xl border border-gray-100 bg-white overflow-hidden">
@@ -429,6 +441,11 @@ export default function SchoolsPage() {
               </div>
             </div>
           ))}
+        </div>
+      ) : unavailable ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-100 bg-amber-50 py-16 text-center">
+          <p className="text-sm font-semibold text-amber-800">We are currently unavailable</p>
+          <p className="mt-1 text-xs text-amber-600">Please come back in a few minutes.</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 py-16 text-center">
