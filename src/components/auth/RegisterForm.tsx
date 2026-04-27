@@ -165,6 +165,20 @@ function OtpInput({ digits, onChange, status = "idle" }: {
   );
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain) return email;
+  const visible = local.slice(0, 2);
+  return `${visible}${"*".repeat(Math.max(3, local.length - 2))}@${domain}`;
+}
+
+function maskPhone(phone: string): string {
+  if (phone.length < 6) return phone;
+  return `${phone.slice(0, 3)}${"*".repeat(phone.length - 6)}${phone.slice(-3)}`;
+}
+
 // ─── Main form ────────────────────────────────────────────────────────────────
 
 export function RegisterForm() {
@@ -296,7 +310,7 @@ export function RegisterForm() {
   }
 
   function startResendCooldown() {
-    setCooldown(60);
+    setCooldown(30);
     const interval = setInterval(() => {
       setCooldown((c) => { if (c <= 1) { clearInterval(interval); return 0; } return c - 1; });
     }, 1000);
@@ -338,6 +352,10 @@ export function RegisterForm() {
       if (err instanceof ApiError && err.status === 409) {
         setFormError("An account with this email already exists.");
         setStep(2);
+      } else if (err instanceof ApiError && (err.status === 410 || err.message.toLowerCase().includes("expir"))) {
+        setOtpError("Code expired. Please request a new one.");
+      } else if (err instanceof ApiError && (err.status === 400 || err.status === 401)) {
+        setOtpError("Invalid code. Please check and try again.");
       } else if (err instanceof ApiError) {
         setOtpError(err.message);
       } else {
@@ -461,9 +479,17 @@ export function RegisterForm() {
       {/* ── Step 3: Choose verify method ── */}
       {step === 3 && formData && (
         <div className="space-y-5">
-          <p className="text-sm text-gray-600">
-            Choose how you&apos;d like to verify your account. We&apos;ll send a 6-digit code.
-          </p>
+          {/* Success banner */}
+          <div className="flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-4 w-4 shrink-0 text-green-500">
+              <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm text-green-700">
+              <span className="font-semibold">Account created successfully.</span> Please verify your account.
+            </p>
+          </div>
+
+          <p className="text-sm text-gray-600">Choose how you&apos;d like to receive your verification code.</p>
 
           <div className="space-y-2.5">
             <button
@@ -481,8 +507,8 @@ export function RegisterForm() {
                 </svg>
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900">Verify by Email</p>
-                <p className="text-xs text-gray-500 truncate">Code sent to {formData.email}</p>
+                <p className="text-sm font-semibold text-gray-900">Email</p>
+                <p className="text-xs text-gray-500 truncate">{maskEmail(formData.email)}</p>
               </div>
               {verifyMethod === "email" && (
                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-apple-blue shrink-0">
@@ -508,9 +534,9 @@ export function RegisterForm() {
                 </svg>
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900">Verify by SMS</p>
+                <p className="text-sm font-semibold text-gray-900">SMS</p>
                 <p className="text-xs text-gray-500 truncate">
-                  {formData.phone ? `Code sent to ${formData.phone}` : "Add a phone number above to use SMS"}
+                  {formData.phone ? maskPhone(formData.phone) : "Add a phone number to use SMS"}
                 </p>
               </div>
               {verifyMethod === "phone" && (
@@ -540,22 +566,28 @@ export function RegisterForm() {
       {step === 4 && formData && (
         <div className="space-y-5">
           {otpStatus === "success" ? (
-            <div className="flex flex-col items-center gap-3 py-4">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-apple-blue/10">
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-apple-blue">
+            <div className="flex flex-col items-center gap-3 py-4 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-8 w-8 text-green-500">
                   <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
                 </svg>
               </span>
-              <p className="text-sm font-semibold text-apple-blue">Verified! Creating your account…</p>
+              <p className="text-sm font-semibold text-green-700">Your account has been verified successfully</p>
+              <p className="text-xs text-gray-400">Redirecting you to your dashboard…</p>
             </div>
           ) : (
             <>
-              <p className="text-sm text-gray-600 text-center">
-                Enter the 6-digit code sent to{" "}
-                <span className="font-semibold text-gray-900">
-                  {verifyMethod === "email" ? formData.email : formData.phone}
-                </span>
-              </p>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">
+                  A verification code has been sent to your{" "}
+                  <span className="font-semibold text-gray-900">
+                    {verifyMethod === "email" ? "email" : "phone"}
+                  </span>
+                </p>
+                <p className="mt-1 text-xs font-medium text-gray-500">
+                  {verifyMethod === "email" ? maskEmail(formData.email) : maskPhone(formData.phone ?? "")}
+                </p>
+              </div>
               {USE_MOCK && sentCode && (
                 <Alert
                   type="info"
@@ -577,7 +609,7 @@ export function RegisterForm() {
               onClick={handleVerifyAndRegister}
               disabled={!otpComplete || verifying}
             >
-              {verifying ? "Verifying…" : "Verify & Create Account"}
+              {verifying ? "Verifying…" : "Verify Code"}
             </Button>
           )}
 
