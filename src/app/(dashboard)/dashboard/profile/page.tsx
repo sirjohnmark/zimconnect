@@ -182,29 +182,36 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      let profilePicture = user?.profile_picture ?? undefined;
-
-      // Upload new avatar if one was selected
+      // Upload new avatar first — the avatar endpoint handles saving the file on
+      // the backend and returns the stored URL.  We must NOT re-send that URL in
+      // the profile PATCH because Django's ImageField only accepts multipart file
+      // data, never a plain string ("The submitted data was not a file").
       if (avatarFile) {
         try {
-          profilePicture = await uploadAvatar(avatarFile);
+          await uploadAvatar(avatarFile);
         } catch {
-          // In mock mode or if the upload endpoint isn't ready, fall back to preview URL
-          profilePicture = avatarPreview || undefined;
+          // avatar upload failed — continue saving text fields, photo unchanged
         }
-      } else if (!avatarPreview) {
-        profilePicture = undefined;
       }
 
+      // Build the profile PATCH payload.  profile_picture is intentionally omitted
+      // when a file was just uploaded (already saved by uploadAvatar) or when the
+      // picture is unchanged.  We only send null to explicitly clear the photo.
       const payload: ProfileUpdatePayload = {
-        first_name:      firstName.trim(),
-        last_name:       lastName.trim(),
-        username:        username.trim(),
-        bio:             bio.trim() || undefined,
-        phone:           phone.trim() || undefined,
-        location:        location.trim() || undefined,
-        profile_picture: profilePicture,
+        first_name: firstName.trim(),
+        last_name:  lastName.trim(),
+        username:   username.trim(),
+        bio:        bio.trim()       || undefined,
+        phone:      phone.trim()     || undefined,
+        location:   location.trim()  || undefined,
       };
+
+      // User removed their photo — send null so the backend clears the field.
+      // Never send a URL string here; Django's ImageField rejects it.
+      if (!avatarFile && !avatarPreview) {
+        payload.profile_picture = null;
+      }
+
       await updateUser(payload);
 
       setAvatarFile(null);
