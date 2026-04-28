@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 
+from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import SellerProfile, SellerUpgradeRequest
