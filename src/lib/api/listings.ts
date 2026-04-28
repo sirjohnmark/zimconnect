@@ -100,6 +100,38 @@ export async function deleteListing(id: number): Promise<void> {
   return api.delete<void>(`/api/v1/listings/${id}`);
 }
 
+// ─── Admin endpoints ──────────────────────────────────────────────────────────
+
+export interface GetListingsAdminParams {
+  status?: "DRAFT" | "ACTIVE" | "SOLD" | "ARCHIVED" | "REJECTED" | "PENDING";
+  search?: string;
+  ordering?: string;
+  page?: number;
+  page_size?: number;
+}
+
+/** Admin view of all listings across all sellers, with status filter support. */
+export async function getAllListingsAdmin(params: GetListingsAdminParams = {}): Promise<PaginatedListings> {
+  return api.get<PaginatedListings>("/api/v1/listings/admin/", {
+    params: params as Record<string, string | number | undefined | null>,
+  });
+}
+
+/** Approve a pending listing — makes it ACTIVE and visible on the marketplace. */
+export async function approveListing(id: number): Promise<void> {
+  await api.post<{ message: string }>(`/api/v1/listings/${id}/approve/`, {});
+}
+
+/** Reject a listing with a mandatory reason shown to the seller. */
+export async function rejectListing(id: number, reason: string): Promise<void> {
+  await api.post<{ message: string }>(`/api/v1/listings/${id}/reject/`, { rejection_reason: reason });
+}
+
+/** Set or clear the featured flag on a listing. */
+export async function featureListing(id: number, featured: boolean): Promise<Listing> {
+  return api.patch<Listing>(`/api/v1/listings/${id}/`, { is_featured: featured });
+}
+
 export async function uploadImages(listingId: number, files: File[]): Promise<ListingImage[]> {
   // Validate types and sizes before uploading (VULN-08 fix)
   validateImageFiles(files);

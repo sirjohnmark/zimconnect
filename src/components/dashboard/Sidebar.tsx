@@ -196,6 +196,30 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Admin</p>
             <NavLink
               item={{
+                label: "Listing Review",
+                href: "/dashboard/admin-listings",
+                icon: (
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                    <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v.258a33.186 33.186 0 0 1 6.668 1.15.75.75 0 1 1-.336 1.461 31.28 31.28 0 0 0-1.103-.232l1.702 7.545a.75.75 0 0 1-.387.832A4.981 4.981 0 0 1 15 14c-.825 0-1.606-.2-2.294-.556a.75.75 0 0 1-.387-.832l1.77-7.849a31.743 31.743 0 0 0-3.339-.254v11.505a20.01 20.01 0 0 1 3.78.501.75.75 0 1 1-.338 1.462A18.51 18.51 0 0 0 10 17.5c-1.442 0-2.845.165-4.192.481a.75.75 0 1 1-.338-1.462 20.01 20.01 0 0 1 3.78-.501V4.509a31.743 31.743 0 0 0-3.339.254l1.77 7.849a.75.75 0 0 1-.387.832A4.98 4.98 0 0 1 5 14a4.98 4.98 0 0 1-2.294-.556.75.75 0 0 1-.387-.832L4.02 5.067c-.361.07-.718.15-1.103.232a.75.75 0 0 1-.336-1.462 33.186 33.186 0 0 1 6.668-1.15V2.75A.75.75 0 0 1 10 2Z" clipRule="evenodd" />
+                  </svg>
+                ),
+              }}
+              onClick={onNavClick}
+            />
+            <NavLink
+              item={{
+                label: "Users",
+                href: "/dashboard/users",
+                icon: (
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                    <path d="M7 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM14.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.615 16.428a1.224 1.224 0 0 1-.569-1.175 6.002 6.002 0 0 1 11.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 0 1 7 18a9.953 9.953 0 0 1-5.385-1.572ZM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 0 0-1.588-3.755 4.502 4.502 0 0 1 5.874 2.636.818.818 0 0 1-.36.98A7.465 7.465 0 0 1 14.5 16Z" />
+                  </svg>
+                ),
+              }}
+              onClick={onNavClick}
+            />
+            <NavLink
+              item={{
                 label: "Categories",
                 href: "/dashboard/categories",
                 icon: (

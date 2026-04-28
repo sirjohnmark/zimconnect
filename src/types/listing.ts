@@ -1,5 +1,5 @@
 export type ListingCondition = "NEW" | "LIKE_NEW" | "GOOD" | "FAIR" | "POOR";
-export type ListingStatus   = "DRAFT" | "ACTIVE" | "SOLD" | "ARCHIVED" | "REJECTED";
+export type ListingStatus   = "DRAFT" | "PENDING" | "ACTIVE" | "SOLD" | "ARCHIVED" | "REJECTED";
 export type ListingCurrency = "USD" | "ZWL";
 
 export type ListingImage = {

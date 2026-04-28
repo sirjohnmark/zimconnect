@@ -3,7 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 // ─── Route definitions ────────────────────────────────────────────────────────
 
 const DASHBOARD_PREFIX = "/dashboard";
-const ADMIN_ROUTES     = ["/dashboard/categories"];
+const ADMIN_ROUTES     = [
+  "/dashboard/categories",
+  "/dashboard/admin-listings",
+  "/dashboard/users",
+];
 const AUTH_ROUTES      = ["/login", "/register", "/forgot-password"];
 
 // ─── Cookie names ─────────────────────────────────────────────────────────────

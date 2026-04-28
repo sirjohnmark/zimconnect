@@ -25,6 +25,23 @@ function signPayload(payload: object, secret: string): string {
   return `${data}.${sig}`;
 }
 
+/** Read and verify the existing session cookie to preserve the user's role.
+ *  Falls back to "BUYER" if the cookie is absent or tampered. */
+function extractRoleFromSession(cookieValue: string, secret: string): string {
+  try {
+    const dotIdx = cookieValue.lastIndexOf(".");
+    if (dotIdx === -1) return "BUYER";
+    const payloadB64 = cookieValue.slice(0, dotIdx);
+    const sigB64     = cookieValue.slice(dotIdx + 1);
+    const expected   = createHmac("sha256", secret).update(payloadB64).digest("base64url");
+    if (expected !== sigB64) return "BUYER";
+    const decoded = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
+    return typeof decoded.role === "string" ? decoded.role : "BUYER";
+  } catch {
+    return "BUYER";
+  }
+}
+
 const COOKIE_BASE = {
   httpOnly: true,
   secure:   process.env.NODE_ENV === "production",
@@ -63,9 +80,12 @@ export async function POST(req: NextRequest) {
   // If Django rotated the refresh token, store the new one
   if (data.refresh) {
     res.cookies.set(REFRESH_COOKIE, data.refresh, { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
-    // Re-sign session cookie — role is unchanged but expiry extends
-    const signedSession = signPayload({ role: "BUYER" }, SESSION_SECRET!);
-    res.cookies.set(SESSION_COOKIE, signedSession, { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
+    // Preserve the role from the existing session cookie — never hardcode "BUYER".
+    // extractRoleFromSession verifies the HMAC before reading, so a tampered cookie
+    // falls back to "BUYER" rather than escalating privileges.
+    const existingSession = req.cookies.get(SESSION_COOKIE)?.value ?? "";
+    const role = extractRoleFromSession(existingSession, SESSION_SECRET!);
+    res.cookies.set(SESSION_COOKIE, signPayload({ role }, SESSION_SECRET!), { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
   }
 
   return res;
