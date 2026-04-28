@@ -483,6 +483,76 @@ export function RegisterForm() {
         <form onSubmit={handleSubmit(onDetailsSubmit)} noValidate className="space-y-4">
           {formError && <Alert message={formError} />}
 
+          {/* Role selector */}
+          <fieldset>
+            <legend className="text-sm font-medium text-gray-700 mb-2">
+              I want to<span className="ml-0.5 text-red-500">*</span>
+            </legend>
+            <input type="hidden" {...register("role")} />
+            <div className="grid grid-cols-2 gap-3">
+              {(["BUYER", "SELLER"] as const).map((roleOption) => {
+                const selected = getValues("role") === roleOption;
+                return (
+                  <button
+                    key={roleOption}
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({ ...prev, role: roleOption } as RegisterInput));
+                      // Also update the form value for validation
+                      const nativeInput = document.querySelector<HTMLInputElement>('input[name="role"]');
+                      if (nativeInput) {
+                        const setter = Object.getOwnPropertyDescriptor(
+                          HTMLInputElement.prototype, "value",
+                        )?.set;
+                        setter?.call(nativeInput, roleOption);
+                        nativeInput.dispatchEvent(new Event("input", { bubbles: true }));
+                      }
+                    }}
+                    className={cn(
+                      "flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-left transition-colors",
+                      selected
+                        ? "border-apple-blue bg-light-gray"
+                        : "border-gray-200 bg-white hover:border-gray-300",
+                    )}
+                  >
+                    <span className={cn(
+                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                      selected ? "bg-apple-blue/10 text-apple-blue" : "bg-gray-100 text-gray-400",
+                    )}>
+                      {roleOption === "SELLER" ? (
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                          <path d="M1 1.75A.75.75 0 0 1 1.75 1h1.628a1.75 1.75 0 0 1 1.734 1.51L5.18 3a65.25 65.25 0 0 1 13.36 1.161.75.75 0 0 1 .58.805l-1.449 8.69a1.75 1.75 0 0 1-1.734 1.51H7.125a1.75 1.75 0 0 1-1.734-1.51L4.63 9.142a21.6 21.6 0 0 0-1.002 4.107.75.75 0 0 1-.746.633H1.75a.75.75 0 0 1-.75-.75V1.75Z" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                          <path fillRule="evenodd" d="M10 2a4 4 0 0 0-4 4v1H5a1 1 0 0 0-.994.89l-1 9A1 1 0 0 0 4 18h12a1 1 0 0 0 .994-1.11l-1-9A1 1 0 0 0 15 7h-1V6a4 4 0 0 0-4-4Zm2 5V6a2 2 0 1 0-4 0v1h4Zm-6 3a1 1 0 1 1 2 0 1 1 0 0 1-2 0Zm7-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </span>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {roleOption === "SELLER" ? "Seller" : "Buyer"}
+                      </p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">
+                        {roleOption === "SELLER"
+                          ? "List items, manage orders, earn money"
+                          : "Browse, buy, and message sellers"}
+                      </p>
+                    </div>
+                    {selected && (
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-apple-blue">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            {errors.role?.message && (
+              <p className="mt-1 text-xs text-red-600">{errors.role.message}</p>
+            )}
+          </fieldset>
+
           <Input
             {...register("password")}
             type="password"
