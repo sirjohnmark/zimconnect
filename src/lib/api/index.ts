@@ -14,13 +14,22 @@ export {
   getListingBySlug,
   getMyListings,
   createListing,
-  updateListing,
   publishListing,
   deleteListing,
   uploadImages,
-  deleteImage,
+  getAllListingsAdmin,
+  approveListing,
+  rejectListing,
+  featureListing,
 } from "./listings";
-export type { GetListingsParams, PaginatedListings, CreateListingBody, UploadedImage } from "./listings";
+export type {
+  GetListingsParams,
+  PaginatedListings,
+  CreateListingPayload,
+  CreateListingBody,
+  CreateListingInput,
+  AdminListingsParams,
+} from "./listings";
 
 export {
   getConversations,

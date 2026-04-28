@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+import { api, ApiError, NetworkError } from "./client";
+import { getMemoryToken } from "@/lib/auth/auth";
+import type { Listing, ListingCondition, ListingCurrency, ListingImage } from "@/types/listing";
+
 export const LISTING_CONDITIONS = [
   "NEW",
   "LIKE_NEW",
@@ -136,3 +140,174 @@ export const createListingSchema = z.object({
 });
 
 export type CreateListingInput = z.infer<typeof createListingSchema>;
+
+// ─── API types ────────────────────────────────────────────────────────────────
+
+export interface PaginatedListings {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Listing[];
+}
+
+export interface GetListingsParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  category?: number | string;
+  condition?: string;
+  location?: string;
+  currency?: string;
+  min_price?: number;
+  max_price?: number;
+  ordering?: string;
+  featured?: boolean;
+  status?: string;
+}
+
+export interface CreateListingPayload {
+  title: string;
+  description: string;
+  price: string;
+  currency: ListingCurrency;
+  condition: ListingCondition;
+  category_id: number;
+  location: string;
+}
+
+/** Alias for CreateListingPayload — used by the mock/data layer */
+export type CreateListingBody = CreateListingPayload;
+
+export interface AdminListingsParams {
+  page?: number;
+  page_size?: number;
+  status?: string;
+  search?: string;
+}
+
+// ─── Endpoints ────────────────────────────────────────────────────────────────
+
+export async function getListings(
+  params: GetListingsParams = {},
+): Promise<PaginatedListings> {
+  return api.get<PaginatedListings>("/api/v1/listings/", {
+    params: params as Record<string, string | number | boolean | undefined | null>,
+  });
+}
+
+export async function getListing(id: number): Promise<Listing> {
+  return api.get<Listing>(`/api/v1/listings/${id}/`);
+}
+
+export async function getListingBySlug(slug: string): Promise<Listing> {
+  return api.get<Listing>(`/api/v1/listings/${slug}/`);
+}
+
+export async function getMyListings(
+  params: GetListingsParams = {},
+): Promise<PaginatedListings> {
+  return api.get<PaginatedListings>("/api/v1/listings/my/", {
+    params: params as Record<string, string | number | boolean | undefined | null>,
+  });
+}
+
+export async function createListing(
+  data: CreateListingPayload,
+): Promise<Listing> {
+  return api.post<Listing>("/api/v1/listings/", data);
+}
+
+export async function uploadImages(
+  listingId: number,
+  files: File[],
+): Promise<ListingImage[]> {
+  const BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL ??
+    process.env.BACKEND_URL ??
+    "";
+
+  const url = `${BASE_URL.replace(/\/+$/, "")}/api/v1/listings/${listingId}/upload-images/`;
+
+  const formData = new FormData();
+  for (const file of files) {
+    formData.append("images", file);
+  }
+
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+  };
+
+  const token = getMemoryToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60_000); // 60 s for uploads
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: formData,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new NetworkError("Upload timed out. Please try again.", err);
+    }
+    throw new NetworkError(
+      "Unable to upload images. Check your connection.",
+      err,
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  if (!res.ok) {
+    let message = `${res.status} ${res.statusText}`;
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === "string") message = data.detail;
+      else if (typeof data?.message === "string") message = data.message;
+    } catch { /* use default */ }
+    throw new ApiError(res.status, res.statusText, message);
+  }
+
+  return res.json() as Promise<ListingImage[]>;
+}
+
+export async function publishListing(id: number): Promise<Listing> {
+  return api.post<Listing>(`/api/v1/listings/${id}/publish/`, {});
+}
+
+export async function deleteListing(id: number): Promise<void> {
+  await api.delete<void>(`/api/v1/listings/${id}/`);
+}
+
+// ─── Admin endpoints ──────────────────────────────────────────────────────────
+
+export async function getAllListingsAdmin(
+  params: AdminListingsParams = {},
+): Promise<PaginatedListings> {
+  return api.get<PaginatedListings>("/api/v1/admin/listings/", {
+    params: params as Record<string, string | number | boolean | undefined | null>,
+  });
+}
+
+export async function approveListing(id: number): Promise<void> {
+  await api.post<void>(`/api/v1/admin/listings/${id}/approve/`, {});
+}
+
+export async function rejectListing(id: number, reason: string): Promise<void> {
+  await api.post<void>(`/api/v1/admin/listings/${id}/reject/`, { reason });
+}
+
+export async function featureListing(
+  id: number,
+  featured: boolean,
+): Promise<void> {
+  await api.post<void>(`/api/v1/admin/listings/${id}/feature/`, {
+    is_featured: featured,
+  });
+}
