@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { isSaved, toggleSaved } from "@/lib/mock/saved";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth/useAuth";
+import { isSaved } from "@/lib/mock/saved";
+import { saveListing, unsaveListing, isSavedRemote } from "@/lib/api/buyers";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 export interface SaveButtonProps {
@@ -12,22 +16,66 @@ export interface SaveButtonProps {
 }
 
 export function SaveButton({ listingId, variant = "icon", className }: SaveButtonProps) {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [saved, setSaved] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [hydrating, setHydrating] = useState(true);
+
+  const isBuyer = user?.role === "BUYER";
+  const numericId = Number(listingId);
 
   useEffect(() => {
-    setMounted(true);
-    setSaved(isSaved(listingId));
-  }, [listingId]);
+    if (isLoading) return;
 
-  function handleClick(e: React.MouseEvent) {
-    e.preventDefault(); // prevent parent <Link> navigation
+    if (isAuthenticated && isBuyer) {
+      isSavedRemote(numericId)
+        .then(setSaved)
+        .catch(() => setSaved(isSaved(listingId)))
+        .finally(() => setHydrating(false));
+    } else {
+      setSaved(false);
+      setHydrating(false);
+    }
+  }, [isLoading, isAuthenticated, isBuyer, numericId, listingId]);
+
+  async function handleClick(e: React.MouseEvent) {
+    e.preventDefault();
     e.stopPropagation();
-    const next = toggleSaved(listingId);
-    setSaved(next);
+
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    if (!isBuyer) return;
+
+    const prev = saved;
+    setSaved(!saved); // optimistic update
+
+    try {
+      if (!saved) {
+        await saveListing(numericId);
+      } else {
+        await unsaveListing(numericId);
+      }
+    } catch {
+      setSaved(prev); // revert on error
+    }
   }
 
-  if (!mounted) return null;
+  // Sellers and admins don't use save
+  if (!isLoading && isAuthenticated && !isBuyer) return null;
+
+  if (hydrating) {
+    return (
+      <Skeleton
+        className={cn(
+          variant === "icon" ? "h-8 w-8 rounded-full" : "h-9 w-20 rounded-lg",
+          className,
+        )}
+      />
+    );
+  }
 
   return (
     <button

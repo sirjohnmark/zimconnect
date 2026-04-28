@@ -88,7 +88,7 @@ export async function registerUser(data: RegisterInput): Promise<AuthUser> {
       first_name: data.first_name,
       last_name: data.last_name,
       phone: data.phone ?? "",
-      role: data.role,
+      role: "BUYER",
     });
     await saveAccount({ id: String(user.id), name: `${data.first_name} ${data.last_name}`, email: data.email, password: data.password });
     return user;
@@ -98,7 +98,7 @@ export async function registerUser(data: RegisterInput): Promise<AuthUser> {
     username: data.username,
     password: data.password,
     confirm_password: data.confirm_password,
-    role: data.role,
+    role: "BUYER",
     phone: data.phone,
     first_name: data.first_name,
     last_name: data.last_name,

@@ -252,7 +252,9 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     user?.username ||
     "U";
 
-  const isAdmin = user?.role === "ADMIN" || user?.role === "MODERATOR";
+  const isAdmin  = user?.role === "ADMIN" || user?.role === "MODERATOR";
+  const isBuyer  = user?.role === "BUYER";
+  const isSeller = user?.role === "SELLER";
 
   useEffect(() => {
     getUnreadCount()
@@ -307,6 +309,34 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
               onClick={onNavClick}
             />
           ))}
+          {isSeller && (
+            <NavLink
+              item={{
+                label: "Shop Profile",
+                href: "/dashboard/seller-profile",
+                icon: (
+                  <Icon>
+                    <path d="M2.879 7.121A3 3 0 0 0 2 9v1a3 3 0 0 0 3 3h.116A3.001 3.001 0 0 0 8 14.83V17H6a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-2v-2.17A3.001 3.001 0 0 0 14.884 13H15a3 3 0 0 0 3-3V9a3 3 0 0 0-.879-2.121l-1-1A3 3 0 0 0 14 5h-1V4a1 1 0 1 0-2 0v1H9V4a1 1 0 0 0-2 0v1H6a3 3 0 0 0-2.121.879l-1 1Z" />
+                  </Icon>
+                ),
+              }}
+              onClick={onNavClick}
+            />
+          )}
+          {isBuyer && (
+            <NavLink
+              item={{
+                label: "Become a Seller",
+                href: "/dashboard/upgrade",
+                icon: (
+                  <Icon>
+                    <path fillRule="evenodd" d="M10 2a.75.75 0 0 1 .75.75v5.59l1.95-2.1a.75.75 0 1 1 1.1 1.02l-3.25 3.5a.75.75 0 0 1-1.1 0L6.2 7.26a.75.75 0 1 1 1.1-1.02l1.95 2.1V2.75A.75.75 0 0 1 10 2ZM5.273 8.386a.75.75 0 0 1 .025 1.06l-.205.22A3.5 3.5 0 0 0 4 12v3.5a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5V12a3.5 3.5 0 0 0-1.093-2.534l-.205-.22a.75.75 0 1 1 1.086-1.034l.205.22A5 5 0 0 1 17.5 12v3.5a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2V12a5 5 0 0 1 1.507-3.568l.205-.22a.75.75 0 0 1 1.061-.026Z" clipRule="evenodd" />
+                  </Icon>
+                ),
+              }}
+              onClick={onNavClick}
+            />
+          )}
         </NavSection>
 
         <div>

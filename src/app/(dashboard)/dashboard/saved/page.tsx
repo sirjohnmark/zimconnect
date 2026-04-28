@@ -4,39 +4,62 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
 import { ListingCard } from "@/components/marketplace/ListingCard";
-import { getSavedIds, removeSaved } from "@/lib/mock/saved";
-import { MOCK_LISTINGS } from "@/lib/mock/listings";
-import { getListings } from "@/lib/data/listings";
+import { getSavedListings, unsaveListing, type SavedListingDetail } from "@/lib/api/buyers";
 import type { Listing } from "@/types/listing";
+
+function toListingShape(detail: SavedListingDetail): Listing {
+  return {
+    id: detail.id,
+    title: detail.title,
+    slug: detail.slug,
+    description: "",
+    price: detail.price,
+    currency: detail.currency as Listing["currency"],
+    condition: detail.condition as Listing["condition"],
+    status: detail.status as Listing["status"],
+    location: detail.location,
+    category: {
+      id: detail.category.id,
+      name: detail.category.name,
+      slug: detail.category.name.toLowerCase().replace(/\s+/g, "-"),
+    },
+    owner: {
+      id: detail.owner.id,
+      username: detail.owner.username,
+      profile_picture: null,
+    },
+    images: [],
+    primary_image: detail.primary_image?.image ?? null,
+    is_featured: detail.is_featured,
+    views_count: detail.views_count,
+    rejection_reason: null,
+    created_at: detail.created_at,
+    updated_at: detail.created_at,
+    published_at: null,
+  };
+}
 
 export default function SavedPage() {
   const [listings, setListings] = useState<Listing[]>([]);
-  const [mounted, setMounted]   = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function load() {
-      const ids = getSavedIds();
-      if (ids.length === 0) { setListings([]); setMounted(true); return; }
-
-      // Pull from data layer (merges localStorage + seed)
-      const { results } = await getListings({});
-      const saved = results.filter((l) => ids.includes(String(l.id)));
-      // Also check MOCK_LISTINGS for any that didn't come through
-      const fromMock = MOCK_LISTINGS.filter(
-        (l) => ids.includes(String(l.id)) && !saved.find((s) => String(s.id) === String(l.id)),
-      );
-      setListings([...saved, ...fromMock]);
-      setMounted(true);
-    }
-    load();
+    getSavedListings()
+      .then((saved) => setListings(saved.map((s) => toListingShape(s.listing))))
+      .catch(() => setListings([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  function handleRemove(id: string) {
-    removeSaved(id);
-    setListings((prev) => prev.filter((l) => String(l.id) !== id));
+  async function handleRemove(id: number) {
+    setListings((prev) => prev.filter((l) => l.id !== id)); // optimistic
+    try {
+      await unsaveListing(id);
+    } catch {
+      // Revert is complex without refetch; rely on next page load to reconcile
+    }
   }
 
-  if (!mounted) {
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="h-8 w-40 animate-pulse rounded-md bg-gray-200" />
@@ -83,7 +106,7 @@ export default function SavedPage() {
             <div key={listing.id} className="flex flex-col gap-2">
               <ListingCard listing={listing} />
               <button
-                onClick={() => handleRemove(String(listing.id))}
+                onClick={() => handleRemove(listing.id)}
                 className="w-full rounded-lg border border-rose-200 py-1.5 text-xs font-medium text-rose-500 hover:bg-rose-50 transition-colors"
               >
                 Remove from saved
