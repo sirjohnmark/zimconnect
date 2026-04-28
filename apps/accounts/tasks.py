@@ -130,10 +130,15 @@ def send_password_reset_email(self, user_id: int, reset_token: str) -> None:
         return
 
     try:
+        from django.conf import settings as django_settings
+
+        frontend_url = getattr(django_settings, "FRONTEND_URL", "").rstrip("/")
+        reset_url = f"{frontend_url}/reset-password?token={reset_token}" if frontend_url else ""
+
         context = {
             "username": user.username,
             "reset_token": reset_token,
-            # "reset_url" will be constructed from frontend URL + token in future
+            "reset_url": reset_url,
         }
         html_body = render_to_string("accounts/email/password_reset.html", context)
         text_body = render_to_string("accounts/email/password_reset.txt", context)

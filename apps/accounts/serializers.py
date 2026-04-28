@@ -141,3 +141,27 @@ class OTPVerifySerializer(serializers.Serializer):
         regex=r"^\d{6}$",
         help_text="6-digit verification code sent via SMS or email.",
     )
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    """Request body for initiating a password reset."""
+
+    email = serializers.EmailField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    """Request body for confirming a password reset."""
+
+    token = serializers.CharField(
+        min_length=10,
+        max_length=200,
+        help_text="Reset token received via email.",
+    )
+    new_password = serializers.CharField(min_length=8, max_length=128, write_only=True)
+    confirm_password = serializers.CharField(min_length=8, max_length=128, write_only=True)
+
+    def validate(self, attrs: dict) -> dict:
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        attrs.pop("confirm_password")
+        return attrs

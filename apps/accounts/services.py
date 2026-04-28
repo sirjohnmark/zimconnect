@@ -328,3 +328,78 @@ def resend_email_otp(user) -> None:
             raise ServiceError("Please wait 60 seconds before requesting a new OTP.")
 
     send_email_otp(user)
+
+
+# ──────────────────────────────────────────────
+# Password reset
+# ──────────────────────────────────────────────
+
+PASSWORD_RESET_EXPIRY_MINUTES = 60
+
+
+def _generate_reset_token() -> str:
+    """Return a cryptographically secure URL-safe token (43 chars)."""
+    return secrets.token_urlsafe(32)
+
+
+@transaction.atomic
+def initiate_password_reset(email: str) -> None:
+    """
+    Generate a reset token, store its SHA-256 hash, and email the raw token.
+
+    Always returns silently regardless of whether the email is registered
+    to prevent email-enumeration attacks.
+    """
+    email = email.lower().strip()
+
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        logger.info("password_reset_requested: unknown email=%s", email)
+        return
+
+    if not user.is_active:
+        logger.info("password_reset_requested: inactive user email=%s", email)
+        return
+
+    token = _generate_reset_token()
+    user.password_reset_token = _hash_otp(token)
+    user.password_reset_expires_at = timezone.now() + timezone.timedelta(minutes=PASSWORD_RESET_EXPIRY_MINUTES)
+    user.save(update_fields=["password_reset_token", "password_reset_expires_at", "updated_at"])
+
+    from apps.accounts.tasks import send_password_reset_email
+
+    try:
+        send_password_reset_email.delay(user.pk, token)
+    except Exception:
+        logger.exception("initiate_password_reset: failed to queue email for user %d", user.pk)
+
+    logger.info("password_reset_initiated: email=%s user_id=%d", email, user.pk)
+
+
+@transaction.atomic
+def confirm_password_reset(token: str, new_password: str) -> None:
+    """
+    Validate the reset token and update the user's password.
+
+    Raises ServiceError on invalid token, UnprocessableError on expiry.
+    """
+    token_hash = _hash_otp(token)
+
+    try:
+        user = User.objects.get(password_reset_token=token_hash)
+    except User.DoesNotExist:
+        raise ServiceError("Invalid or expired password reset token.")
+
+    if user.password_reset_expires_at and user.password_reset_expires_at < timezone.now():
+        user.password_reset_token = ""
+        user.password_reset_expires_at = None
+        user.save(update_fields=["password_reset_token", "password_reset_expires_at", "updated_at"])
+        raise UnprocessableError("Password reset token has expired. Please request a new one.")
+
+    user.set_password(new_password)
+    user.password_reset_token = ""
+    user.password_reset_expires_at = None
+    user.save(update_fields=["password", "password_reset_token", "password_reset_expires_at", "updated_at"])
+
+    logger.info("password_reset_confirmed: user_id=%d", user.pk)

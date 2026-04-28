@@ -324,6 +324,7 @@ CORS_ALLOW_CREDENTIALS = True
 # ──────────────────────────────────────────────
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@tradlink.co.zw")
+FRONTEND_URL = config("FRONTEND_URL", default="")
 
 # ──────────────────────────────────────────────
 # Security headers

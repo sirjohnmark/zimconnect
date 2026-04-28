@@ -9,10 +9,12 @@ from rest_framework.views import APIView
 
 from apps.accounts import services
 from apps.accounts.serializers import (
+    ForgotPasswordSerializer,
     LoginResponseSerializer,
     LogoutRequestSerializer,
     MessageResponseSerializer,
     OTPVerifySerializer,
+    ResetPasswordSerializer,
     TokenResponseSerializer,
     UserLoginSerializer,
     UserProfileSerializer,
@@ -26,6 +28,7 @@ from apps.common.throttling import (
     LoginRateThrottle,
     OTPSendThrottle,
     OTPVerifyThrottle,
+    PasswordResetThrottle,
     RegisterRateThrottle,
 )
 
@@ -410,5 +413,80 @@ class ResendEmailOTPView(APIView):
         services.resend_email_otp(request.user)
         return Response(
             {"message": "Verification code resent to your email."},
+            status=status.HTTP_200_OK,
+        )
+
+
+# ──────────────────────────────────────────────
+# Password reset
+# ──────────────────────────────────────────────
+
+
+class ForgotPasswordView(APIView):
+    """POST /api/v1/auth/password/forgot/ — request a password reset email."""
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (PasswordResetThrottle,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_password_forgot",
+        summary="Forgot password",
+        description=(
+            "Send a password reset token to the given email address. "
+            "Always returns 200 to prevent email enumeration. "
+            "Rate-limited to 3 requests/hour per IP."
+        ),
+        request=ForgotPasswordSerializer,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="Reset email sent (or silently ignored)"),
+            400: OpenApiResponse(description="Validation error"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = ForgotPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        services.initiate_password_reset(serializer.validated_data["email"])
+        return Response(
+            {"message": "If that email is registered, a password reset link has been sent."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResetPasswordView(APIView):
+    """POST /api/v1/auth/password/reset/ — confirm reset token and set new password."""
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (PasswordResetThrottle,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_password_reset",
+        summary="Reset password",
+        description=(
+            "Submit the reset token from the email along with a new password. "
+            "Tokens expire after 1 hour and are single-use. "
+            "Rate-limited to 3 requests/hour per IP."
+        ),
+        request=ResetPasswordSerializer,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="Password updated"),
+            400: OpenApiResponse(description="Invalid token or passwords do not match"),
+            422: OpenApiResponse(description="Token expired"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        services.confirm_password_reset(
+            token=serializer.validated_data["token"],
+            new_password=serializer.validated_data["new_password"],
+        )
+        return Response(
+            {"message": "Your password has been reset successfully."},
             status=status.HTTP_200_OK,
         )

@@ -24,4 +24,7 @@ urlpatterns = [
     path("email/send-otp/", views.SendEmailOTPView.as_view(), name="email-send-otp"),
     path("email/verify/", views.VerifyEmailOTPView.as_view(), name="email-verify"),
     path("email/resend/", views.ResendEmailOTPView.as_view(), name="email-resend"),
+    # Password reset
+    path("password/forgot/", views.ForgotPasswordView.as_view(), name="password-forgot"),
+    path("password/reset/", views.ResetPasswordView.as_view(), name="password-reset"),
 ]

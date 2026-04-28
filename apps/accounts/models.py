@@ -104,6 +104,10 @@ class User(AbstractBaseUser, PermissionsMixin, SoftDeleteModel):
     email_otp = models.CharField(max_length=128, blank=True, default="")
     email_otp_expires_at = models.DateTimeField(null=True, blank=True)
 
+    # Password reset
+    password_reset_token = models.CharField(max_length=128, blank=True, default="")
+    password_reset_expires_at = models.DateTimeField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
