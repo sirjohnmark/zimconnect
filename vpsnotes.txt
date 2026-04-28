@@ -21,3 +21,8 @@ $env:ANTHROPIC_DEFAULT_OPUS_MODEL="deepseek-v4-pro[1m]"
 $env:ANTHROPIC_DEFAULT_SONNET_MODEL="deepseek-v4-pro[1m]"
 $env:ANTHROPIC_DEFAULT_HAIKU_MODEL="deepseek-v4-flash"
 $env:CLAUDE_CODE_SUBAGENT_MODEL="deepseek-v4-flash"
+
+curl -X POST https://api.sanganai.co.zw/api/v1/auth/register/ \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your@email.com","username":"testuser99","password":"Test1234!","confirm_password":"Test1234!","role":"BUYER","first_name":"Test","last_name":"User"}'
+
