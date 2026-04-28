@@ -13,6 +13,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from apps.common.constants import Currency, ListingCondition, ListingStatus, ZimbabweCity
+from apps.common.exceptions import ConflictError
 from apps.common.models import SoftDeleteModel
 from apps.common.validators import ImageContentTypeValidator, ImageSizeValidator
 
@@ -100,6 +101,42 @@ class Listing(SoftDeleteModel):
             slug = f"{base_slug}-{counter}"
             counter += 1
         return slug
+
+
+class SavedListing(models.Model):
+    """
+    A buyer's saved (wishlisted) listing.
+
+    Unique per (buyer, listing) pair — enforced at DB and service layer.
+    Only ACTIVE listings can be saved (enforced in service layer).
+    """
+
+    buyer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="saved_listings",
+        db_index=True,
+    )
+    listing = models.ForeignKey(
+        Listing,
+        on_delete=models.CASCADE,
+        related_name="saved_by",
+        db_index=True,
+    )
+    saved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "saved_listings"
+        ordering = ["-saved_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["buyer", "listing"], name="uq_saved_listing_buyer"),
+        ]
+        indexes = [
+            models.Index(fields=["buyer", "saved_at"], name="idx_saved_buyer_time"),
+        ]
+
+    def __str__(self) -> str:
+        return f"SavedListing(buyer={self.buyer_id}, listing={self.listing_id})"
 
 
 class ListingImage(models.Model):

@@ -5,6 +5,8 @@ DRF serializers for the admin panel app.
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from apps.accounts.models import SellerUpgradeRequest
+from apps.common.constants import SellerUpgradeStatus
 from apps.listings.models import Listing
 
 User = get_user_model()
@@ -222,3 +224,73 @@ class AdminDeletedUserSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = fields
+
+
+# ──────────────────────────────────────────────
+# Seller upgrade requests
+# ──────────────────────────────────────────────
+
+
+class _AdminUpgradeUserInlineSerializer(serializers.Serializer):
+    """Minimal user info for seller upgrade request views."""
+
+    id = serializers.IntegerField(read_only=True)
+    email = serializers.EmailField(read_only=True)
+    username = serializers.CharField(read_only=True)
+    email_verified = serializers.BooleanField(read_only=True)
+    phone_verified = serializers.BooleanField(read_only=True)
+
+
+class AdminSellerRequestListSerializer(serializers.ModelSerializer):
+    """Compact representation of a seller upgrade request for list views."""
+
+    user = _AdminUpgradeUserInlineSerializer(read_only=True)
+
+    class Meta:
+        model = SellerUpgradeRequest
+        fields = (
+            "id",
+            "user",
+            "status",
+            "business_name",
+            "requested_at",
+            "reviewed_at",
+        )
+        read_only_fields = fields
+
+
+class AdminSellerRequestDetailSerializer(serializers.ModelSerializer):
+    """Full representation of a seller upgrade request."""
+
+    user = _AdminUpgradeUserInlineSerializer(read_only=True)
+    reviewed_by = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SellerUpgradeRequest
+        fields = (
+            "id",
+            "user",
+            "status",
+            "business_name",
+            "business_description",
+            "rejection_reason",
+            "requested_at",
+            "reviewed_at",
+            "reviewed_by",
+        )
+        read_only_fields = fields
+
+    def get_reviewed_by(self, obj) -> dict | None:
+        if obj.reviewed_by is None:
+            return None
+        return {
+            "id": obj.reviewed_by_id,
+            "email": obj.reviewed_by.email,
+            "username": obj.reviewed_by.username,
+        }
+
+
+class AdminSellerRequestActionSerializer(serializers.Serializer):
+    """Input for rejecting a seller upgrade request (requires a reason)."""
+
+    reason = serializers.CharField(min_length=10, max_length=1000)

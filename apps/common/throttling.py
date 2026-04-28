@@ -82,3 +82,10 @@ class EmailOTPVerifyThrottle(UserRateThrottle):
 
     scope = "email_otp_verify"
     rate = "10/hour"
+
+
+class SellerUpgradeThrottle(UserRateThrottle):
+    """3 seller upgrade requests per day per user."""
+
+    scope = "seller_upgrade"
+    rate = "3/day"

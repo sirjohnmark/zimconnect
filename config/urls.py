@@ -27,6 +27,8 @@ def api_root(request):
             "auth": "/api/v1/auth/",
             "categories": "/api/v1/categories/",
             "listings": "/api/v1/listings/",
+            "buyers": "/api/v1/buyers/",
+            "sellers": "/api/v1/sellers/",
             "inbox": "/api/v1/inbox/",
             "admin_panel": "/api/v1/admin/",
             "docs": "/api/v1/docs/",
@@ -42,6 +44,8 @@ v1_patterns = [
     path("auth/", include("apps.accounts.urls")),
     path("categories/", include("apps.categories.urls")),
     path("listings/", include("apps.listings.urls")),
+    path("buyers/", include("apps.listings.buyer_urls")),
+    path("sellers/", include("apps.accounts.seller_urls")),
     path("inbox/", include("apps.inbox.urls")),
     path("admin/", include("apps.adminpanel.urls")),
     # OpenAPI schema + docs

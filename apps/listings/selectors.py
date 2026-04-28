@@ -14,7 +14,7 @@ from apps.common.cache import CacheKeys, TTL_LISTING_DETAIL, make_cache_key
 from apps.common.constants import ListingStatus
 from apps.common.exceptions import NotFoundError
 
-from .models import Listing
+from .models import Listing, SavedListing
 
 
 def get_listing_by_id(listing_id: int) -> Listing:
@@ -124,6 +124,22 @@ def get_user_listings(user, status: str | None = None) -> QuerySet:
     if status:
         qs = qs.filter(status=status)
     return qs.order_by("-created_at")
+
+
+def get_saved_listings(buyer) -> QuerySet:
+    """Return all saved listings for *buyer*, newest first, with listing data prefetched."""
+    return (
+        SavedListing.objects
+        .filter(buyer=buyer)
+        .select_related("listing__owner", "listing__category")
+        .prefetch_related("listing__images")
+        .order_by("-saved_at")
+    )
+
+
+def get_saved_listing(buyer, listing_id: int) -> SavedListing | None:
+    """Return a SavedListing for (buyer, listing_id), or None if not found."""
+    return SavedListing.objects.filter(buyer=buyer, listing_id=listing_id).first()
 
 
 def get_listings_for_moderation() -> QuerySet:

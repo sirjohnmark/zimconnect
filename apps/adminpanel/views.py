@@ -21,6 +21,9 @@ from apps.adminpanel.serializers import (
     AdminDeletedListingSerializer,
     AdminDeletedUserSerializer,
     AdminListingModerationSerializer,
+    AdminSellerRequestActionSerializer,
+    AdminSellerRequestDetailSerializer,
+    AdminSellerRequestListSerializer,
     AdminUserDetailSerializer,
     AdminUserListSerializer,
     AdminUserUpdateSerializer,
@@ -332,6 +335,129 @@ class RestoreListingView(APIView):
 # ──────────────────────────────────────────────
 # Soft-deleted users
 # ──────────────────────────────────────────────
+
+
+# ──────────────────────────────────────────────
+# Seller upgrade requests
+# ──────────────────────────────────────────────
+
+
+class SellerRequestListView(APIView):
+    """GET /api/v1/admin/seller-requests/ — paginated list of upgrade requests."""
+
+    permission_classes = (IsAdmin,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_seller_requests_list",
+        summary="List seller upgrade requests",
+        description="Paginated list of all seller upgrade requests. Filterable by status. **Admin only.**",
+        parameters=[
+            OpenApiParameter("status", OpenApiTypes.STR, description="Filter by status: PENDING, APPROVED, REJECTED"),
+            OpenApiParameter("search", OpenApiTypes.STR, description="Search by user email or username"),
+        ],
+        responses={200: AdminSellerRequestListSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        filters = {
+            "status": request.query_params.get("status"),
+            "search": request.query_params.get("search"),
+        }
+        filters = {k: v for k, v in filters.items() if v is not None}
+
+        qs = selectors.get_seller_upgrade_requests(filters or None)
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = AdminSellerRequestListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class SellerRequestDetailView(APIView):
+    """GET /api/v1/admin/seller-requests/{id}/ — single request detail."""
+
+    permission_classes = (IsAdmin,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_seller_requests_detail",
+        summary="Get seller upgrade request detail",
+        description="Full detail of a seller upgrade request. **Admin only.**",
+        responses={
+            200: OpenApiResponse(response=AdminSellerRequestDetailSerializer, description="Request detail"),
+            404: OpenApiResponse(description="Request not found"),
+        },
+    )
+    def get(self, request: Request, request_id: int) -> Response:
+        upgrade_request = selectors.get_seller_upgrade_request_by_id(request_id)
+        return Response(
+            AdminSellerRequestDetailSerializer(upgrade_request).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class SellerRequestApproveView(APIView):
+    """POST /api/v1/admin/seller-requests/{id}/approve/ — approve and promote user."""
+
+    permission_classes = (IsAdmin,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_seller_requests_approve",
+        summary="Approve seller upgrade request",
+        description=(
+            "Approve the request and promote the buyer's role to SELLER. "
+            "Only PENDING requests can be approved. **Admin only.**"
+        ),
+        request=None,
+        responses={
+            200: OpenApiResponse(response=AdminSellerRequestDetailSerializer, description="Approved request"),
+            400: OpenApiResponse(description="Request is not in PENDING status"),
+            404: OpenApiResponse(description="Request not found"),
+        },
+    )
+    def post(self, request: Request, request_id: int) -> Response:
+        upgrade_request = selectors.get_seller_upgrade_request_by_id(request_id)
+        approved = services.approve_seller_upgrade(upgrade_request, request.user)
+        return Response(
+            AdminSellerRequestDetailSerializer(approved).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class SellerRequestRejectView(APIView):
+    """POST /api/v1/admin/seller-requests/{id}/reject/ — reject with mandatory reason."""
+
+    permission_classes = (IsAdmin,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_seller_requests_reject",
+        summary="Reject seller upgrade request",
+        description=(
+            "Reject the request with a mandatory reason. "
+            "The user's role remains BUYER and they may resubmit. **Admin only.**"
+        ),
+        request=AdminSellerRequestActionSerializer,
+        responses={
+            200: OpenApiResponse(response=AdminSellerRequestDetailSerializer, description="Rejected request"),
+            400: OpenApiResponse(description="Reason required or request not pending"),
+            404: OpenApiResponse(description="Request not found"),
+        },
+    )
+    def post(self, request: Request, request_id: int) -> Response:
+        serializer = AdminSellerRequestActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        upgrade_request = selectors.get_seller_upgrade_request_by_id(request_id)
+        rejected = services.reject_seller_upgrade(
+            upgrade_request,
+            request.user,
+            serializer.validated_data["reason"],
+        )
+        return Response(
+            AdminSellerRequestDetailSerializer(rejected).data,
+            status=status.HTTP_200_OK,
+        )
 
 
 class DeletedUsersView(APIView):

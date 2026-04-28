@@ -15,6 +15,12 @@ class UserRole(models.TextChoices):
     MODERATOR = "MODERATOR", "Moderator"
 
 
+class SellerUpgradeStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    APPROVED = "APPROVED", "Approved"
+    REJECTED = "REJECTED", "Rejected"
+
+
 class ListingStatus(models.TextChoices):
     DRAFT = "DRAFT", "Draft"
     ACTIVE = "ACTIVE", "Active"

@@ -11,8 +11,9 @@ from django.core.cache import cache
 from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
 
+from apps.accounts.models import SellerUpgradeRequest
 from apps.common.cache import CacheKeys, TTL_DASHBOARD_STATS
-from apps.common.constants import ListingStatus
+from apps.common.constants import ListingStatus, SellerUpgradeStatus
 from apps.common.exceptions import NotFoundError
 from apps.inbox.models import Conversation
 from apps.listings.models import Listing
@@ -120,6 +121,44 @@ def get_deleted_listing_by_id(listing_id: int) -> Listing:
         )
     except Listing.DoesNotExist:
         raise NotFoundError(f"Deleted listing with id {listing_id} not found.")
+
+
+def get_seller_upgrade_requests(filters: dict | None = None) -> QuerySet:
+    """
+    Return seller upgrade requests ordered newest first.
+
+    Supported filter keys: status (PENDING/APPROVED/REJECTED), search (email/username).
+    """
+    qs = (
+        SellerUpgradeRequest.objects
+        .select_related("user", "reviewed_by")
+        .order_by("-requested_at")
+    )
+
+    if not filters:
+        return qs
+
+    if status_filter := filters.get("status"):
+        qs = qs.filter(status=status_filter)
+
+    if search := filters.get("search"):
+        qs = qs.filter(
+            Q(user__email__icontains=search) | Q(user__username__icontains=search)
+        )
+
+    return qs
+
+
+def get_seller_upgrade_request_by_id(request_id: int) -> SellerUpgradeRequest:
+    """Return a single seller upgrade request. Raises NotFoundError if not found."""
+    try:
+        return (
+            SellerUpgradeRequest.objects
+            .select_related("user", "reviewed_by")
+            .get(pk=request_id)
+        )
+    except SellerUpgradeRequest.DoesNotExist:
+        raise NotFoundError(f"Seller upgrade request with id {request_id} not found.")
 
 
 def get_deleted_users() -> QuerySet:

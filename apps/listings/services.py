@@ -15,10 +15,10 @@ from django.utils import timezone
 from apps.categories.models import Category
 from apps.common.cache import invalidate_dashboard_stats, invalidate_listing_detail
 from apps.common.constants import ListingStatus, UserRole
-from apps.common.exceptions import NotFoundError, PermissionDeniedError, ServiceError
+from apps.common.exceptions import ConflictError, NotFoundError, PermissionDeniedError, ServiceError
 from apps.common.sanitizers import sanitize_plain
 
-from .models import Listing, ListingImage
+from .models import Listing, ListingImage, SavedListing
 
 logger = logging.getLogger(__name__)
 
@@ -187,6 +187,48 @@ def set_primary_image(listing: Listing, image_id: int, user) -> ListingImage:
     image.is_primary = True
     image.save(update_fields=["is_primary"])
     return image
+
+
+# ── Saved listings (buyer wishlist) ──────────
+
+
+@transaction.atomic
+def save_listing(buyer, listing_id: int) -> SavedListing:
+    """
+    Add *listing_id* to *buyer*'s wishlist.
+
+    - Only ACTIVE listings can be saved.
+    - Duplicate saves return 409.
+    """
+    from apps.listings.selectors import get_saved_listing
+
+    try:
+        listing = Listing.objects.get(pk=listing_id)
+    except Listing.DoesNotExist:
+        raise NotFoundError(f"Listing with id {listing_id} not found.")
+
+    if listing.status != ListingStatus.ACTIVE:
+        raise ServiceError("Only active listings can be saved.")
+
+    if get_saved_listing(buyer, listing_id) is not None:
+        raise ConflictError("You have already saved this listing.")
+
+    saved = SavedListing.objects.create(buyer=buyer, listing=listing)
+    logger.info("listing_saved buyer=%d listing=%d", buyer.pk, listing_id)
+    return saved
+
+
+@transaction.atomic
+def unsave_listing(buyer, listing_id: int) -> None:
+    """Remove *listing_id* from *buyer*'s wishlist. Raises NotFoundError if not saved."""
+    from apps.listings.selectors import get_saved_listing
+
+    saved = get_saved_listing(buyer, listing_id)
+    if saved is None:
+        raise NotFoundError("This listing is not in your saved list.")
+
+    saved.delete()
+    logger.info("listing_unsaved buyer=%d listing=%d", buyer.pk, listing_id)
 
 
 # ── Internal helpers ──────────────────────────

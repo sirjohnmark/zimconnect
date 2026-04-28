@@ -15,6 +15,8 @@ from apps.accounts.serializers import (
     MessageResponseSerializer,
     OTPVerifySerializer,
     ResetPasswordSerializer,
+    SellerUpgradeRequestSerializer,
+    SellerUpgradeStatusSerializer,
     TokenResponseSerializer,
     UserLoginSerializer,
     UserProfileSerializer,
@@ -22,6 +24,7 @@ from apps.accounts.serializers import (
     UserUpdateSerializer,
 )
 from apps.accounts.tasks import send_email_otp_task, send_otp_task, send_welcome_email
+from apps.common.permissions import IsBuyer
 from apps.common.throttling import (
     EmailOTPSendThrottle,
     EmailOTPVerifyThrottle,
@@ -30,6 +33,7 @@ from apps.common.throttling import (
     OTPVerifyThrottle,
     PasswordResetThrottle,
     RegisterRateThrottle,
+    SellerUpgradeThrottle,
 )
 
 logger = logging.getLogger(__name__)
@@ -413,6 +417,80 @@ class ResendEmailOTPView(APIView):
         services.resend_email_otp(request.user)
         return Response(
             {"message": "Verification code resent to your email."},
+            status=status.HTTP_200_OK,
+        )
+
+
+# ──────────────────────────────────────────────
+# Seller upgrade
+# ──────────────────────────────────────────────
+
+
+class UpgradeToSellerView(APIView):
+    """POST /api/v1/auth/upgrade-to-seller/ — submit a seller upgrade request."""
+
+    permission_classes = (IsAuthenticated, IsBuyer)
+    throttle_classes = (SellerUpgradeThrottle,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_upgrade_to_seller",
+        summary="Request seller upgrade",
+        description=(
+            "Submit a request to upgrade a BUYER account to SELLER. "
+            "Email or phone must be verified. Only one pending request is allowed at a time. "
+            "Rate-limited to 3 requests/day."
+        ),
+        request=SellerUpgradeRequestSerializer,
+        responses={
+            201: OpenApiResponse(response=SellerUpgradeStatusSerializer, description="Request submitted"),
+            400: OpenApiResponse(description="Verification required"),
+            403: OpenApiResponse(description="Only buyers can apply"),
+            409: OpenApiResponse(description="Pending request already exists"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = SellerUpgradeRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        upgrade_request = services.create_seller_upgrade_request(
+            user=request.user,
+            business_name=data["business_name"],
+            business_description=data.get("business_description", ""),
+        )
+        return Response(
+            SellerUpgradeStatusSerializer(upgrade_request).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class UpgradeStatusView(APIView):
+    """GET /api/v1/auth/upgrade-status/ — check seller upgrade request status."""
+
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_upgrade_status",
+        summary="Get upgrade request status",
+        description="Returns the authenticated user's most recent seller upgrade request, or 404 if none exists.",
+        responses={
+            200: OpenApiResponse(response=SellerUpgradeStatusSerializer, description="Upgrade request details"),
+            401: OpenApiResponse(description="Not authenticated"),
+            404: OpenApiResponse(description="No upgrade request found"),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        from apps.common.exceptions import NotFoundError
+
+        upgrade_request = services.get_latest_seller_upgrade_request(request.user)
+        if upgrade_request is None:
+            raise NotFoundError("No seller upgrade request found.")
+
+        return Response(
+            SellerUpgradeStatusSerializer(upgrade_request).data,
             status=status.HTTP_200_OK,
         )
 

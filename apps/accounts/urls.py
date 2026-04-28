@@ -27,4 +27,7 @@ urlpatterns = [
     # Password reset
     path("password/forgot/", views.ForgotPasswordView.as_view(), name="password-forgot"),
     path("password/reset/", views.ResetPasswordView.as_view(), name="password-reset"),
+    # Seller upgrade
+    path("upgrade-to-seller/", views.UpgradeToSellerView.as_view(), name="upgrade-to-seller"),
+    path("upgrade-status/", views.UpgradeStatusView.as_view(), name="upgrade-status"),
 ]

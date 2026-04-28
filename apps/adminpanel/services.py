@@ -10,8 +10,9 @@ import logging
 
 from django.utils import timezone
 
+from apps.accounts.models import SellerProfile, SellerUpgradeRequest
 from apps.common.cache import invalidate_dashboard_stats, invalidate_listing_detail
-from apps.common.constants import ListingStatus, UserRole
+from apps.common.constants import ListingStatus, SellerUpgradeStatus, UserRole
 from apps.common.exceptions import PermissionDeniedError, ServiceError
 from apps.common.sanitizers import sanitize_plain
 from apps.listings.models import Listing
@@ -106,6 +107,82 @@ def change_user_role(user, admin_user, new_role: str) -> object:
         user.pk, old_role, new_role, admin_user.pk,
     )
     return user
+
+
+# ── Seller upgrade ────────────────────────────
+
+
+@transaction.atomic
+def approve_seller_upgrade(upgrade_request: SellerUpgradeRequest, admin_user) -> SellerUpgradeRequest:
+    """
+    Approve a seller upgrade request.
+
+    - Transitions user.role from BUYER → SELLER.
+    - Marks the request as APPROVED and records reviewer/timestamp.
+    """
+    _assert_admin(admin_user)
+
+    if upgrade_request.status != SellerUpgradeStatus.PENDING:
+        raise ServiceError("Only pending requests can be approved.")
+
+    upgrade_request.status = SellerUpgradeStatus.APPROVED
+    upgrade_request.reviewed_at = timezone.now()
+    upgrade_request.reviewed_by = admin_user
+    upgrade_request.rejection_reason = ""
+    upgrade_request.save(update_fields=["status", "reviewed_at", "reviewed_by", "rejection_reason"])
+
+    user = upgrade_request.user
+    user.role = UserRole.SELLER
+    user.save(update_fields=["role", "updated_at"])
+
+    # Idempotent: create SellerProfile only if not already present
+    SellerProfile.objects.get_or_create(
+        user=user,
+        defaults={
+            "shop_name": upgrade_request.business_name,
+            "shop_description": upgrade_request.business_description,
+        },
+    )
+
+    invalidate_dashboard_stats()
+    logger.info(
+        "seller_upgrade_approved request_id=%d user_id=%d admin=%d",
+        upgrade_request.pk, user.pk, admin_user.pk,
+    )
+    return upgrade_request
+
+
+@transaction.atomic
+def reject_seller_upgrade(
+    upgrade_request: SellerUpgradeRequest,
+    admin_user,
+    reason: str,
+) -> SellerUpgradeRequest:
+    """
+    Reject a seller upgrade request with a mandatory reason.
+
+    The user's role remains BUYER and they may resubmit.
+    """
+    _assert_admin(admin_user)
+
+    if upgrade_request.status != SellerUpgradeStatus.PENDING:
+        raise ServiceError("Only pending requests can be rejected.")
+
+    reason = sanitize_plain(reason)
+    if not reason:
+        raise ServiceError("A rejection reason is required.")
+
+    upgrade_request.status = SellerUpgradeStatus.REJECTED
+    upgrade_request.reviewed_at = timezone.now()
+    upgrade_request.reviewed_by = admin_user
+    upgrade_request.rejection_reason = reason
+    upgrade_request.save(update_fields=["status", "reviewed_at", "reviewed_by", "rejection_reason"])
+
+    logger.info(
+        "seller_upgrade_rejected request_id=%d user_id=%d admin=%d reason=%s",
+        upgrade_request.pk, upgrade_request.user_id, admin_user.pk, reason[:80],
+    )
+    return upgrade_request
 
 
 # ── Internal helpers ──────────────────────────

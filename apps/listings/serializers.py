@@ -5,7 +5,7 @@ DRF serializers for the listings app.
 from rest_framework import serializers
 
 from apps.common.constants import Currency, ListingCondition, ZimbabweCity
-from apps.listings.models import Listing, ListingImage
+from apps.listings.models import Listing, ListingImage, SavedListing
 
 
 # ──────────────────────────────────────────────
@@ -146,6 +146,17 @@ class ListingCreateSerializer(serializers.Serializer):
     condition = serializers.ChoiceField(choices=ListingCondition.choices)
     category_id = serializers.IntegerField()
     location = serializers.ChoiceField(choices=ZimbabweCity.choices)
+
+
+class SavedListingSerializer(serializers.ModelSerializer):
+    """Saved listing response — embeds full listing detail."""
+
+    listing = ListingListSerializer(read_only=True)
+
+    class Meta:
+        model = SavedListing
+        fields = ("id", "listing", "saved_at")
+        read_only_fields = fields
 
 
 class ListingUpdateSerializer(serializers.Serializer):

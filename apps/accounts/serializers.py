@@ -5,8 +5,10 @@ DRF serializers for the accounts app.
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from apps.common.constants import UserRole
+from apps.common.constants import SellerUpgradeStatus, UserRole
 from apps.common.exceptions import ConflictError
+
+from apps.accounts.models import SellerProfile
 
 User = get_user_model()
 
@@ -20,10 +22,7 @@ class UserRegistrationSerializer(serializers.Serializer):
     confirm_password = serializers.CharField(min_length=8, max_length=128, write_only=True)
     first_name = serializers.CharField(max_length=100, required=False, default="")
     last_name = serializers.CharField(max_length=100, required=False, default="")
-    role = serializers.ChoiceField(
-        choices=[UserRole.BUYER, UserRole.SELLER],
-        default=UserRole.BUYER,
-    )
+    role = serializers.HiddenField(default=UserRole.BUYER)
     phone = serializers.CharField(max_length=15)
 
     def validate_email(self, value: str) -> str:
@@ -165,3 +164,107 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
         attrs.pop("confirm_password")
         return attrs
+
+
+# ──────────────────────────────────────────────
+# Seller upgrade
+# ──────────────────────────────────────────────
+
+
+# ──────────────────────────────────────────────
+# Seller profile
+# ──────────────────────────────────────────────
+
+
+class _SellerUserInlineSerializer(serializers.Serializer):
+    """Minimal user info embedded in public seller profile responses."""
+
+    username = serializers.CharField(read_only=True)
+    profile_picture = serializers.ImageField(read_only=True)
+    location = serializers.CharField(read_only=True)
+    member_since = serializers.DateTimeField(source="created_at", read_only=True)
+
+
+class SellerProfilePublicSerializer(serializers.ModelSerializer):
+    """Public storefront view — includes user info and active listing count."""
+
+    user = _SellerUserInlineSerializer(read_only=True)
+    active_listings_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = SellerProfile
+        fields = (
+            "id",
+            "user",
+            "shop_name",
+            "shop_description",
+            "response_time_hours",
+            "active_listings_count",
+            "created_at",
+        )
+        read_only_fields = fields
+
+
+class SellerProfileMeSerializer(serializers.ModelSerializer):
+    """Full seller profile for the authenticated seller's own view."""
+
+    user = _SellerUserInlineSerializer(read_only=True)
+    active_listings_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = SellerProfile
+        fields = (
+            "id",
+            "user",
+            "shop_name",
+            "shop_description",
+            "response_time_hours",
+            "active_listings_count",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = fields
+
+
+class SellerProfileUpdateSerializer(serializers.ModelSerializer):
+    """Fields the seller can update on their own profile."""
+
+    class Meta:
+        model = SellerProfile
+        fields = ("shop_name", "shop_description", "response_time_hours")
+
+    def validate_shop_name(self, value: str) -> str:
+        if value:
+            value = value.strip()
+            if len(value) < 2:
+                raise serializers.ValidationError("Shop name must be at least 2 characters.")
+        return value
+
+    def validate_response_time_hours(self, value: int | None) -> int | None:
+        if value is not None and value < 1:
+            raise serializers.ValidationError("Response time must be at least 1 hour.")
+        return value
+
+
+class SellerUpgradeRequestSerializer(serializers.Serializer):
+    """Input for a buyer submitting a seller upgrade request."""
+
+    business_name = serializers.CharField(min_length=2, max_length=150)
+    business_description = serializers.CharField(
+        max_length=1000,
+        required=False,
+        allow_blank=True,
+        default="",
+    )
+
+
+class SellerUpgradeStatusSerializer(serializers.Serializer):
+    """Read-only representation of a user's upgrade request status."""
+
+    id = serializers.IntegerField(read_only=True)
+    status = serializers.ChoiceField(choices=SellerUpgradeStatus.choices, read_only=True)
+    business_name = serializers.CharField(read_only=True)
+    business_description = serializers.CharField(read_only=True)
+    rejection_reason = serializers.CharField(read_only=True)
+    requested_at = serializers.DateTimeField(read_only=True)
+    reviewed_at = serializers.DateTimeField(read_only=True, allow_null=True)

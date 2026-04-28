@@ -42,6 +42,38 @@ class IsModerator(BasePermission):
         return self.has_permission(request, view)
 
 
+class IsSeller(BasePermission):
+    """Allow access only to users with SELLER role."""
+
+    message = "Seller access required."
+
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and getattr(request.user, "role", None) == UserRole.SELLER
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
+
+class IsBuyer(BasePermission):
+    """Allow access only to users with BUYER role."""
+
+    message = "Only buyers can perform this action."
+
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and getattr(request.user, "role", None) == UserRole.BUYER
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
+
 class IsAdminOrReadOnly(BasePermission):
     """
     Full access for ADMIN users; read-only for everyone else.

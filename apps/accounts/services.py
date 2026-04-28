@@ -12,12 +12,13 @@ import secrets
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.common.exceptions import ServiceError, UnprocessableError
+from apps.common.constants import SellerUpgradeStatus, UserRole
+from apps.common.exceptions import ConflictError, NotFoundError, PermissionDeniedError, ServiceError, UnprocessableError
 from apps.common.sanitizers import sanitize_plain
 
 User = get_user_model()
@@ -375,6 +376,138 @@ def initiate_password_reset(email: str) -> None:
         logger.exception("initiate_password_reset: failed to queue email for user %d", user.pk)
 
     logger.info("password_reset_initiated: email=%s user_id=%d", email, user.pk)
+
+
+# ──────────────────────────────────────────────
+# Seller upgrade requests
+# ──────────────────────────────────────────────
+
+
+@transaction.atomic
+def create_seller_upgrade_request(user, business_name: str, business_description: str):
+    """
+    Submit a seller upgrade request for a BUYER.
+
+    - Only BUYER accounts may apply.
+    - Only one PENDING request is allowed at a time.
+    - Returns the created SellerUpgradeRequest instance.
+    """
+    from apps.accounts.models import SellerUpgradeRequest
+
+    if getattr(user, "role", None) != UserRole.BUYER:
+        raise PermissionDeniedError("Only buyers can request a seller upgrade.")
+
+    if not (user.email_verified or user.phone_verified):
+        raise ServiceError("Please verify your email or phone number before applying to become a seller.")
+
+    if SellerUpgradeRequest.objects.filter(user=user, status=SellerUpgradeStatus.PENDING).exists():
+        raise ConflictError("You already have a pending seller upgrade request.")
+
+    upgrade_request = SellerUpgradeRequest.objects.create(
+        user=user,
+        status=SellerUpgradeStatus.PENDING,
+        business_name=sanitize_plain(business_name),
+        business_description=sanitize_plain(business_description) if business_description else "",
+    )
+    logger.info("seller_upgrade_requested user_id=%d request_id=%d", user.pk, upgrade_request.pk)
+    return upgrade_request
+
+
+def get_seller_profile_by_username(username: str):
+    """
+    Return a SellerProfile for the given username, annotated with active_listings_count.
+
+    Raises NotFoundError if the user or their profile is not found.
+    """
+    from django.db.models import Count
+
+    from apps.accounts.models import SellerProfile
+    from apps.common.constants import ListingStatus
+
+    try:
+        return (
+            SellerProfile.objects
+            .select_related("user")
+            .annotate(
+                active_listings_count=Count(
+                    "user__listings",
+                    filter=models.Q(user__listings__status=ListingStatus.ACTIVE),
+                )
+            )
+            .get(user__username=username)
+        )
+    except SellerProfile.DoesNotExist:
+        raise NotFoundError(f"Seller '{username}' not found.")
+
+
+def get_seller_profile_for_user(user):
+    """
+    Return the SellerProfile for the authenticated seller, annotated with active_listings_count.
+
+    Raises NotFoundError if the profile does not exist (e.g., pending approval).
+    """
+    from django.db.models import Count
+
+    from apps.accounts.models import SellerProfile
+    from apps.common.constants import ListingStatus
+
+    try:
+        return (
+            SellerProfile.objects
+            .select_related("user")
+            .annotate(
+                active_listings_count=Count(
+                    "user__listings",
+                    filter=models.Q(user__listings__status=ListingStatus.ACTIVE),
+                )
+            )
+            .get(user=user)
+        )
+    except SellerProfile.DoesNotExist:
+        raise NotFoundError("Seller profile not found.")
+
+
+@transaction.atomic
+def update_seller_profile(user, **kwargs):
+    """
+    Update editable fields on the seller's own SellerProfile.
+
+    Sanitizes text fields and returns the refreshed, annotated instance.
+    Raises NotFoundError if the seller profile does not exist.
+    """
+    from apps.accounts.models import SellerProfile
+
+    try:
+        profile = SellerProfile.objects.get(user=user)
+    except SellerProfile.DoesNotExist:
+        raise NotFoundError("Seller profile not found.")
+
+    text_fields = ("shop_name", "shop_description")
+    for field in text_fields:
+        if field in kwargs and kwargs[field]:
+            kwargs[field] = sanitize_plain(kwargs[field])
+
+    for field, value in kwargs.items():
+        setattr(profile, field, value)
+
+    profile.full_clean()
+    profile.save(update_fields=[*kwargs.keys(), "updated_at"])
+
+    return get_seller_profile_for_user(user)
+
+
+def get_latest_seller_upgrade_request(user):
+    """
+    Return the user's most recent seller upgrade request, or None.
+    """
+    from apps.accounts.models import SellerUpgradeRequest
+
+    return (
+        SellerUpgradeRequest.objects
+        .filter(user=user)
+        .order_by("-requested_at")
+        .first()
+    )
 
 
 @transaction.atomic
