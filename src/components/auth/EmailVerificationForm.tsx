@@ -15,7 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -190,13 +190,14 @@ export function EmailVerificationForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otpComplete, otpStatus]);
 
-  // Redirect away if already verified
+  // Redirect away if the user was ALREADY verified before this page loaded.
+  // Guard on otpStatus so this never fires while handleVerify is in progress.
   useEffect(() => {
-    if (!isLoading && user?.email_verified) {
+    if (!isLoading && user?.email_verified && otpStatus !== "success") {
       router.replace(redirectTo);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.email_verified, isLoading]);
+  }, [isLoading]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -226,8 +227,7 @@ export function EmailVerificationForm() {
       setUser(updated);
       setOtpStatus("success");
       await new Promise((r) => setTimeout(r, 600));
-      router.push(redirectTo);
-      router.refresh();
+      window.location.href = redirectTo;
     } catch (err) {
       setOtpStatus("idle");
       if (err instanceof ApiError && err.status === 422) {
