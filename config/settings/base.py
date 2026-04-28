@@ -52,6 +52,7 @@ THIRD_PARTY_APPS = [
     "storages",
     "django_celery_beat",
     "drf_spectacular",
+    "anymail",
 ]
 
 LOCAL_APPS: list[str] = [

@@ -7,3 +7,17 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 sudo systemctl restart gunicorn
 sudo systemctl restart nginx
+
+curl -s -X POST https://sanganai.co.zw/api/v1/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{"email":"strive@sanganai.co.zw","password":"Strive@3934#"}' \
+  | python3 -m json.tool
+
+  
+$env:ANTHROPIC_BASE_URL="https://api.deepseek.com/anthropic"
+$env:ANTHROPIC_AUTH_TOKEN="sk-737ff2cfac7849f6a9c85e03bfe4ed71"
+$env:ANTHROPIC_MODEL="deepseek-v4-pro[1m]"
+$env:ANTHROPIC_DEFAULT_OPUS_MODEL="deepseek-v4-pro[1m]"
+$env:ANTHROPIC_DEFAULT_SONNET_MODEL="deepseek-v4-pro[1m]"
+$env:ANTHROPIC_DEFAULT_HAIKU_MODEL="deepseek-v4-flash"
+$env:CLAUDE_CODE_SUBAGENT_MODEL="deepseek-v4-flash"
