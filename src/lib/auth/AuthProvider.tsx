@@ -7,7 +7,7 @@ import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
-import { getStoredUser, setMemoryToken } from "@/lib/auth/auth";
+import { getStoredUser, setMemoryToken, saveUser } from "@/lib/auth/auth";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
