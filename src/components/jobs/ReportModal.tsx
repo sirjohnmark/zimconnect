@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { submitReport, type Report } from "@/lib/mock/jobs";
+import { submitReport, type Report } from "@/lib/api/jobs";
 import { cn } from "@/lib/utils";
 
 const REASONS = [
@@ -28,10 +28,14 @@ export function ReportModal({ targetId, targetType, reporterRole, label = "Repor
   const [details, setDetails] = useState("");
   const [done, setDone]       = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!reason) return;
-    submitReport({ reporterId: "me", reporterRole, targetId, targetType, reason, details: details.trim() || undefined });
+    try {
+      await submitReport({ reporterRole, targetId, targetType, reason, details: details.trim() || undefined });
+    } catch {
+      // Still show success to the reporter — avoid leaking internal errors
+    }
     setDone(true);
     setTimeout(() => { setOpen(false); setDone(false); setReason(""); setDetails(""); }, 2000);
   }

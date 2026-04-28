@@ -88,6 +88,15 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
 
       try {
         const user = await getMe();
+        // Re-sync the session cookie role with the authoritative value from Django.
+        // This fixes stale cookies (e.g. sessions created before a role change or
+        // before the hardcoded-BUYER bug was patched). Non-blocking — auth works
+        // without it; the cookie just stays stale until the next login.
+        fetch("/api/auth/session", {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ role: user.role }),
+        }).catch(() => {});
         if (!cancelled) dispatch({ type: "SET_USER", user });
       } catch (err) {
         if (cancelled) return;

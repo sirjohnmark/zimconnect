@@ -77,15 +77,18 @@ export async function POST(req: NextRequest) {
   const data = await djangoRes.json() as { access: string; refresh?: string };
   const res  = NextResponse.json({ access: data.access });
 
+  // Always re-sign the session cookie on a successful refresh so that:
+  // 1. The 7-day clock resets in sync with the refresh cookie.
+  // 2. Stale roles (e.g. from the hardcoded-BUYER bug) are propagated correctly
+  //    until the AuthProvider's PATCH /api/auth/session call overwrites them with
+  //    the authoritative role from getMe().
+  const existingSession = req.cookies.get(SESSION_COOKIE)?.value ?? "";
+  const role = extractRoleFromSession(existingSession, SESSION_SECRET!);
+  res.cookies.set(SESSION_COOKIE, signPayload({ role }, SESSION_SECRET!), { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
+
   // If Django rotated the refresh token, store the new one
   if (data.refresh) {
     res.cookies.set(REFRESH_COOKIE, data.refresh, { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
-    // Preserve the role from the existing session cookie — never hardcode "BUYER".
-    // extractRoleFromSession verifies the HMAC before reading, so a tampered cookie
-    // falls back to "BUYER" rather than escalating privileges.
-    const existingSession = req.cookies.get(SESSION_COOKIE)?.value ?? "";
-    const role = extractRoleFromSession(existingSession, SESSION_SECRET!);
-    res.cookies.set(SESSION_COOKIE, signPayload({ role }, SESSION_SECRET!), { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
   }
 
   return res;

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
 import { ReportModal } from "@/components/jobs/ReportModal";
-import { getJobs, getCvs, type JobListing, type CvProfile } from "@/lib/mock/jobs";
+import { getJobs, getCvs, type JobListing, type CvProfile } from "@/lib/api/jobs";
 import { cn } from "@/lib/utils";
 
 // ─── Disclaimer ───────────────────────────────────────────────────────────────
@@ -182,9 +182,13 @@ export default function JobsPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setJobs(getJobs());
-    setCvs(getCvs());
-    setMounted(true);
+    Promise.all([getJobs(), getCvs()])
+      .then(([fetchedJobs, fetchedCvs]) => {
+        setJobs(fetchedJobs);
+        setCvs(fetchedCvs);
+      })
+      .catch(() => {/* show empty state on error */})
+      .finally(() => setMounted(true));
   }, []);
 
   const queryWords = search.trim().toLowerCase().split(/\s+/).filter(Boolean);

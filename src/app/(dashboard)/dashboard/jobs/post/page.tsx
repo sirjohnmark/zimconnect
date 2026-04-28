@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
-import { postJob, type JobType, type JobIndustry } from "@/lib/mock/jobs";
+import { postJob, type JobType, type JobIndustry } from "@/lib/api/jobs";
 import { VerificationGate } from "@/components/ui/VerificationGate";
 import { cn } from "@/lib/utils";
 
@@ -185,32 +185,35 @@ export default function PostJobPage() {
     return Object.keys(e).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!user || !validate()) return;
     setSubmitting(true);
-
-    postJob({
-      title:           title.trim(),
-      company:         company.trim(),
-      employerId:      String(user!.id),
-      location:        location.trim() || "Remote",
-      remote:          isRemote,
-      type:            jobType,
-      industry:        industry || undefined,
-      salary:          salaryOn ? { min: Number(salaryMin), max: Number(salaryMax), currency: "USD" } : undefined,
-      description:     description.trim(),
-      requirements,
-      benefits:        benefits.length > 0 ? benefits : undefined,
-      howToApply:      howToApply.trim() || undefined,
-      deadline:        deadline || undefined,
-      status:          "open",
-      verifiedEmployer: isVerified,
-    });
-
-    setSubmitting(false);
-    setSuccess(true);
-    setTimeout(() => router.push("/dashboard/jobs"), 1500);
+    try {
+      await postJob({
+        title:            title.trim(),
+        company:          company.trim(),
+        employerId:       String(user.id),
+        location:         location.trim() || "Remote",
+        remote:           isRemote,
+        type:             jobType,
+        industry:         industry || undefined,
+        salary:           salaryOn ? { min: Number(salaryMin), max: Number(salaryMax), currency: "USD" } : undefined,
+        description:      description.trim(),
+        requirements,
+        benefits:         benefits.length > 0 ? benefits : undefined,
+        howToApply:       howToApply.trim() || undefined,
+        deadline:         deadline || undefined,
+        status:           "open",
+        verifiedEmployer: isVerified,
+      });
+      setSuccess(true);
+      setTimeout(() => router.push("/dashboard/jobs"), 1500);
+    } catch {
+      setErrors((prev) => ({ ...prev, submit: "Failed to post job. Please try again." }));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (!isVerified) {
@@ -462,6 +465,11 @@ export default function PostJobPage() {
         )}
 
         {/* ── Submit ── */}
+        {errors.submit && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+            {errors.submit}
+          </div>
+        )}
         <div className="flex gap-3 pb-8">
           <button
             type="button"

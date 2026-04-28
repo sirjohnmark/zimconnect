@@ -96,7 +96,7 @@ function UserRow({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isLoading: authLoading } = useAuth();
   const isAdmin = currentUser?.role === "ADMIN" || currentUser?.role === "MODERATOR";
 
   const [users,       setUsers]       = useState<AdminUser[]>([]);
@@ -150,6 +150,16 @@ export default function UsersPage() {
     } finally {
       setBusyId(null);
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="max-w-4xl space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100" />
+        ))}
+      </div>
+    );
   }
 
   if (!isAdmin) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
 import type { Category } from "@/types/category";
 import type { CategoryInput } from "@/lib/api/categories";
@@ -12,7 +12,7 @@ function slugify(val: string) {
 }
 
 export default function AdminCategoriesPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<CategoryInput>(EMPTY);
@@ -36,7 +36,7 @@ export default function AdminCategoriesPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (isAdmin) load(); }, [isAdmin]);
 
   function startEdit(cat: Category) {
     setEditId(cat.id);
@@ -94,6 +94,16 @@ export default function AdminCategoriesPage() {
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to delete category.");
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="max-w-3xl space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-16 animate-pulse rounded-2xl bg-gray-100" />
+        ))}
+      </div>
+    );
   }
 
   if (!isAdmin) {

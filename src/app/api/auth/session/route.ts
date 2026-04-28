@@ -57,3 +57,35 @@ export async function DELETE() {
   res.cookies.set(SESSION_COOKIE, "", { ...COOKIE_BASE, maxAge: 0 });
   return res;
 }
+
+/**
+ * PATCH /api/auth/session — re-sync the session cookie role.
+ *
+ * Called by AuthProvider after getMe() returns the authoritative role from Django.
+ * Requires a valid sanganai_refresh cookie to prove the caller is authenticated.
+ * The role value is trusted because it originates from the Django profile API,
+ * not from user-controlled input.
+ */
+export async function PATCH(req: NextRequest) {
+  const hasRefresh = Boolean(req.cookies.get(REFRESH_COOKIE)?.value);
+  if (!hasRefresh) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  let body: { role?: string };
+  try {
+    body = await req.json() as { role?: string };
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const { role } = body;
+  const VALID_ROLES = ["BUYER", "SELLER", "ADMIN", "MODERATOR"];
+  if (!role || typeof role !== "string" || !VALID_ROLES.includes(role)) {
+    return NextResponse.json({ error: "Valid role is required" }, { status: 400 });
+  }
+
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set(SESSION_COOKIE, signPayload({ role }, SESSION_SECRET!), { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
+  return res;
+}

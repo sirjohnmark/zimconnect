@@ -182,7 +182,7 @@ function ListingRow({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminListingsPage() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MODERATOR";
 
   const [listings,    setListings]    = useState<Listing[]>([]);
@@ -264,6 +264,16 @@ export default function AdminListingsPage() {
     } finally {
       setBusyId(null);
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="max-w-4xl space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100" />
+        ))}
+      </div>
+    );
   }
 
   if (!isAdmin) {

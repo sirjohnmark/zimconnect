@@ -181,6 +181,11 @@ async function request<T>(
     }
   }
 
+  // 403 → clear permission error so admin pages can distinguish it from a network failure
+  if (res.status === 403) {
+    throw new ApiError(403, "Forbidden", "You do not have permission to perform this action.", data);
+  }
+
   if (!res.ok) {
     let rawMessage = `${res.status} ${res.statusText}`;
 

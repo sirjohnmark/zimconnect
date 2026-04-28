@@ -6,19 +6,16 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
 import { ReportModal } from "@/components/jobs/ReportModal";
 import {
-  getJobs,
+  getMyJobs,
   getCvs,
-  getEmployerJobs,
   getVerification,
   submitVerification,
   uploadCv,
   getMyCv,
-  updateJobStatus,
-  deleteJob,
   type JobListing,
   type CvProfile,
   type VerificationRequest,
-} from "@/lib/mock/jobs";
+} from "@/lib/api/jobs";
 import { cn } from "@/lib/utils";
 
 // ─── Verification banner ──────────────────────────────────────────────────────
@@ -27,27 +24,34 @@ function VerificationSection({ userId }: { userId: string }) {
   const [verification, setVerification] = useState<VerificationRequest | undefined>(undefined);
   const [docType, setDocType] = useState<VerificationRequest["docType"]>("national_id");
   const [fileName, setFileName] = useState("");
+  const [fileObj,  setFileObj]  = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setVerification(getVerification(userId));
+    getVerification(userId).then(setVerification);
   }, [userId]);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setFileName(file.name);
+    if (file) { setFileName(file.name); setFileObj(file); }
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!fileName) return;
+    if (!fileObj) return;
     setSubmitting(true);
-    submitVerification({ userId, docType, docFile: fileName });
-    setVerification(getVerification(userId));
-    setSubmitting(false);
-    setSubmitted(true);
+    setError("");
+    try {
+      await submitVerification({ docType, file: fileObj });
+      setSubmitted(true);
+    } catch {
+      setError("Submission failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (verification?.status === "verified") {
@@ -136,9 +140,11 @@ function VerificationSection({ userId }: { userId: string }) {
           Your documents are encrypted and used only for verification. They will not be shared publicly.
         </div>
 
+        {error && <p className="text-xs text-red-600">{error}</p>}
+
         <button
           type="submit"
-          disabled={!fileName || submitting}
+          disabled={!fileObj || submitting}
           className="w-full rounded-xl bg-apple-blue px-4 py-2.5 text-sm font-semibold text-white hover:bg-apple-blue disabled:opacity-40 transition-colors"
         >
           {submitting ? "Submitting…" : "Submit for Verification"}
@@ -151,21 +157,23 @@ function VerificationSection({ userId }: { userId: string }) {
 // ─── CV upload section ────────────────────────────────────────────────────────
 
 function CvUploadSection({ userId, userName }: { userId: string; userName: string }) {
-  const [cv, setCv]           = useState<CvProfile | undefined>(undefined);
-  const [title, setTitle]     = useState("");
-  const [location, setLoc]    = useState("");
-  const [experience, setExp]  = useState("");
-  const [skills, setSkills]   = useState("");
-  const [summary, setSummary] = useState("");
-  const [status, setStatus]   = useState("Actively looking");
+  const [cv, setCv]             = useState<CvProfile | undefined>(undefined);
+  const [title, setTitle]       = useState("");
+  const [location, setLoc]      = useState("");
+  const [experience, setExp]    = useState("");
+  const [skills, setSkills]     = useState("");
+  const [summary, setSummary]   = useState("");
+  const [status, setStatus]     = useState("Actively looking");
   const [fileName, setFileName] = useState("");
-  const [saving, setSaving]   = useState(false);
-  const [saved, setSaved]     = useState(false);
+  const [fileObj,  setFileObj]  = useState<File | null>(null);
+  const [saving,   setSaving]   = useState(false);
+  const [saved,    setSaved]    = useState(false);
+  const [cvError,  setCvError]  = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const existing = getMyCv(userId);
-    if (existing) {
+    getMyCv().then((existing) => {
+      if (!existing) return;
       setCv(existing);
       setTitle(existing.title);
       setLoc(existing.location);
@@ -174,35 +182,45 @@ function CvUploadSection({ userId, userName }: { userId: string; userName: strin
       setSummary(existing.summary);
       setStatus(existing.status);
       if (existing.cvFile) setFileName(existing.cvFile);
-    }
-  }, [userId]);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setFileName(file.name);
+    if (file) { setFileName(file.name); setFileObj(file); }
   }
 
-  function handleSave(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
-    const updated = uploadCv({
-      seekerId: userId,
-      seekerName: userName,
-      seekerInitial: userName.charAt(0).toUpperCase(),
-      title: title.trim(),
-      location: location.trim(),
-      experience: experience.trim(),
-      skills: skills.split(",").map((s) => s.trim()).filter(Boolean),
-      summary: summary.trim(),
-      cvFile: fileName || undefined,
-      available: status !== "Not currently available",
-      status,
-    });
-    setCv(updated);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setCvError("");
+    try {
+      const updated = await uploadCv(
+        {
+          seekerId:      userId,
+          seekerName:    userName,
+          seekerInitial: userName.charAt(0).toUpperCase(),
+          title:         title.trim(),
+          location:      location.trim(),
+          experience:    experience.trim(),
+          skills:        skills.split(",").map((s) => s.trim()).filter(Boolean),
+          summary:       summary.trim(),
+          cvFile:        undefined,
+          available:     status !== "Not currently available",
+          status,
+        },
+        fileObj ?? undefined,
+      );
+      setCv(updated);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setCvError("Failed to save CV. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -265,6 +283,8 @@ function CvUploadSection({ userId, userName }: { userId: string; userName: strin
           <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="sr-only" onChange={handleFile} />
         </div>
 
+        {cvError && <p className="text-xs text-red-600">{cvError}</p>}
+
         <div className="flex items-center gap-3">
           <button
             type="submit"
@@ -312,9 +332,13 @@ export default function JobsDashboardPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setJobs(getJobs());
-    setCvs(getCvs());
-    setMounted(true);
+    Promise.all([getMyJobs(), getCvs()])
+      .then(([myJobs, allCvs]) => {
+        setJobs(myJobs);
+        setCvs(allCvs);
+      })
+      .catch(() => {/* show empty state */})
+      .finally(() => setMounted(true));
   }, []);
 
   if (!authUser) return null;
@@ -377,9 +401,9 @@ export default function JobsDashboardPage() {
               <div className="space-y-2">
                 {[1, 2].map((n) => <div key={n} className="h-14 animate-pulse rounded-xl bg-gray-100" />)}
               </div>
-            ) : getEmployerJobs(String(user.id)).length > 0 ? (
+            ) : jobs.length > 0 ? (
               <div className="space-y-2">
-                {getEmployerJobs(String(user.id)).map((job) => <MyJobCard key={job.id} job={job} />)}
+                {jobs.map((job) => <MyJobCard key={job.id} job={job} />)}
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 py-8 text-center">
