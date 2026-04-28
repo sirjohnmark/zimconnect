@@ -204,6 +204,8 @@ export function RegisterForm() {
   const otpCode     = otpDigits.join("");
   const otpComplete = otpDigits.every((d) => d !== "");
 
+  const preselectedRole = (searchParams.get("role") === "SELLER" ? "SELLER" : "BUYER") as "BUYER" | "SELLER";
+
   const {
     register,
     handleSubmit,
@@ -212,7 +214,7 @@ export function RegisterForm() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { role: "BUYER" },
+    defaultValues: { role: preselectedRole },
   });
 
   useEffect(() => {
