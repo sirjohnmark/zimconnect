@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
 import { getAccessToken } from "@/lib/auth/auth";
+import { sendEmailVerificationOtp } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 
@@ -134,6 +137,50 @@ async function uploadAvatar(file: File): Promise<string> {
   }
 }
 
+// ─── Email verify banner ──────────────────────────────────────────────────────
+
+function EmailVerifyBanner({ email }: { email: string }) {
+  const router     = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [err,  setErr]  = useState<string | null>(null);
+
+  async function handleVerify() {
+    setBusy(true);
+    setErr(null);
+    try {
+      await sendEmailVerificationOtp();
+      router.push("/verify-email");
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Failed to send code. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
+      <svg viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-5 w-5 shrink-0 text-amber-500">
+        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+      </svg>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-amber-900">Verify your email</p>
+        <p className="text-xs text-amber-700 mt-0.5 truncate">
+          {email} is not yet verified. Verify to unlock all features.
+        </p>
+        {err && <p className="text-xs text-red-600 mt-1">{err}</p>}
+      </div>
+      <button
+        type="button"
+        onClick={handleVerify}
+        disabled={busy}
+        className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 disabled:opacity-60 transition-colors"
+      >
+        {busy ? "Sending…" : "Verify email"}
+      </button>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
@@ -241,6 +288,10 @@ export default function ProfilePage() {
         <h1 className="text-xl font-semibold text-gray-900">Profile</h1>
         <p className="mt-1 text-sm text-gray-500">Manage your personal information and how buyers see you.</p>
       </div>
+
+      {user && !user.email_verified && (
+        <EmailVerifyBanner email={user.email} />
+      )}
 
       <form onSubmit={handleSave} noValidate className="space-y-6">
 

@@ -39,6 +39,7 @@ interface AuthContextValue {
   register: (data: RegisterInput) => Promise<AuthUser>;
   logout: () => Promise<void>;
   updateUser: (updates: ProfileUpdatePayload) => Promise<AuthUser>;
+  setUser: (user: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -136,8 +137,13 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     return updated;
   }, []);
 
+  const setUser = useCallback((user: AuthUser) => {
+    saveUser(user);
+    dispatch({ type: "SET_USER", user });
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ auth, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ auth, login, register, logout, updateUser, setUser }}>
       {children}
     </AuthContext.Provider>
   );

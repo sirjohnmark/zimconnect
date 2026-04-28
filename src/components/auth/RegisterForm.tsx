@@ -244,6 +244,11 @@ export function RegisterForm() {
     if (!USE_MOCK) {
       try {
         await registerAuth(data);
+        // Auto-login to get tokens; the backend already sent the email OTP
+        await login({ email: data.email, password: data.password });
+        router.push(`/verify-email?redirect=${encodeURIComponent(redirectTo)}`);
+        router.refresh();
+        return;
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
           setFormError("An account with this email already exists.");

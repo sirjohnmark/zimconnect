@@ -25,10 +25,12 @@ export interface UseAuthReturn {
   logout: () => Promise<void>;
   /** Update profile fields and refresh auth state. Only writable fields are accepted. */
   updateUser: (updates: ProfileUpdatePayload) => Promise<AuthUser>;
+  /** Directly overwrite the auth user (e.g. after email verification updates the profile). */
+  setUser: (user: AuthUser) => void;
 }
 
 export function useAuth(): UseAuthReturn {
-  const { auth, login, register, logout, updateUser } = useAuthContext();
+  const { auth, login, register, logout, updateUser, setUser } = useAuthContext();
 
   return {
     auth,
@@ -39,5 +41,6 @@ export function useAuth(): UseAuthReturn {
     register,
     logout,
     updateUser,
+    setUser,
   };
 }

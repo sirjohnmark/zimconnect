@@ -9,6 +9,8 @@ import {
   verifyStoredPassword,
   saveTokens,
   clearTokens,
+  generateAndStoreOtp,
+  verifyOtp,
 } from "@/lib/auth/auth";
 import { clearSessionCookie } from "@/lib/auth/cookies";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
@@ -238,6 +240,53 @@ export async function verifyOtpCode(
   if (method === "email" && email) payload.email = email;
   if (method === "sms"   && phone) payload.phone = phone;
   await api.post<void>("/api/v1/verify-otp", payload);
+}
+
+// ─── Email verification (authenticated) ──────────────────────────────────────
+
+/**
+ * POST /api/v1/auth/email/send-otp/
+ * Sends a fresh email OTP to the authenticated user's address.
+ * Rate-limited: max 3/hour.
+ */
+export async function sendEmailVerificationOtp(): Promise<void> {
+  if (USE_MOCK) return;
+  await api.post<void>("/api/v1/auth/email/send-otp", {});
+}
+
+/**
+ * POST /api/v1/auth/email/verify/
+ * Verifies the submitted OTP. Returns the updated UserProfile with email_verified: true.
+ * Throws ApiError(400) for invalid code, ApiError(422) for expired, ApiError(429) for rate limit.
+ */
+export async function verifyEmailAddress(otp: string): Promise<AuthUser> {
+  if (USE_MOCK) {
+    const result = verifyOtp(otp);
+    if (!result.valid) {
+      if (result.reason?.toLowerCase().includes("expir")) {
+        throw new ApiError(422, "Unprocessable Entity", result.reason ?? "OTP has expired. Please request a new one.");
+      }
+      throw new ApiError(400, "Bad Request", result.reason ?? "Invalid OTP code.");
+    }
+    const stored = getStoredUser();
+    if (!stored) throw new ApiError(401, "Unauthorized", "Not authenticated");
+    const updated = { ...stored, email_verified: true, is_verified: true } as AuthUser;
+    saveUser(updated);
+    return updated;
+  }
+  const raw = await api.post<BackendUser>("/api/v1/auth/email/verify", { otp });
+  const updated = mapUser(raw) as AuthUser;
+  saveUser(updated);
+  return updated;
+}
+
+/**
+ * POST /api/v1/auth/email/resend/
+ * Resends the email OTP. Rate-limited: max 3/hour, min 60s between sends.
+ */
+export async function resendEmailVerificationOtp(): Promise<void> {
+  if (USE_MOCK) return;
+  await api.post<void>("/api/v1/auth/email/resend", {});
 }
 
 // ─── Legacy aliases (kept for any other callers) ──────────────────────────────

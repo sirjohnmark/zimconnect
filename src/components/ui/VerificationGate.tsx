@@ -11,14 +11,14 @@ export function VerificationGate({ action }: { action: string }) {
       <div>
         <p className="text-sm font-semibold text-gray-900">Verification required</p>
         <p className="mt-1 text-xs text-gray-500 max-w-xs mx-auto">
-          Your account must be verified before you can {action}. Please verify your email address to continue.
+          You must verify your email or phone before you can {action}.
         </p>
       </div>
       <Link
-        href="/dashboard/profile"
+        href="/verify-email?trigger=1"
         className="rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
       >
-        Go to Profile
+        Verify Email
       </Link>
     </div>
   );
