@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
@@ -246,7 +246,7 @@ export function RegisterForm() {
         await registerAuth(data);
         // Auto-login to get tokens; the backend already sent the email OTP
         await login({ email: data.email, password: data.password });
-        router.push(`/verify-email?redirect=${encodeURIComponent(redirectTo)}`);
+        router.push(`/verify-email?trigger=1&redirect=${encodeURIComponent(redirectTo)}`);
         router.refresh();
         return;
       } catch (err) {

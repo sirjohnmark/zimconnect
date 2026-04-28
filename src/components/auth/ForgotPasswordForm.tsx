@@ -16,7 +16,7 @@ const forgotSchema = z.object({
 
 type ForgotInput = z.infer<typeof forgotSchema>;
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
 export function ForgotPasswordForm() {
   const [submitted, setSubmitted] = useState(false);
