@@ -1,38 +1,28 @@
 import { cn } from "@/lib/utils";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export type CardPadding = "none" | "sm" | "md" | "lg";
 export type CardShadow = "none" | "sm" | "md" | "lg";
 
 export interface CardProps {
   children: React.ReactNode;
   className?: string;
-  /** Inner padding. Defaults to "md". */
   padding?: CardPadding;
-  /** Drop shadow depth. Defaults to "sm". */
   shadow?: CardShadow;
-  /** Shows a subtle border. Defaults to true. */
   bordered?: boolean;
-  /** Makes the card visually interactive (hover lift). */
   hoverable?: boolean;
   as?: React.ElementType;
 }
-
-// ─── Sub-component types ──────────────────────────────────────────────────────
 
 interface CardSectionProps {
   children: React.ReactNode;
   className?: string;
 }
 
-// ─── Maps ─────────────────────────────────────────────────────────────────────
-
 const paddingClasses: Record<CardPadding, string> = {
   none: "",
   sm: "p-3",
   md: "p-5",
-  lg: "p-8",
+  lg: "p-6 sm:p-8",
 };
 
 const shadowClasses: Record<CardShadow, string> = {
@@ -41,8 +31,6 @@ const shadowClasses: Record<CardShadow, string> = {
   md: "shadow-md",
   lg: "shadow-lg",
 };
-
-// ─── Root ─────────────────────────────────────────────────────────────────────
 
 export function Card({
   children,
@@ -56,11 +44,11 @@ export function Card({
   return (
     <Tag
       className={cn(
-        "rounded-lg bg-white",
+        "rounded-xl bg-white",
         bordered && "border border-border-base",
         shadowClasses[shadow],
         paddingClasses[padding],
-        hoverable && "transition-shadow duration-200 hover:shadow-md cursor-pointer",
+        hoverable && "cursor-pointer transition-shadow duration-200 hover:shadow-md",
         className,
       )}
     >
@@ -69,11 +57,9 @@ export function Card({
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 function CardHeader({ children, className }: CardSectionProps) {
   return (
-    <div className={cn("border-b border-border-base pb-4 mb-4", className)}>
+    <div className={cn("mb-5 border-b border-border-base pb-4", className)}>
       {children}
     </div>
   );
@@ -81,14 +67,14 @@ function CardHeader({ children, className }: CardSectionProps) {
 
 function CardFooter({ children, className }: CardSectionProps) {
   return (
-    <div className={cn("border-t border-border-base pt-4 mt-4", className)}>
+    <div className={cn("mt-5 border-t border-border-base pt-4", className)}>
       {children}
     </div>
   );
 }
 
 function CardContent({ children, className }: CardSectionProps) {
-  return <div className={cn(className)}>{children}</div>;
+  return <div className={className}>{children}</div>;
 }
 
 function CardTitle({ children, className }: CardSectionProps) {
@@ -100,11 +86,7 @@ function CardTitle({ children, className }: CardSectionProps) {
 }
 
 function CardDescription({ children, className }: CardSectionProps) {
-  return (
-    <p className={cn("mt-0.5 text-sm text-gray-500", className)}>
-      {children}
-    </p>
-  );
+  return <p className={cn("mt-1 text-sm text-gray-500", className)}>{children}</p>;
 }
 
 Card.Header = CardHeader;

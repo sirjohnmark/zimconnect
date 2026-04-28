@@ -1,175 +1,138 @@
-import { api } from "./client";
-import { getAccessToken } from "@/lib/auth/auth";
+import { z } from "zod";
 
-// ─── File validation ──────────────────────────────────────────────────────────
+export const LISTING_CONDITIONS = [
+  "NEW",
+  "LIKE_NEW",
+  "GOOD",
+  "FAIR",
+  "POOR",
+] as const;
 
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_IMAGE_BYTES      = 10 * 1024 * 1024; // 10 MB per image for listings
+export const ZIMBABWE_CITIES = [
+  "HARARE",
+  "BULAWAYO",
+  "MUTARE",
+  "GWERU",
+  "KWEKWE",
+  "KADOMA",
+  "MASVINGO",
+  "CHINHOYI",
+  "BINDURA",
+  "CHEGUTU",
+  "MARONDERA",
+  "KAROI",
+  "VICTORIA_FALLS",
+  "HWANGE",
+  "BEITBRIDGE",
+  "CHITUNGWIZA",
+  "EPWORTH",
+  "NORTON",
+  "RUWA",
+  "ZVISHAVANE",
+  "CHIREDZI",
+  "CHIPINGE",
+  "RUSAPE",
+  "PLUMTREE",
+  "GWANDA",
+  "SHURUGWI",
+  "REDCLIFF",
+  "KARIBA",
+  "NYANGA",
+  "MVURWI",
+  "GOKWE",
+  "LUPANE",
+  "TRIANGLE",
+  "OTHER",
+] as const;
 
-function validateImageFiles(files: File[]): void {
-  for (const file of files) {
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type))
-      throw new Error(`"${file.name}" is not a supported image type. Use JPEG, PNG, or WebP.`);
-    if (file.size > MAX_IMAGE_BYTES)
-      throw new Error(`"${file.name}" exceeds the 10 MB size limit.`);
-  }
-}
-import type { Listing, ListingCondition, ListingCurrency, ListingImage } from "@/types/listing";
+export const CITY_LABELS: Record<(typeof ZIMBABWE_CITIES)[number], string> = {
+  HARARE: "Harare",
+  BULAWAYO: "Bulawayo",
+  MUTARE: "Mutare",
+  GWERU: "Gweru",
+  KWEKWE: "Kwekwe",
+  KADOMA: "Kadoma",
+  MASVINGO: "Masvingo",
+  CHINHOYI: "Chinhoyi",
+  BINDURA: "Bindura",
+  CHEGUTU: "Chegutu",
+  MARONDERA: "Marondera",
+  KAROI: "Karoi",
+  VICTORIA_FALLS: "Victoria Falls",
+  HWANGE: "Hwange",
+  BEITBRIDGE: "Beitbridge",
+  CHITUNGWIZA: "Chitungwiza",
+  EPWORTH: "Epworth",
+  NORTON: "Norton",
+  RUWA: "Ruwa",
+  ZVISHAVANE: "Zvishavane",
+  CHIREDZI: "Chiredzi",
+  CHIPINGE: "Chipinge",
+  RUSAPE: "Rusape",
+  PLUMTREE: "Plumtree",
+  GWANDA: "Gwanda",
+  SHURUGWI: "Shurugwi",
+  REDCLIFF: "Redcliff",
+  KARIBA: "Kariba",
+  NYANGA: "Nyanga",
+  MVURWI: "Mvurwi",
+  GOKWE: "Gokwe",
+  LUPANE: "Lupane",
+  TRIANGLE: "Triangle",
+  OTHER: "Other",
+};
 
-// ─── Param / response types ───────────────────────────────────────────────────
+export const CONDITION_LABELS: Record<(typeof LISTING_CONDITIONS)[number], string> = {
+  NEW: "New",
+  LIKE_NEW: "Like new",
+  GOOD: "Good",
+  FAIR: "Fair",
+  POOR: "Poor",
+};
 
-export interface GetListingsParams {
-  search?: string;
-  category?: string;      // category slug
-  location?: string;      // Zimbabwe city code e.g. "HARARE"
-  min_price?: number;
-  max_price?: number;
-  condition?: ListingCondition;
-  featured?: boolean;
-  ordering?: string;      // e.g. "-created_at", "price", "-views_count"
-  page?: number;
-  page_size?: number;     // max 100
-}
+export const createListingSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(5, "Add a clearer title")
+    .max(100, "Keep the title under 100 characters"),
 
-export interface PaginatedListings {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Listing[];
-}
+  description: z
+    .string()
+    .trim()
+    .min(20, "Add more detail about the item")
+    .max(2000, "Keep the description under 2000 characters"),
 
-export interface CreateListingBody {
-  title: string;
-  description: string;
-  price: string;          // decimal string e.g. "5000.00"
-  currency: ListingCurrency;
-  condition: ListingCondition;
-  category_id: number;
-  location: string;       // Zimbabwe city code
-}
+  price: z
+    .string()
+    .trim()
+    .min(1, "Enter a price")
+    .refine(
+      (value) => {
+        const price = Number(value);
+        return Number.isFinite(price) && price > 0;
+      },
+      "Enter a valid price",
+    ),
 
-export interface UploadedImage {
-  images: ListingImage[];
-}
+  currency: z.enum(["USD", "ZWL"], {
+    error: "Choose a currency",
+  }),
 
-// ─── Endpoints ────────────────────────────────────────────────────────────────
+  condition: z.enum(LISTING_CONDITIONS, {
+    error: "Choose the item condition",
+  }),
 
-export async function getListings(params: GetListingsParams = {}): Promise<PaginatedListings> {
-  return api.get<PaginatedListings>("/api/v1/listings", {
-    params: params as Record<string, string | number | boolean | undefined | null>,
-    next: { revalidate: 60 },
-  });
-}
+  category_id: z
+    .number({
+      error: "Choose a category",
+    })
+    .int("Choose a category")
+    .positive("Choose a category"),
 
-export async function getListing(id: number): Promise<Listing> {
-  return api.get<Listing>(`/api/v1/listings/${id}`, {
-    next: { revalidate: 60, tags: [`listing-${id}`] },
-  });
-}
+  location: z.enum(ZIMBABWE_CITIES, {
+    error: "Choose a location",
+  }),
+});
 
-export async function getListingBySlug(slug: string): Promise<Listing> {
-  // The API doesn't have a slug endpoint; search by slug in the listings list
-  const res = await api.get<PaginatedListings>("/api/v1/listings", {
-    params: { search: slug },
-    next: { revalidate: 60, tags: [`listing-slug-${slug}`] },
-  });
-  const match = res.results.find((l) => l.slug === slug);
-  if (!match) throw new Error(`Listing with slug "${slug}" not found`);
-  return match;
-}
-
-export async function getMyListings(params: GetListingsParams = {}): Promise<PaginatedListings> {
-  return api.get<PaginatedListings>("/api/v1/listings/my-listings", {
-    params: params as Record<string, string | number | boolean | undefined | null>,
-  });
-}
-
-export async function createListing(body: CreateListingBody): Promise<Listing> {
-  return api.post<Listing>("/api/v1/listings", body);
-}
-
-export async function updateListing(id: number, body: Partial<CreateListingBody>): Promise<Listing> {
-  return api.patch<Listing>(`/api/v1/listings/${id}`, body);
-}
-
-export async function publishListing(id: number): Promise<void> {
-  await api.post<{ message: string }>(`/api/v1/listings/${id}/publish`, {});
-}
-
-export async function deleteListing(id: number): Promise<void> {
-  return api.delete<void>(`/api/v1/listings/${id}`);
-}
-
-// ─── Admin endpoints ──────────────────────────────────────────────────────────
-
-export interface GetListingsAdminParams {
-  status?: "DRAFT" | "ACTIVE" | "SOLD" | "ARCHIVED" | "REJECTED" | "PENDING";
-  search?: string;
-  ordering?: string;
-  page?: number;
-  page_size?: number;
-}
-
-/** Admin view of all listings across all sellers, with status filter support. */
-export async function getAllListingsAdmin(params: GetListingsAdminParams = {}): Promise<PaginatedListings> {
-  return api.get<PaginatedListings>("/api/v1/listings/admin/", {
-    params: params as Record<string, string | number | undefined | null>,
-  });
-}
-
-/** Approve a pending listing — makes it ACTIVE and visible on the marketplace. */
-export async function approveListing(id: number): Promise<void> {
-  await api.post<{ message: string }>(`/api/v1/listings/${id}/approve/`, {});
-}
-
-/** Reject a listing with a mandatory reason shown to the seller. */
-export async function rejectListing(id: number, reason: string): Promise<void> {
-  await api.post<{ message: string }>(`/api/v1/listings/${id}/reject/`, { rejection_reason: reason });
-}
-
-/** Set or clear the featured flag on a listing. */
-export async function featureListing(id: number, featured: boolean): Promise<Listing> {
-  return api.patch<Listing>(`/api/v1/listings/${id}/`, { is_featured: featured });
-}
-
-export async function uploadImages(listingId: number, files: File[]): Promise<ListingImage[]> {
-  // Validate types and sizes before uploading (VULN-08 fix)
-  validateImageFiles(files);
-
-  // Require the API URL to be explicitly configured — no http://localhost fallback (VULN-09 fix)
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) throw new Error("NEXT_PUBLIC_API_URL is not configured");
-
-  const form = new FormData();
-  files.forEach((file) => form.append("images", file));
-
-  const token   = getAccessToken();
-  const headers: Record<string, string> = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const controller = new AbortController();
-  const timeoutId  = setTimeout(() => controller.abort(), 60_000); // 60 s for batch upload
-  try {
-    const res = await fetch(`${apiUrl}/api/v1/listings/${listingId}/images/`, {
-      method: "POST",
-      headers,
-      body:   form,
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Image upload failed (${res.status}). Please try again.`);
-      void text; // prevent unused warning
-    }
-
-    const data = await res.json() as { images: ListingImage[] };
-    return data.images;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-export async function deleteImage(imageId: number): Promise<void> {
-  return api.delete<void>(`/api/v1/listings/images/${imageId}`);
-}
+export type CreateListingInput = z.infer<typeof createListingSchema>;
