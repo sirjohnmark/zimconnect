@@ -129,7 +129,7 @@ const STEP_LABELS: Record<SubmitStep, string> = {
 
 export function CreateListingForm() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const isMock = process.env.NEXT_PUBLIC_USE_MOCK === "true";
   const isVerified =
@@ -140,6 +140,8 @@ export function CreateListingForm() {
   const [imageError, setImageError] = useState<string | null>(null);
   const [step, setStep] = useState<SubmitStep>("idle");
   const [categories, setCategories] = useState<Category[]>([]);
+  const [upgrading, setUpgrading] = useState(false);
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
 
   useEffect(() => {
     getCategories({ page_size: 200 })
@@ -171,6 +173,21 @@ export function CreateListingForm() {
     images.length > 0,
   ].filter(Boolean).length;
 
+  async function handleBecomeSeller() {
+    setUpgrading(true);
+    setUpgradeError(null);
+    try {
+      await updateUser({ role: "SELLER" });
+      // Page will re-render with new role and show the form
+    } catch (err) {
+      setUpgradeError(
+        err instanceof Error ? err.message : "Failed to switch role. Please try again.",
+      );
+    } finally {
+      setUpgrading(false);
+    }
+  }
+
   if (!isVerified) return <VerificationGate action="post a listing" />;
 
   if (user?.role === "BUYER") {
@@ -181,15 +198,26 @@ export function CreateListingForm() {
         </svg>
         <p className="text-lg font-semibold text-gray-900">Only sellers can create listings</p>
         <p className="mt-2 max-w-sm text-sm text-gray-500">
-          Your account is registered as a <strong>Buyer</strong>. To sell items on Sanganai, you need a <strong>Seller</strong> account.
+          Your account is registered as a <strong>Buyer</strong>. Switch to a Seller account to list your items on Sanganai.
         </p>
+        {upgradeError && (
+          <p className="mt-3 text-sm text-red-600">{upgradeError}</p>
+        )}
         <div className="mt-6 flex gap-3">
-          <a
-            href="/register?redirect=/dashboard/listings/create"
-            className="rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+          <button
+            type="button"
+            onClick={handleBecomeSeller}
+            disabled={upgrading}
+            className="rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity inline-flex items-center gap-2"
           >
-            Create a Seller Account
-          </a>
+            {upgrading && (
+              <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            )}
+            {upgrading ? "Switching…" : "Become a Seller"}
+          </button>
           <a
             href="/dashboard"
             className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"

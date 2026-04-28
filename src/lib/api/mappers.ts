@@ -51,6 +51,7 @@ export interface ProfileUpdatePayload {
   phone?: string;
   location?: string;
   profile_picture?: string | null;
+  role?: "BUYER" | "SELLER";
 }
 
 // ─── Mappers ──────────────────────────────────────────────────────────────────
@@ -78,5 +79,6 @@ export function buildProfilePayload(data: ProfileUpdatePayload): ProfileUpdatePa
   if (data.phone           !== undefined) out.phone           = data.phone;
   if (data.location        !== undefined) out.location        = data.location;
   if (data.profile_picture !== undefined) out.profile_picture = data.profile_picture;
+  if (data.role            !== undefined) out.role            = data.role;
   return out;
 }
