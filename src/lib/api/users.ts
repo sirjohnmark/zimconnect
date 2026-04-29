@@ -59,3 +59,8 @@ export async function getUserById(id: number): Promise<AdminUser> {
 export async function updateUserAdmin(id: number, data: UserUpdatePayload): Promise<AdminUser> {
   return api.patch<AdminUser>(`/api/v1/users/${id}/`, data);
 }
+
+/** Admin: permanently delete a user account. */
+export async function deleteUser(id: number): Promise<void> {
+  await api.delete<void>(`/api/v1/users/${id}/`);
+}
