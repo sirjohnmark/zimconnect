@@ -8,6 +8,7 @@ const ADMIN_ROUTES     = [
   "/dashboard/categories",
   "/dashboard/admin-listings",
   "/dashboard/users",
+  "/dashboard/admin/messages",
 ];
 const AUTH_ROUTES      = ["/login", "/register", "/forgot-password"];
 
