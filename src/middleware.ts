@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const DASHBOARD_PREFIX = "/dashboard";
 const ADMIN_ROUTES     = [
+  "/dashboard/admin",
   "/dashboard/categories",
   "/dashboard/admin-listings",
   "/dashboard/users",

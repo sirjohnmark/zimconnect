@@ -156,6 +156,15 @@ const ACCOUNT_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   {
+    label: "Overview",
+    href: "/dashboard/admin",
+    icon: (
+      <Icon>
+        <path fillRule="evenodd" d="M1 2.75A.75.75 0 0 1 1.75 2h10.5a.75.75 0 0 1 0 1.5H12v13.75a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75v-3.5a.75.75 0 0 0-.75-.75h-2.5a.75.75 0 0 0-.75.75v3.5a.75.75 0 0 1-.75.75H3a.75.75 0 0 1-.75-.75V3.5h-.5A.75.75 0 0 1 1 2.75ZM4 5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1ZM4.5 9a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1ZM8 5.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1ZM8.5 9a.5.5 0 0 0-.5.5v1a.5.5 0 0 0 .5.5h1a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-.5-.5h-1ZM14.25 6a.75.75 0 0 0-.75.75V17a1 1 0 0 0 1 1h3.75a.75.75 0 0 0 .75-.75v-7a.75.75 0 0 0-.75-.75h-2.25V6.75a.75.75 0 0 0-.75-.75h-.75ZM14 11.25a.25.25 0 0 1 .25-.25h.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-.5a.25.25 0 0 1-.25-.25v-.5Zm.25 2.25a.25.25 0 0 0-.25.25v.5c0 .138.112.25.25.25h.5a.25.25 0 0 0 .25-.25v-.5a.25.25 0 0 0-.25-.25h-.5Z" clipRule="evenodd" />
+      </Icon>
+    ),
+  },
+  {
     label: "Listing Review",
     href: "/dashboard/admin-listings",
     icon: (
@@ -247,7 +256,7 @@ function NavSection({
 
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, isLoading, logout } = useAuth();
 
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [exploreOpen, setExploreOpen] = useState(
@@ -261,9 +270,9 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     user?.username ||
     "U";
 
-  const isAdmin  = user?.role === "ADMIN" || user?.role === "MODERATOR";
-  const isBuyer  = user?.role === "BUYER";
-  const isSeller = user?.role === "SELLER";
+  const isAdmin  = !isLoading && (user?.role === "ADMIN" || user?.role === "MODERATOR");
+  const isBuyer  = !isLoading && user?.role === "BUYER";
+  const isSeller = !isLoading && user?.role === "SELLER";
 
   useEffect(() => {
     getUnreadCount()
@@ -377,13 +386,20 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           )}
         </div>
 
-        {isAdmin && (
+        {isLoading ? (
+          <div className="space-y-1">
+            <div className="mb-2 h-3 w-16 animate-pulse rounded bg-gray-100" />
+            <div className="h-8 animate-pulse rounded-lg bg-gray-100" />
+            <div className="h-8 animate-pulse rounded-lg bg-gray-100" />
+            <div className="h-8 animate-pulse rounded-lg bg-gray-100" />
+          </div>
+        ) : isAdmin ? (
           <NavSection title="Admin">
             {ADMIN_NAV.map((item) => (
               <NavLink key={item.href} item={item} onClick={onNavClick} />
             ))}
           </NavSection>
-        )}
+        ) : null}
 
         <NavSection title="Account">
           {ACCOUNT_NAV.map((item) => (

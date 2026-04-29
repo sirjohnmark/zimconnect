@@ -9,6 +9,7 @@ import {
   rejectListing,
   featureListing,
 } from "@/lib/api/listings";
+import { ApiError } from "@/lib/api/client";
 import type { Listing, ListingStatus } from "@/types/listing";
 import { cn } from "@/lib/utils";
 
@@ -41,10 +42,12 @@ function RejectModal({
   listing,
   onConfirm,
   onClose,
+  busy = false,
 }: {
   listing: Listing;
   onConfirm: (reason: string) => void;
   onClose: () => void;
+  busy?: boolean;
 }) {
   const [reason, setReason] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -70,16 +73,17 @@ function RejectModal({
         <div className="flex gap-3 justify-end pt-1">
           <button
             onClick={onClose}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            disabled={busy}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
           >
             Cancel
           </button>
           <button
-            onClick={() => reason.trim() && onConfirm(reason.trim())}
-            disabled={!reason.trim()}
+            onClick={() => reason.trim() && !busy && onConfirm(reason.trim())}
+            disabled={!reason.trim() || busy}
             className="rounded-lg bg-red-500 px-4 py-2 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
           >
-            Reject
+            {busy ? "Rejecting…" : "Reject"}
           </button>
         </div>
       </div>
@@ -212,8 +216,8 @@ export default function AdminListingsPage() {
       const data = await getAllListingsAdmin(params);
       setListings(data.results);
       setTotalCount(data.count);
-    } catch {
-      setError("unavailable");
+    } catch (e: unknown) {
+      setError(e instanceof ApiError && e.status === 403 ? "forbidden" : "unavailable");
     } finally {
       setLoading(false);
     }
@@ -232,22 +236,26 @@ export default function AdminListingsPage() {
       await approveListing(listing.id);
       showToast("Listing approved.");
       load();
-    } catch {
-      setError("Failed to approve listing.");
+    } catch (e: unknown) {
+      setError(e instanceof ApiError && e.status === 403
+        ? "Permission denied. Your admin session may have expired — try reloading."
+        : "Failed to approve listing.");
     } finally {
       setBusyId(null);
     }
   }
 
   async function handleReject(listing: Listing, reason: string) {
-    setRejectTarget(null);
     setBusyId(listing.id);
     try {
       await rejectListing(listing.id, reason);
+      setRejectTarget(null);
       showToast("Listing rejected.");
       load();
-    } catch {
-      setError("Failed to reject listing.");
+    } catch (e: unknown) {
+      setError(e instanceof ApiError && e.status === 403
+        ? "Permission denied. Your admin session may have expired — try reloading."
+        : "Failed to reject listing.");
     } finally {
       setBusyId(null);
     }
@@ -259,8 +267,10 @@ export default function AdminListingsPage() {
       await featureListing(listing.id, !listing.is_featured);
       showToast(listing.is_featured ? "Listing unfeatured." : "Listing featured.");
       load();
-    } catch {
-      setError("Failed to update listing.");
+    } catch (e: unknown) {
+      setError(e instanceof ApiError && e.status === 403
+        ? "Permission denied. Your admin session may have expired — try reloading."
+        : "Failed to update listing.");
     } finally {
       setBusyId(null);
     }
@@ -338,7 +348,7 @@ export default function AdminListingsPage() {
           {toast}
         </div>
       )}
-      {error && error !== "unavailable" && (
+      {error && error !== "unavailable" && error !== "forbidden" && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
           {error}
         </div>
@@ -355,6 +365,11 @@ export default function AdminListingsPage() {
           Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100" />
           ))
+        ) : error === "forbidden" ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-red-100 bg-red-50 py-12 text-center">
+            <p className="text-sm font-semibold text-red-700">Permission denied</p>
+            <p className="mt-1 text-xs text-red-500">Your account does not have admin access. Try signing out and back in.</p>
+          </div>
         ) : error === "unavailable" ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-100 bg-amber-50 py-12 text-center">
             <p className="text-sm font-semibold text-amber-700">We are currently unavailable</p>
@@ -401,6 +416,7 @@ export default function AdminListingsPage() {
       {rejectTarget && (
         <RejectModal
           listing={rejectTarget}
+          busy={busyId === rejectTarget.id}
           onConfirm={(reason) => handleReject(rejectTarget, reason)}
           onClose={() => setRejectTarget(null)}
         />

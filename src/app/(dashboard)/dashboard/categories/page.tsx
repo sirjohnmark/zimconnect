@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
+import { ApiError } from "@/lib/api/client";
 import type { Category } from "@/types/category";
 import type { CategoryInput } from "@/lib/api/categories";
 
@@ -29,8 +30,8 @@ export default function AdminCategoriesPage() {
       const res = await getCategories({ page_size: 100 });
       setCategories(res);
       setError("");
-    } catch {
-      setError("unavailable");
+    } catch (e: unknown) {
+      setError(e instanceof ApiError && e.status === 403 ? "forbidden" : "unavailable");
     } finally {
       setLoading(false);
     }
@@ -242,12 +243,17 @@ export default function AdminCategoriesPage() {
       )}
 
       {success && <p className="text-xs font-semibold text-green-600">{success}</p>}
-      {error && error !== "unavailable" && <p className="text-xs text-red-500">{error}</p>}
+      {error && error !== "unavailable" && error !== "forbidden" && <p className="text-xs text-red-500">{error}</p>}
 
       {/* List */}
       <div className="rounded-2xl border border-gray-100 bg-white shadow-sm divide-y divide-gray-50">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-12 animate-pulse bg-gray-50 m-3 rounded-xl" />)
+        ) : error === "forbidden" ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm font-semibold text-red-700">Permission denied</p>
+            <p className="mt-1 text-xs text-red-500">Your account does not have admin access. Try signing out and back in.</p>
+          </div>
         ) : error === "unavailable" ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-sm font-semibold text-amber-700">We are currently unavailable</p>

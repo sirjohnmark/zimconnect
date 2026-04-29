@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useAuth } from "@/lib/auth/useAuth";
 import { getUsers, updateUserAdmin } from "@/lib/api/users";
 import type { AdminUser } from "@/lib/api/users";
+import { ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 // ─── Role badge ───────────────────────────────────────────────────────────────
@@ -15,6 +16,8 @@ const ROLE_COLORS: Record<string, string> = {
   SELLER:    "bg-blue-100 text-blue-700",
   BUYER:     "bg-gray-100 text-gray-600",
 };
+
+const ROLES: AdminUser["role"][] = ["BUYER", "SELLER", "MODERATOR", "ADMIN"];
 
 type RoleFilter = "ALL" | AdminUser["role"];
 
@@ -31,10 +34,12 @@ const ROLE_TABS: { label: string; value: RoleFilter }[] = [
 function UserRow({
   user,
   onToggleActive,
+  onChangeRole,
   busy,
 }: {
   user: AdminUser;
   onToggleActive: () => void;
+  onChangeRole: (role: AdminUser["role"]) => void;
   busy: boolean;
 }) {
   const initials = `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase() || user.username.charAt(0).toUpperCase();
@@ -74,8 +79,18 @@ function UserRow({
         </p>
       </div>
 
-      {/* Action */}
-      <div className="shrink-0">
+      {/* Actions */}
+      <div className="flex shrink-0 items-center gap-2">
+        <select
+          value={user.role}
+          onChange={(e) => onChangeRole(e.target.value as AdminUser["role"])}
+          disabled={busy}
+          className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-apple-blue disabled:opacity-50"
+        >
+          {ROLES.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
         <button
           onClick={onToggleActive}
           disabled={busy}
@@ -125,8 +140,8 @@ export default function UsersPage() {
       const data = await getUsers(params);
       setUsers(data.results);
       setTotalCount(data.count);
-    } catch {
-      setError("unavailable");
+    } catch (e: unknown) {
+      setError(e instanceof ApiError && e.status === 403 ? "forbidden" : "unavailable");
     } finally {
       setLoading(false);
     }
@@ -139,14 +154,33 @@ export default function UsersPage() {
     setTimeout(() => setToast(""), 3000);
   }
 
+  async function handleChangeRole(user: AdminUser, role: AdminUser["role"]) {
+    if (role === user.role) return;
+    if (!confirm(`Change ${user.username}'s role from ${user.role} to ${role}?`)) return;
+    setBusyId(user.id);
+    try {
+      await updateUserAdmin(user.id, { role });
+      showToast(`${user.username} role changed to ${role}.`);
+      load();
+    } catch (e: unknown) {
+      setError(e instanceof ApiError && e.status === 403
+        ? "Permission denied. Your admin session may have expired — try reloading."
+        : "Failed to update user role.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handleToggleActive(user: AdminUser) {
     setBusyId(user.id);
     try {
       await updateUserAdmin(user.id, { is_active: !user.is_active });
       showToast(user.is_active ? `${user.username} deactivated.` : `${user.username} activated.`);
       load();
-    } catch {
-      setError("Failed to update user.");
+    } catch (e: unknown) {
+      setError(e instanceof ApiError && e.status === 403
+        ? "Permission denied. Your admin session may have expired — try reloading."
+        : "Failed to update user.");
     } finally {
       setBusyId(null);
     }
@@ -178,7 +212,7 @@ export default function UsersPage() {
       {/* Header */}
       <div>
         <h1 className="text-lg font-semibold text-gray-900">User Management</h1>
-        <p className="mt-0.5 text-xs text-gray-500">View, search, and activate or deactivate user accounts.</p>
+        <p className="mt-0.5 text-xs text-gray-500">View, search, manage roles, and activate or deactivate user accounts.</p>
       </div>
 
       {/* Filters */}
@@ -222,7 +256,7 @@ export default function UsersPage() {
           {toast}
         </div>
       )}
-      {error && error !== "unavailable" && (
+      {error && error !== "unavailable" && error !== "forbidden" && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
           {error}
         </div>
@@ -238,6 +272,11 @@ export default function UsersPage() {
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100" />
           ))
+        ) : error === "forbidden" ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-red-100 bg-red-50 py-12 text-center">
+            <p className="text-sm font-semibold text-red-700">Permission denied</p>
+            <p className="mt-1 text-xs text-red-500">Your account does not have admin access. Try signing out and back in.</p>
+          </div>
         ) : error === "unavailable" ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-100 bg-amber-50 py-12 text-center">
             <p className="text-sm font-semibold text-amber-700">We are currently unavailable</p>
@@ -252,6 +291,7 @@ export default function UsersPage() {
               user={u}
               busy={busyId === u.id}
               onToggleActive={() => handleToggleActive(u)}
+              onChangeRole={(role) => handleChangeRole(u, role)}
             />
           ))
         )}

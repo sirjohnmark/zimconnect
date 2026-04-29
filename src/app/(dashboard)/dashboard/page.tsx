@@ -337,8 +337,11 @@ export default function DashboardPage() {
 
   const firstName = user?.first_name || user?.username || "there";
 
+  const isAdminUser = user?.role === "ADMIN" || user?.role === "MODERATOR";
+
   const isNewSeller =
     !loading &&
+    !isAdminUser &&
     activeListings === 0 &&
     conversations.length === 0 &&
     (totalViews === 0 || totalViews === null);
