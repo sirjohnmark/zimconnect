@@ -6,6 +6,8 @@ import type { PaginatedUsers } from "./users";
 
 export interface AdminStats {
   totalUsers:       number;
+  totalSellers:     number;
+  totalBuyers:      number;
   totalListings:    number;
   pendingListings:  number;
   activeListings:   number;
@@ -19,8 +21,10 @@ export interface AdminStats {
  * failed counters fall back to 0.
  */
 export async function getAdminStats(): Promise<AdminStats> {
-  const [users, all, pending, active, rejected, cats] = await Promise.allSettled([
+  const [users, sellers, buyers, all, pending, active, rejected, cats] = await Promise.allSettled([
     api.get<PaginatedUsers>("/api/v1/users/",             { params: { page_size: 1 } }),
+    api.get<PaginatedUsers>("/api/v1/users/",             { params: { role: "SELLER", page_size: 1 } }),
+    api.get<PaginatedUsers>("/api/v1/users/",             { params: { role: "BUYER",  page_size: 1 } }),
     api.get<PaginatedListings>("/api/v1/admin/listings/", { params: { page_size: 1 } }),
     api.get<PaginatedListings>("/api/v1/admin/listings/", { params: { status: "PENDING",  page_size: 1 } }),
     api.get<PaginatedListings>("/api/v1/admin/listings/", { params: { status: "ACTIVE",   page_size: 1 } }),
@@ -30,6 +34,8 @@ export async function getAdminStats(): Promise<AdminStats> {
 
   return {
     totalUsers:       users.status     === "fulfilled" ? users.value.count     : 0,
+    totalSellers:     sellers.status   === "fulfilled" ? sellers.value.count   : 0,
+    totalBuyers:      buyers.status    === "fulfilled" ? buyers.value.count    : 0,
     totalListings:    all.status       === "fulfilled" ? all.value.count       : 0,
     pendingListings:  pending.status   === "fulfilled" ? pending.value.count   : 0,
     activeListings:   active.status    === "fulfilled" ? active.value.count    : 0,

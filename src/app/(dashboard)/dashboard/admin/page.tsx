@@ -13,9 +13,50 @@ import type { Listing } from "@/types/listing";
 import type { AdminUser } from "@/lib/api/users";
 import { cn } from "@/lib/utils";
 
-// ─── Stat card ────────────────────────────────────────────────────────────────
+// ─── Primary summary card ─────────────────────────────────────────────────────
 
-function StatCard({
+function SummaryCard({
+  label,
+  value,
+  icon,
+  color,
+  bg,
+  href,
+  loading,
+}: {
+  label: string;
+  value: number | null;
+  icon: React.ReactNode;
+  color: string;
+  bg: string;
+  href: string;
+  loading: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white px-5 py-5 shadow-sm transition-shadow hover:shadow-md"
+    >
+      <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", bg, color)}>
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+        {loading ? (
+          <div className="mt-1.5 h-7 w-14 animate-pulse rounded-lg bg-gray-100" />
+        ) : (
+          <p className={cn("mt-0.5 text-2xl font-bold tabular-nums", color)}>
+            {value !== null ? value.toLocaleString() : "—"}
+          </p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+// ─── Secondary metric pill ────────────────────────────────────────────────────
+
+function MetricPill({
   label,
   value,
   color,
@@ -28,21 +69,19 @@ function StatCard({
   href: string;
   loading: boolean;
 }) {
-  const inner = loading ? (
-    <div className="mt-2 h-9 w-16 animate-pulse rounded-lg bg-gray-100" />
-  ) : (
-    <p className={cn("mt-2 text-3xl font-bold tabular-nums", color)}>
-      {value !== null ? value.toLocaleString() : "—"}
-    </p>
-  );
-
   return (
     <Link
       href={href}
-      className="group rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm transition-shadow hover:shadow-md"
+      className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm transition-shadow hover:shadow-md"
     >
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
-      {inner}
+      <p className="text-xs font-semibold text-gray-500">{label}</p>
+      {loading ? (
+        <div className="h-5 w-8 animate-pulse rounded bg-gray-100" />
+      ) : (
+        <p className={cn("text-sm font-bold tabular-nums", color)}>
+          {value !== null ? value.toLocaleString() : "—"}
+        </p>
+      )}
     </Link>
   );
 }
@@ -70,20 +109,46 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+const UsersIcon = (
+  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+    <path d="M7 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM14.5 9a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.615 16.428a1.224 1.224 0 0 1-.569-1.175 6.002 6.002 0 0 1 11.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 0 1 7 18a9.953 9.953 0 0 1-5.385-1.572ZM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 0 0-1.588-3.755 4.502 4.502 0 0 1 5.874 2.636.818.818 0 0 1-.36.98A7.465 7.465 0 0 1 14.5 16Z" />
+  </svg>
+);
+
+const ListingsIcon = (
+  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+    <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+  </svg>
+);
+
+const SellersIcon = (
+  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+    <path fillRule="evenodd" d="M6 5v1H4.667a1.75 1.75 0 0 0-1.743 1.598l-.826 9.14A1.75 1.75 0 0 0 3.84 18.75h12.32a1.75 1.75 0 0 0 1.742-2.012l-.825-9.14A1.75 1.75 0 0 0 15.333 7H14V5a4 4 0 0 0-8 0Zm1.5 1V5a2.5 2.5 0 0 1 5 0v1h-5Zm-3 4a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 4.5 10Zm11 0a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
+  </svg>
+);
+
+const BuyersIcon = (
+  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+    <path d="M1 1.75A.75.75 0 0 1 1.75 1h1.628a1.75 1.75 0 0 1 1.734 1.51L5.18 3a65.25 65.25 0 0 1 13.36 1.412.75.75 0 0 1 .58.875 48.645 48.645 0 0 1-1.618 6.2.75.75 0 0 1-.712.513H6a2.503 2.503 0 0 0-2.292 1.5H17.25a.75.75 0 0 1 0 1.5H2.76a.75.75 0 0 1-.748-.807 4.002 4.002 0 0 1 2.716-3.486L3.626 2.716a.25.25 0 0 0-.248-.216H1.75A.75.75 0 0 1 1 1.75ZM6 17.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM15.5 19a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z" />
+  </svg>
+);
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminOverviewPage() {
   const { user, isLoading: authLoading } = useAuth();
   const isAdmin = user?.role === "ADMIN" || user?.role === "MODERATOR";
 
-  const [stats,           setStats]           = useState<AdminStats | null>(null);
+  const [stats,           setStats]          = useState<AdminStats | null>(null);
   const [pendingListings, setPendingListings] = useState<Listing[]>([]);
-  const [recentUsers,     setRecentUsers]     = useState<AdminUser[]>([]);
-  const [loading,         setLoading]         = useState(true);
-  const [busyId,          setBusyId]          = useState<number | null>(null);
-  const [toast,           setToast]           = useState("");
-  const [error,           setError]           = useState("");
-  const [refreshedAt,     setRefreshedAt]     = useState<Date | null>(null);
+  const [recentUsers,     setRecentUsers]    = useState<AdminUser[]>([]);
+  const [loading,         setLoading]        = useState(true);
+  const [busyId,          setBusyId]         = useState<number | null>(null);
+  const [toast,           setToast]          = useState("");
+  const [error,           setError]          = useState("");
+  const [refreshedAt,     setRefreshedAt]    = useState<Date | null>(null);
 
   function showToast(msg: string) {
     setToast(msg);
@@ -148,9 +213,14 @@ export default function AdminOverviewPage() {
     return (
       <div className="max-w-5xl space-y-6">
         <div className="h-8 w-44 animate-pulse rounded-xl bg-gray-100" />
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-20 animate-pulse rounded-2xl bg-gray-100" />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-gray-100" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-xl bg-gray-100" />
           ))}
         </div>
         <div className="grid gap-6 lg:grid-cols-2">
@@ -171,18 +241,46 @@ export default function AdminOverviewPage() {
     );
   }
 
-  // ─── Stat cards config ───────────────────────────────────────────────────────
+  // ─── Card configs ────────────────────────────────────────────────────────────
 
-  const statCards: {
-    label: string;
-    value: number | null;
-    color: string;
-    href: string;
-  }[] = [
-    { label: "Total Users",     value: stats?.totalUsers       ?? null, color: "text-apple-blue", href: "/dashboard/users"          },
+  const summaryCards = [
+    {
+      label: "Total Users",
+      value: stats?.totalUsers    ?? null,
+      icon:  UsersIcon,
+      color: "text-apple-blue",
+      bg:    "bg-blue-50",
+      href:  "/dashboard/users",
+    },
+    {
+      label: "Total Listings",
+      value: stats?.totalListings ?? null,
+      icon:  ListingsIcon,
+      color: "text-indigo-600",
+      bg:    "bg-indigo-50",
+      href:  "/dashboard/admin-listings",
+    },
+    {
+      label: "Total Sellers",
+      value: stats?.totalSellers  ?? null,
+      icon:  SellersIcon,
+      color: "text-emerald-600",
+      bg:    "bg-emerald-50",
+      href:  "/dashboard/users",
+    },
+    {
+      label: "Total Buyers",
+      value: stats?.totalBuyers   ?? null,
+      icon:  BuyersIcon,
+      color: "text-orange-500",
+      bg:    "bg-orange-50",
+      href:  "/dashboard/users",
+    },
+  ];
+
+  const metricPills = [
     { label: "Pending Review",  value: stats?.pendingListings  ?? null, color: "text-amber-500",  href: "/dashboard/admin-listings" },
     { label: "Active Listings", value: stats?.activeListings   ?? null, color: "text-green-600",  href: "/dashboard/admin-listings" },
-    { label: "All Listings",    value: stats?.totalListings    ?? null, color: "text-blue-600",   href: "/dashboard/admin-listings" },
     { label: "Rejected",        value: stats?.rejectedListings ?? null, color: "text-red-500",    href: "/dashboard/admin-listings" },
     { label: "Categories",      value: stats?.totalCategories  ?? null, color: "text-purple-600", href: "/dashboard/categories"     },
   ];
@@ -218,14 +316,21 @@ export default function AdminOverviewPage() {
         </div>
       )}
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        {statCards.map((card) => (
-          <StatCard key={card.label} {...card} loading={loading} />
+      {/* ── Primary summary cards ── */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {summaryCards.map((card) => (
+          <SummaryCard key={card.label} {...card} loading={loading} />
         ))}
       </div>
 
-      {/* Pending — alert banner if non-zero */}
+      {/* ── Secondary metrics ── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {metricPills.map((pill) => (
+          <MetricPill key={pill.label} {...pill} loading={loading} />
+        ))}
+      </div>
+
+      {/* Pending — alert banner */}
       {!loading && (stats?.pendingListings ?? 0) > 0 && (
         <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3">
           <div className="flex items-center gap-3">
@@ -261,16 +366,14 @@ export default function AdminOverviewPage() {
         </div>
       )}
 
-      {/* Main content — only when loaded successfully */}
+      {/* Main content */}
       {!loading && !error && (
         <>
-          {/* Two-column: pending listings + recent users */}
           <div className="grid gap-8 lg:grid-cols-2">
 
             {/* Pending listings */}
             <section className="space-y-3">
               <SectionHeader title="Needs Attention" href="/dashboard/admin-listings" />
-
               {pendingListings.length === 0 ? (
                 <EmptyState message="No listings pending review." />
               ) : (
@@ -279,7 +382,6 @@ export default function AdminOverviewPage() {
                     const thumb = listing.primary_image ?? listing.images?.[0]?.image;
                     return (
                       <div key={listing.id} className="flex items-center gap-3 px-4 py-3">
-                        {/* Thumbnail */}
                         <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-gray-100">
                           {thumb ? (
                             <Image src={thumb} alt={listing.title} fill className="object-cover" />
@@ -291,16 +393,12 @@ export default function AdminOverviewPage() {
                             </div>
                           )}
                         </div>
-
-                        {/* Info */}
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-xs font-semibold text-gray-900">{listing.title}</p>
                           <p className="text-xs text-gray-400">
                             {listing.owner?.username ?? "—"} · {listing.currency} {Number(listing.price).toLocaleString()}
                           </p>
                         </div>
-
-                        {/* Actions */}
                         <div className="flex shrink-0 gap-1.5">
                           <button
                             onClick={() => handleApprove(listing)}
@@ -326,7 +424,6 @@ export default function AdminOverviewPage() {
             {/* Recent users */}
             <section className="space-y-3">
               <SectionHeader title="Recent Sign-ups" href="/dashboard/users" />
-
               {recentUsers.length === 0 ? (
                 <EmptyState message="No users yet." />
               ) : (
@@ -342,14 +439,11 @@ export default function AdminOverviewPage() {
                     };
                     return (
                       <div key={u.id} className="flex items-center gap-3 px-4 py-3">
-                        {/* Avatar */}
                         <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-apple-blue/10 text-xs font-bold text-apple-blue">
                           {u.profile_picture ? (
                             <Image src={u.profile_picture} alt={u.username} fill className="object-cover" />
                           ) : initials}
                         </div>
-
-                        {/* Info */}
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-1.5">
                             <p className="truncate text-xs font-semibold text-gray-900">
@@ -366,8 +460,6 @@ export default function AdminOverviewPage() {
                           </div>
                           <p className="text-xs text-gray-400">@{u.username}</p>
                         </div>
-
-                        {/* Toggle */}
                         <button
                           onClick={() => handleToggleActive(u)}
                           disabled={busyId === u.id}
