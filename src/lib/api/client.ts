@@ -1,4 +1,10 @@
-import { getMemoryToken, setMemoryToken as _setMemoryToken } from "@/lib/auth/auth";
+import {
+  getMemoryToken,
+  setMemoryToken as _setMemoryToken,
+  clearMemoryToken,
+  clearStoredUser,
+  clearTokens,
+} from "@/lib/auth/auth";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ??
@@ -177,6 +183,18 @@ async function request<T>(
       await _refreshPromise;
       return request<T>(path, options, true); // retry with new token
     } catch {
+      // Refresh failed — clear session and signal the app to redirect.
+      // Use hadToken as a dedup guard: concurrent 401s share one _refreshPromise,
+      // so multiple callers hit this catch; only the first should fire the event.
+      const hadToken = getMemoryToken() !== null;
+      clearMemoryToken();
+      if (hadToken) {
+        clearStoredUser();
+        clearTokens().catch(() => {});   // clears HttpOnly cookies via /api/auth/session DELETE
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("auth:session-expired"));
+        }
+      }
       throw new ApiError(401, "Unauthorized", "Your session has expired. Please log in again.");
     }
   }

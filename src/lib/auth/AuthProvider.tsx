@@ -55,6 +55,17 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
   const router = useRouter();
   const [auth, dispatch] = useReducer(authReducer, { status: "loading" });
 
+  // When the API client fires this event after a failed token refresh, clear
+  // auth state and send the user to the login page.
+  useEffect(() => {
+    function onSessionExpired() {
+      dispatch({ type: "CLEAR_USER" });
+      router.push("/login");
+    }
+    window.addEventListener("auth:session-expired", onSessionExpired);
+    return () => window.removeEventListener("auth:session-expired", onSessionExpired);
+  }, [router]);
+
   useEffect(() => {
     if (USE_MOCK) {
       const user = getStoredUser();
