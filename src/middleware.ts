@@ -107,7 +107,7 @@ export async function middleware(req: NextRequest) {
     // 2. Protect admin routes — require verified HMAC role
     if (ADMIN_ROUTES.some((route) => pathname.startsWith(route))) {
       if (!session || !isAdmin(session.role)) {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
+        return NextResponse.redirect(new URL("/login", req.url));
       }
     }
   }
