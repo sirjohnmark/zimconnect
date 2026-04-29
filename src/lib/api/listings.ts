@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 import { api, ApiError, NetworkError } from "./client";
-import { getMemoryToken } from "@/lib/auth/auth";
+import { getMemoryToken, getStoredUser } from "@/lib/auth/auth";
+import { assertPermission } from "@/lib/auth/permissions";
 import type { Listing, ListingCondition, ListingCurrency, ListingImage } from "@/types/listing";
 
 export const LISTING_CONDITIONS = [
@@ -214,6 +215,7 @@ export async function getMyListings(
 export async function createListing(
   data: CreateListingPayload,
 ): Promise<Listing> {
+  assertPermission(getStoredUser(), "manage:own-listings");
   return api.post<Listing>("/api/v1/listings/", data);
 }
 
@@ -278,10 +280,12 @@ export async function uploadImages(
 }
 
 export async function publishListing(id: number): Promise<Listing> {
+  assertPermission(getStoredUser(), "manage:own-listings");
   return api.post<Listing>(`/api/v1/listings/${id}/publish/`, {});
 }
 
 export async function deleteListing(id: number): Promise<void> {
+  assertPermission(getStoredUser(), "manage:own-listings");
   await api.delete<void>(`/api/v1/listings/${id}/`);
 }
 
@@ -290,16 +294,19 @@ export async function deleteListing(id: number): Promise<void> {
 export async function getAllListingsAdmin(
   params: AdminListingsParams = {},
 ): Promise<PaginatedListings> {
+  assertPermission(getStoredUser(), "moderate:listings");
   return api.get<PaginatedListings>("/api/v1/admin/listings/", {
     params: params as Record<string, string | number | boolean | undefined | null>,
   });
 }
 
 export async function approveListing(id: number): Promise<void> {
+  assertPermission(getStoredUser(), "moderate:listings");
   await api.post<void>(`/api/v1/admin/listings/${id}/approve/`, {});
 }
 
 export async function rejectListing(id: number, reason: string): Promise<void> {
+  assertPermission(getStoredUser(), "moderate:listings");
   await api.post<void>(`/api/v1/admin/listings/${id}/reject/`, { reason });
 }
 
@@ -307,6 +314,7 @@ export async function featureListing(
   id: number,
   featured: boolean,
 ): Promise<void> {
+  assertPermission(getStoredUser(), "moderate:listings");
   await api.post<void>(`/api/v1/admin/listings/${id}/feature/`, {
     is_featured: featured,
   });

@@ -6,11 +6,16 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth/useAuth";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/lib/auth/useRole";
+import { hasPermission } from "@/lib/auth/permissions";
+import type { Permission } from "@/lib/auth/permissions";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
+  /** When set, the item is only shown to roles that have this permission. */
+  permission?: Permission;
 }
 
 function Icon({ children }: { children: React.ReactNode }) {
@@ -51,6 +56,7 @@ const MARKETPLACE_NAV: NavItem[] = [
   {
     label: "My Listings",
     href: "/dashboard/listings",
+    permission: "manage:own-listings",
     icon: (
       <Icon>
         <path
@@ -77,6 +83,7 @@ const MARKETPLACE_NAV: NavItem[] = [
   {
     label: "Saved",
     href: "/dashboard/saved",
+    permission: "view:saved",
     icon: (
       <Icon>
         <path
@@ -266,6 +273,7 @@ function NavSection({
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
   const { user, isLoading, logout } = useAuth();
+  const { isAdmin, isBuyer, isSeller, can } = useRole();
 
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [exploreOpen, setExploreOpen] = useState(
@@ -279,9 +287,13 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     user?.username ||
     "U";
 
-  const isAdmin  = !isLoading && (user?.role === "ADMIN" || user?.role === "MODERATOR");
-  const isBuyer  = !isLoading && user?.role === "BUYER";
-  const isSeller = !isLoading && user?.role === "SELLER";
+  // Filter nav items by the current user's permissions.
+  // During loading, show all items so there's no layout shift once auth resolves.
+  const visibleMarketplaceNav = isLoading
+    ? MARKETPLACE_NAV
+    : MARKETPLACE_NAV.filter(
+        (item) => !item.permission || hasPermission(user?.role, item.permission),
+      );
 
   useEffect(() => {
     getUnreadCount()
@@ -316,19 +328,21 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         </Link>
       </div>
 
-      <div className="px-4 pt-4">
-        <Link
-          href="/dashboard/listings/create"
-          onClick={onNavClick}
-          className="flex items-center justify-center rounded-xl bg-apple-blue px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
-        >
-          + Sell Item
-        </Link>
-      </div>
+      {!isLoading && can("manage:own-listings") && (
+        <div className="px-4 pt-4">
+          <Link
+            href="/dashboard/listings/create"
+            onClick={onNavClick}
+            className="flex items-center justify-center rounded-xl bg-apple-blue px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
+          >
+            + Sell Item
+          </Link>
+        </div>
+      )}
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-5">
         <NavSection title="Marketplace">
-          {MARKETPLACE_NAV.map((item) => (
+          {visibleMarketplaceNav.map((item) => (
             <NavLink
               key={item.href}
               item={item}

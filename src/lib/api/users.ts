@@ -1,4 +1,6 @@
 import { api } from "./client";
+import { getStoredUser } from "@/lib/auth/auth";
+import { assertPermission } from "@/lib/auth/permissions";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +47,7 @@ export interface UserUpdatePayload {
 
 /** Admin: list all users with optional search, role, and active filters. */
 export async function getUsers(params: GetUsersParams = {}): Promise<PaginatedUsers> {
+  assertPermission(getStoredUser(), "manage:users");
   return api.get<PaginatedUsers>("/api/v1/users/", {
     params: params as Record<string, string | number | boolean | undefined | null>,
   });
@@ -52,15 +55,18 @@ export async function getUsers(params: GetUsersParams = {}): Promise<PaginatedUs
 
 /** Admin: get a single user by ID. */
 export async function getUserById(id: number): Promise<AdminUser> {
+  assertPermission(getStoredUser(), "manage:users");
   return api.get<AdminUser>(`/api/v1/users/${id}/`);
 }
 
 /** Admin: update a user's active status or role. */
 export async function updateUserAdmin(id: number, data: UserUpdatePayload): Promise<AdminUser> {
+  assertPermission(getStoredUser(), "manage:users");
   return api.patch<AdminUser>(`/api/v1/users/${id}/`, data);
 }
 
 /** Admin: permanently delete a user account. */
 export async function deleteUser(id: number): Promise<void> {
+  assertPermission(getStoredUser(), "manage:users");
   await api.delete<void>(`/api/v1/users/${id}/`);
 }
