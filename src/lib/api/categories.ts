@@ -109,12 +109,22 @@ export interface CategoryInput {
   is_active?: boolean;
 }
 
+// Strip null image — backend expects binary (file upload), not a null JSON value.
+// All other optional fields are sent as-is; undefined fields are omitted by JSON.stringify.
+function buildPayload(data: CategoryInput | Partial<CategoryInput>): Record<string, unknown> {
+  const { image, ...rest } = data;
+  const payload: Record<string, unknown> = { ...rest };
+  if (image) payload.image = image;
+  return payload;
+}
+
 /**
  * Client-safe create/update/delete.
  * These DO NOT call revalidateTag because this file may be used by client components.
  */
 export async function createCategory(data: CategoryInput): Promise<Category> {
-  const result = await api.post<Category>("/api/v1/categories/", data);
+  const payload = buildPayload(data);
+  const result = await api.post<Category>("/api/v1/categories/", payload);
   return normalizeCategory(result);
 }
 
@@ -122,7 +132,8 @@ export async function updateCategory(
   id: number,
   data: Partial<CategoryInput>,
 ): Promise<Category> {
-  const result = await api.patch<Category>(`/api/v1/categories/${id}/`, data);
+  const payload = buildPayload(data);
+  const result = await api.patch<Category>(`/api/v1/categories/${id}/`, payload);
   return normalizeCategory(result);
 }
 

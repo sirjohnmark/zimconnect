@@ -78,7 +78,11 @@ function CategoryModal({
 
   function handleSubmit() {
     if (!form.name.trim()) { setNameError("Name is required."); return; }
-    onSave({ ...form, slug: form.slug || slugify(form.name) });
+    if (form.name.trim().length > 100) { setNameError("Name must be 100 characters or fewer."); return; }
+    const slug = form.slug || slugify(form.name);
+    if (slug.length > 120) { setNameError("Slug must be 120 characters or fewer."); return; }
+    if (form.icon && form.icon.length > 50) { setNameError("Icon must be 50 characters or fewer."); return; }
+    onSave({ ...form, name: form.name.trim(), slug });
   }
 
   const parentOptions = allCategories.filter((c) => c.id !== category?.id);
@@ -119,6 +123,7 @@ function CategoryModal({
               value={form.name}
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="e.g. Electronics"
+              maxLength={100}
               className={cn(
                 "w-full rounded-xl border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue",
                 nameError ? "border-red-300 focus:ring-red-400" : "border-gray-200",
@@ -134,6 +139,7 @@ function CategoryModal({
               value={form.slug}
               onChange={(e) => setForm((f) => ({ ...f, slug: slugify(e.target.value) }))}
               placeholder="auto-generated"
+              maxLength={120}
               className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-mono text-gray-600 focus:outline-none focus:ring-2 focus:ring-apple-blue"
             />
           </div>
@@ -157,7 +163,8 @@ function CategoryModal({
               <input
                 value={form.icon ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-                placeholder="📱 or URL"
+                placeholder="📱 or icon name"
+                maxLength={50}
                 className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-apple-blue"
               />
             </div>
@@ -362,6 +369,7 @@ export default function AdminCategoriesPage() {
   }
 
   async function handleSave(data: CategoryInput) {
+    console.log("Submitting category:", data);
     setSaving(true);
     setModalError("");
     try {
@@ -448,17 +456,6 @@ export default function AdminCategoriesPage() {
           </button>
         </div>
 
-        {/* Toast */}
-        {toast && (
-          <div className={cn(
-            "rounded-lg border px-4 py-2 text-xs font-semibold",
-            toast.type === "error"
-              ? "border-red-200 bg-red-50 text-red-700"
-              : "border-green-200 bg-green-50 text-green-700",
-          )}>
-            {toast.msg}
-          </div>
-        )}
 
         {/* Table */}
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -622,6 +619,18 @@ export default function AdminCategoriesPage() {
           </div>
         )}
       </div>
+
+      {/* Toast — fixed above all modals */}
+      {toast && (
+        <div className={cn(
+          "fixed left-1/2 top-4 z-[60] -translate-x-1/2 rounded-xl border px-5 py-3 text-xs font-semibold shadow-lg",
+          toast.type === "error"
+            ? "border-red-200 bg-red-50 text-red-700"
+            : "border-green-200 bg-green-50 text-green-700",
+        )}>
+          {toast.msg}
+        </div>
+      )}
 
       {/* Category form modal — null = new, Category = edit, undefined = closed */}
       {modalCat !== undefined && (
