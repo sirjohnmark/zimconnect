@@ -18,7 +18,7 @@ export interface UseAuthReturn {
   /** The current user, or null when unauthenticated / loading. */
   user: AuthUser | null;
   /** Submit credentials — resolves with the full login response. */
-  login: (credentials: LoginInput) => Promise<LoginResponse>;
+  login: (credentials: LoginInput, staySignedIn?: boolean) => Promise<LoginResponse>;
   /** Create a new account. In real API mode, OTP verification and login are handled separately. */
   register: (data: RegisterInput) => Promise<AuthUser>;
   /** Clears auth state, calls /api/auth/logout, and redirects. */

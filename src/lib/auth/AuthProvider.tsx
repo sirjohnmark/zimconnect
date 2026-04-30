@@ -2,12 +2,12 @@
 
 import { createContext, useCallback, useContext, useEffect, useReducer } from "react";
 import { useRouter } from "next/navigation";
-import { getMe, loginUser, logoutUser, registerUser, updateProfile } from "@/lib/api/auth";
+import { getMe, logoutUser, registerUser, updateProfile } from "@/lib/api/auth";
 import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
-import { getStoredUser, setMemoryToken, saveUser, setStaySignedIn, getStaySignedIn } from "@/lib/auth/auth";
+import { getStoredUser, setMemoryToken, saveUser, setStaySignedIn, getStaySignedIn, login as authLogin } from "@/lib/auth/auth";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
@@ -35,7 +35,7 @@ function authReducer(_state: AuthState, action: AuthAction): AuthState {
 
 interface AuthContextValue {
   auth: AuthState;
-  login: (credentials: LoginInput) => Promise<LoginResponse>;
+  login: (credentials: LoginInput, staySignedIn?: boolean) => Promise<LoginResponse>;
   register: (data: RegisterInput) => Promise<AuthUser>;
   logout: () => Promise<void>;
   updateUser: (updates: ProfileUpdatePayload) => Promise<AuthUser>;
@@ -131,9 +131,7 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
   }, []);
 
   const login = useCallback(async (credentials: LoginInput, staySignedIn: boolean = false): Promise<LoginResponse> => {
-    const response = await loginUser(credentials);
-    setStaySignedIn(staySignedIn);
-    if (USE_MOCK) setMemoryToken("mock-access");
+    const response = await authLogin(credentials, staySignedIn);
     dispatch({ type: "SET_USER", user: response.user });
     return response;
   }, []);

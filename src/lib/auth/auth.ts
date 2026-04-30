@@ -14,7 +14,8 @@
  * localStorage.  Plaintext passwords are never persisted.
  */
 
-import type { AuthUser } from "@/lib/api/auth";
+import type { AuthUser, LoginResponse } from "@/lib/api/auth";
+import type { LoginInput } from "@/lib/validations/auth";
 
 const SESSION_KEY     = "sanganai_user";
 const ACCOUNTS_KEY    = "sanganai_accounts";
@@ -238,4 +239,17 @@ export function verifyOtp(code: string): { valid: boolean; reason?: string } {
 
 export function clearOtp(): void {
   if (typeof window !== "undefined") localStorage.removeItem(OTP_KEY);
+}
+
+// ─── Login (consolidated side-effect wrapper) ─────────────────────────────────
+// Dynamic import breaks the lib/auth ↔ lib/api circular dependency at runtime.
+
+export async function login(data: LoginInput, staySignedIn = false): Promise<LoginResponse> {
+  const { loginUser } = await import("@/lib/api/auth");
+  const response = await loginUser(data);
+  setStaySignedIn(staySignedIn);
+  if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
+    setMemoryToken(response.tokens.access);
+  }
+  return response;
 }

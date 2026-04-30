@@ -78,9 +78,9 @@ function isAdmin(role: string): boolean {
   return role === "ADMIN" || role === "MODERATOR";
 }
 
-// ─── Middleware ────────────────────────────────────────────────────────────────
+// ─── Proxy ────────────────────────────────────────────────────────────────────
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const secret        = process.env.SESSION_SECRET ?? "";
