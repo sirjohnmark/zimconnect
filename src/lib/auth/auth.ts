@@ -19,6 +19,7 @@ import type { AuthUser } from "@/lib/api/auth";
 const SESSION_KEY     = "sanganai_user";
 const ACCOUNTS_KEY    = "sanganai_accounts";
 const PREFERENCES_KEY = "sanganai_prefs";
+const STAY_SIGNED_IN_KEY = "sanganai_stay_signed_in";
 
 // ─── In-memory access token (cleared when tab closes) ─────────────────────────
 
@@ -119,6 +120,22 @@ export function clearStoredUser(): void {
 export function isStoredAuthenticated(): boolean {
   if (typeof window === "undefined") return false;
   return localStorage.getItem(SESSION_KEY) !== null;
+}
+
+// ─── Stay signed in preference ────────────────────────────────────────────────
+
+export function setStaySignedIn(stay: boolean): void {
+  if (typeof window === "undefined") return;
+  if (stay) {
+    localStorage.setItem(STAY_SIGNED_IN_KEY, "true");
+  } else {
+    localStorage.removeItem(STAY_SIGNED_IN_KEY);
+  }
+}
+
+export function getStaySignedIn(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(STAY_SIGNED_IN_KEY) === "true";
 }
 
 // ─── Password change (mock) ───────────────────────────────────────────────────

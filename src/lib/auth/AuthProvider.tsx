@@ -7,7 +7,7 @@ import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
-import { getStoredUser, setMemoryToken, saveUser } from "@/lib/auth/auth";
+import { getStoredUser, setMemoryToken, saveUser, setStaySignedIn, getStaySignedIn } from "@/lib/auth/auth";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
@@ -69,7 +69,7 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
   useEffect(() => {
     if (USE_MOCK) {
       const user = getStoredUser();
-      if (user) {
+      if (user && getStaySignedIn()) {
         setMemoryToken("mock-access");
         dispatch({ type: "SET_USER", user: user as unknown as AuthUser });
       } else {
@@ -82,6 +82,12 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     dispatch({ type: "LOADING" });
 
     async function initSession() {
+      // Check if user wants to stay signed in
+      if (!getStaySignedIn()) {
+        dispatch({ type: "CLEAR_USER" });
+        return;
+      }
+
       // Try to restore the access token via the HttpOnly refresh cookie
       try {
         const res = await fetch("/api/auth/refresh", { method: "POST" });
@@ -124,8 +130,9 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     return () => { cancelled = true; };
   }, []);
 
-  const login = useCallback(async (credentials: LoginInput): Promise<LoginResponse> => {
+  const login = useCallback(async (credentials: LoginInput, staySignedIn: boolean = false): Promise<LoginResponse> => {
     const response = await loginUser(credentials);
+    setStaySignedIn(staySignedIn);
     if (USE_MOCK) setMemoryToken("mock-access");
     dispatch({ type: "SET_USER", user: response.user });
     return response;
@@ -145,6 +152,7 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     try {
       await logoutUser();
     } finally {
+      setStaySignedIn(false);
       dispatch({ type: "CLEAR_USER" });
       router.push(logoutRedirect);
       router.refresh();

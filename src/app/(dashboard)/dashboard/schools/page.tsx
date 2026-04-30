@@ -140,7 +140,8 @@ const INPUT = "w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm te
 export default function SchoolDashboardPage() {
   const { user } = useAuth();
   const isMock = process.env.NEXT_PUBLIC_USE_MOCK === "true";
-  const isVerified = isMock || (user?.is_verified ?? false) || (user?.email_verified ?? false);
+  const isAdminRole = user?.role === "ADMIN" || user?.role === "MODERATOR";
+  const isVerified = isMock || isAdminRole || (user?.is_verified ?? false) || (user?.email_verified ?? false);
 
   // form state
   const [name, setName]         = useState("");

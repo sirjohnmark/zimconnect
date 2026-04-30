@@ -134,8 +134,9 @@ export function CreateListingForm() {
   const { logout } = useAuthContext();
 
   const isMock = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+  const isAdminRole = user?.role === "ADMIN" || user?.role === "MODERATOR";
   const isVerified =
-    isMock || (user?.is_verified ?? false) || (user?.email_verified ?? false);
+    isMock || isAdminRole || (user?.is_verified ?? false) || (user?.email_verified ?? false);
 
   const [formError, setFormError] = useState<string | null>(null);
   const [images, setImages] = useState<ImagePreview[]>([]);

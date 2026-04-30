@@ -40,6 +40,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const [staySignedIn, setStaySignedIn] = useState(false);
   const redirectTo = searchParams.get("redirect") ?? "/dashboard";
 
   const {
@@ -53,8 +54,15 @@ export function LoginForm() {
   async function onSubmit(data: LoginInput) {
     setFormError(null);
     try {
-      await login(data);
-      router.push(redirectTo);
+      const response = await login(data, staySignedIn);
+      const u = response.user;
+      const isAdmin = u.role === "ADMIN" || u.role === "MODERATOR";
+      const isVerified = u.is_verified || u.email_verified;
+      if (!isAdmin && !isVerified) {
+        router.push(`/verify-email?trigger=1&redirect=${encodeURIComponent(redirectTo)}`);
+      } else {
+        router.push(redirectTo);
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 404) {
@@ -110,6 +118,19 @@ export function LoginForm() {
             error={errors.password?.message}
             required
           />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="staySignedIn"
+            checked={staySignedIn}
+            onChange={(e) => setStaySignedIn(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-apple-blue focus:ring-apple-blue cursor-pointer"
+          />
+          <label htmlFor="staySignedIn" className="text-sm text-gray-700 cursor-pointer">
+            Stay signed in on this device
+          </label>
         </div>
 
         <Button type="submit" fullWidth loading={isSubmitting}>

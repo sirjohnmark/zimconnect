@@ -161,8 +161,9 @@ export default function PostJobPage() {
 
   if (!user) return null;
 
-  const isMock     = process.env.NEXT_PUBLIC_USE_MOCK === "true";
-  const isVerified = isMock || user.is_verified || user.email_verified;
+  const isMock      = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+  const isAdminRole = user.role === "ADMIN" || user.role === "MODERATOR";
+  const isVerified  = isMock || isAdminRole || user.is_verified || user.email_verified;
 
   function validate(): boolean {
     const e: FormErrors = {};

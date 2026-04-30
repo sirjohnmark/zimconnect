@@ -95,6 +95,11 @@ function ViewModal({
   onChangeRole: (role: AdminUser["role"]) => void;
   busy: boolean;
 }) {
+  const [localRole, setLocalRole] = useState<AdminUser["role"]>(user.role);
+  const roleChanged = localRole !== user.role;
+
+  useEffect(() => { setLocalRole(user.role); }, [user.role]);
+
   const initials =
     `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase() ||
     user.username.charAt(0).toUpperCase();
@@ -158,8 +163,8 @@ function ViewModal({
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Change Role</label>
             <select
-              value={user.role}
-              onChange={(e) => onChangeRole(e.target.value as AdminUser["role"])}
+              value={localRole}
+              onChange={(e) => setLocalRole(e.target.value as AdminUser["role"])}
               disabled={busy}
               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-apple-blue disabled:opacity-50"
             >
@@ -167,6 +172,24 @@ function ViewModal({
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
+            {roleChanged && (
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => setLocalRole(user.role)}
+                  disabled={busy}
+                  className="flex-1 rounded-xl border border-gray-200 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => onChangeRole(localRole)}
+                  disabled={busy}
+                  className="flex-1 rounded-xl bg-apple-blue py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {busy ? "Saving…" : `Set ${localRole}`}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Suspend / Activate */}
@@ -309,13 +332,16 @@ export default function UsersPage() {
 
   async function handleChangeRole(user: AdminUser, role: AdminUser["role"]) {
     if (role === user.role) return;
+    console.log("[users] handleChangeRole", { userId: user.id, from: user.role, to: role });
     setBusyId(user.id);
     try {
       const updated = await updateUserAdmin(user.id, { role });
+      console.log("[users] role change success →", updated.role);
       setUsers((prev) => prev.map((u) => u.id === user.id ? updated : u));
       if (viewUser?.id === user.id) setViewUser(updated);
       showToast(`${user.username} role changed to ${role}.`);
     } catch (e: unknown) {
+      console.error("[users] role change failed", e);
       showToast(e instanceof ApiError && e.status === 403 ? "Permission denied." : "Failed to change role.", "error");
     } finally {
       setBusyId(null);
@@ -414,18 +440,6 @@ export default function UsersPage() {
             </button>
           </form>
         </div>
-
-        {/* Toast */}
-        {toast && (
-          <div className={cn(
-            "rounded-lg border px-4 py-2 text-xs font-semibold",
-            toast.type === "error"
-              ? "border-red-200 bg-red-50 text-red-700"
-              : "border-green-200 bg-green-50 text-green-700",
-          )}>
-            {toast.msg}
-          </div>
-        )}
 
         {/* Count */}
         {!loading && !error && (
@@ -641,6 +655,18 @@ export default function UsersPage() {
           </div>
         )}
       </div>
+
+      {/* Toast — fixed above all modals */}
+      {toast && (
+        <div className={cn(
+          "fixed left-1/2 top-4 z-[60] -translate-x-1/2 rounded-xl border px-5 py-3 text-xs font-semibold shadow-lg",
+          toast.type === "error"
+            ? "border-red-200 bg-red-50 text-red-700"
+            : "border-green-200 bg-green-50 text-green-700",
+        )}>
+          {toast.msg}
+        </div>
+      )}
 
       {/* View modal */}
       {viewUser && (
