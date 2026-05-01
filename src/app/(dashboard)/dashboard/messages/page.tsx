@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
-import { EmptyState } from "@/components/ui/EmptyState";
 import {
   getConversations,
   markMessageRead,
@@ -275,10 +274,11 @@ function ChatThread({ conv, myId, onBack }: { conv: Conversation; myId: number; 
         )}
 
         {messages.length === 0 && (
-          <EmptyState
-            title={isConnected ? "No messages yet" : "Connecting…"}
-            description={isConnected ? "Start a conversation to see messages here." : undefined}
-          />
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-gray-400">
+              {isConnected ? "No messages yet. Say hello!" : "Connecting…"}
+            </p>
+          </div>
         )}
 
         {messages.map((msg) => (
