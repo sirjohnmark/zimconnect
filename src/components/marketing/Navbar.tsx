@@ -32,7 +32,7 @@ function Logo({ className }: { className?: string }) {
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const pathname = usePathname();
 
   // Lock body scroll when drawer is open
@@ -70,15 +70,26 @@ export function Navbar() {
 
             {/* Desktop actions */}
             <div className="hidden md:flex items-center gap-4">
-              <Link href="/login" className="text-xs font-normal text-white/80 hover:text-white transition-colors">
-                Sign In
-              </Link>
-              <Link
-                href={sellHref}
-                className="rounded-full bg-apple-blue px-3 py-1 text-xs font-normal text-white hover:opacity-90 transition-opacity"
-              >
-                Get Started
-              </Link>
+              {!isLoading && isAuthenticated ? (
+                <Link
+                  href="/dashboard"
+                  className="rounded-full bg-apple-blue px-3 py-1 text-xs font-normal text-white hover:opacity-90 transition-opacity"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login" className="text-xs font-normal text-white/80 hover:text-white transition-colors">
+                    Sign In
+                  </Link>
+                  <Link
+                    href={sellHref}
+                    className="rounded-full bg-apple-blue px-3 py-1 text-xs font-normal text-white hover:opacity-90 transition-opacity"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Mobile hamburger */}
@@ -177,21 +188,33 @@ export function Navbar() {
             </div>
 
             {/* CTAs */}
-            <div className="grid grid-cols-2 gap-3">
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-center rounded-full border border-white/15 py-3.5 text-sm font-normal text-white/80 hover:border-white/30 hover:text-white transition-all"
-              >
-                Sign In
-              </Link>
-              <Link
-                href={sellHref}
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-center rounded-full bg-apple-blue py-3.5 text-sm font-normal text-white hover:opacity-90 transition-opacity"
-              >
-                Get Started
-              </Link>
+            <div className={isAuthenticated ? "grid grid-cols-1 gap-3" : "grid grid-cols-2 gap-3"}>
+              {!isLoading && isAuthenticated ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-center rounded-full bg-apple-blue py-3.5 text-sm font-normal text-white hover:opacity-90 transition-opacity"
+                >
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-center rounded-full border border-white/15 py-3.5 text-sm font-normal text-white/80 hover:border-white/30 hover:text-white transition-all"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href={sellHref}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-center rounded-full bg-apple-blue py-3.5 text-sm font-normal text-white hover:opacity-90 transition-opacity"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

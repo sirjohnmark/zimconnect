@@ -54,7 +54,7 @@ export default function SellerProfilePage() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      router.replace("/login");
+      router.replace("/login?redirect=/dashboard/seller-profile");
       return;
     }
     if (user.role === "BUYER") {

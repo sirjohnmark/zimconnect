@@ -58,7 +58,7 @@ export default function UpgradePage() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (!user) { router.replace("/login"); return; }
+    if (!user) { router.replace("/login?redirect=/dashboard/upgrade"); return; }
     if (user.role === "SELLER") { router.replace("/dashboard/seller-profile"); return; }
     if (user.role !== "BUYER") { router.replace("/dashboard"); return; }
 

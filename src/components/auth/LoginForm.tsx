@@ -35,13 +35,22 @@ function FormAlert({ message }: { message: string }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const SAFE_REDIRECT_PREFIXES = ["/dashboard", "/verify-email"];
+
+function safeLoginRedirect(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://")) return "/dashboard";
+  if (SAFE_REDIRECT_PREFIXES.some((p) => raw.startsWith(p))) return raw;
+  return "/dashboard";
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [staySignedIn, setStaySignedIn] = useState(false);
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
+  const redirectTo = safeLoginRedirect(searchParams.get("redirect"));
 
   const {
     register,

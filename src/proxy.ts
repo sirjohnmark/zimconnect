@@ -66,11 +66,17 @@ async function verifySessionCookie(
 }
 
 // ─── Open-redirect guard ──────────────────────────────────────────────────────
-// Only allow same-origin relative paths; reject absolute URLs and //host paths.
+// Restrict post-login destinations to authenticated-area paths only.
+// Rejects absolute URLs, protocol-relative paths, and marketing/public pages
+// so that /login?redirect=/home never sends a freshly-logged-in user to the
+// landing page.
+
+const SAFE_REDIRECT_PREFIXES = ["/dashboard", "/verify-email"];
 
 function safeRedirectPath(raw: string | null): string {
   if (!raw) return "/dashboard";
-  if (raw.startsWith("/") && !raw.startsWith("//") && !raw.includes("://")) return raw;
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://")) return "/dashboard";
+  if (SAFE_REDIRECT_PREFIXES.some((prefix) => raw.startsWith(prefix))) return raw;
   return "/dashboard";
 }
 
