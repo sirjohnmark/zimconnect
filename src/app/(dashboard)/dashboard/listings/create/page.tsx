@@ -1,10 +1,36 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAuth } from "@/lib/auth/useAuth";
+import { hasPermission } from "@/lib/auth/permissions";
 import { CreateListingForm } from "@/components/dashboard/CreateListingForm";
 
-export const metadata: Metadata = { title: "Create Listing" };
-
 export default function CreateListingPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      router.replace("/login?redirect=/dashboard/listings/create");
+      return;
+    }
+    if (!hasPermission(user.role, "manage:own-listings")) {
+      // BUYER — send them to the upgrade flow
+      router.replace("/dashboard/upgrade");
+    }
+  }, [isLoading, user, router]);
+
+  if (isLoading || !user || !hasPermission(user.role, "manage:own-listings")) {
+    return (
+      <div className="flex h-40 items-center justify-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>

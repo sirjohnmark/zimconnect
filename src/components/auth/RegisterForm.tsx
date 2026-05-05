@@ -11,12 +11,22 @@ import { useAuthContext } from "@/lib/auth/AuthProvider";
 import { sendOtp, verifyOtpCode, type OtpMethod } from "@/lib/api/auth";
 import { generateAndStoreOtp, verifyOtp } from "@/lib/auth/auth";
 import { ApiError } from "@/lib/api/client";
+import type { AuthUser } from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
+
+const SAFE_REDIRECT_PREFIXES = ["/dashboard", "/verify-email"];
+
+function safeRedirectPath(raw: string | null): string {
+  if (!raw) return "/dashboard";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://")) return "/dashboard";
+  if (SAFE_REDIRECT_PREFIXES.some((p) => raw.startsWith(p))) return raw;
+  return "/dashboard";
+}
 
 // ─── Step indicator ───────────────────────────────────────────────────────────
 
@@ -182,8 +192,8 @@ export function RegisterForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { register: registerAuth } = useAuthContext();
-  const { login } = useAuth();
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
+  const { login, setUser } = useAuth();
+  const redirectTo = safeRedirectPath(searchParams.get("redirect"));
 
   const [step, setStep]             = useState<1 | 2 | 3 | 4>(1);
   const [formData, setFormData]     = useState<RegisterInput | null>(null);
@@ -243,11 +253,12 @@ export function RegisterForm() {
     if (!USE_MOCK) {
       try {
         await registerAuth(data);
-        // Navigate to email verification — do not auto-login here.
-        // If the backend requires email verification before allowing login,
-        // auto-login throws a 401 and the user sees a generic error.
-        // The verify-email page guides them through OTP then login.
-        router.push(`/verify-email?trigger=1&redirect=${encodeURIComponent(redirectTo)}`);
+        // Account created — proceed to OTP steps within this form.
+        // We verify first (pre-auth endpoints) then call login() after OTP confirmation,
+        // avoiding any chicken-and-egg problem with backends that gate login on verification.
+        setFormData(data);
+        setMethod(data.phone ? "phone" : "email");
+        setStep(3);
         return;
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {
@@ -363,7 +374,12 @@ export function RegisterForm() {
         }
         setOtpAttempts(0);
         setOtpStatus("success");
+        // Create account then login; loginUser (mock) builds user from stored account.
+        // After login, immediately upgrade the verification flags — the OTP was just confirmed.
         await registerAuth(formData);
+        const loginResponse = await login({ email: formData.email, password: formData.password });
+        const verifiedUser: AuthUser = { ...loginResponse.user, email_verified: true, is_verified: true };
+        setUser(verifiedUser);
       } else {
         // Real API: verify OTP then login to get tokens
         await verifyOtpCode(

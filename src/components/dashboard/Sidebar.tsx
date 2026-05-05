@@ -273,7 +273,7 @@ function NavSection({
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname();
   const { user, isLoading, logout } = useAuth();
-  const { isAdmin, isBuyer, isSeller, can } = useRole();
+  const { isAdmin, isStaff, isBuyer, isSeller, can } = useRole();
 
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [exploreOpen, setExploreOpen] = useState(
@@ -416,7 +416,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             <div className="h-8 animate-pulse rounded-lg bg-gray-100" />
             <div className="h-8 animate-pulse rounded-lg bg-gray-100" />
           </div>
-        ) : isAdmin ? (
+        ) : isStaff ? (
           <NavSection title="Admin">
             {ADMIN_NAV.map((item) => (
               <NavLink key={item.href} item={item} onClick={onNavClick} />

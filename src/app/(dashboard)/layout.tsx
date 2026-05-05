@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuthGuard } from "@/lib/auth/useAuthGuard";
+import { useAuth } from "@/lib/auth/useAuth";
 import { DesktopSidebar, MobileSidebar } from "@/components/dashboard/Sidebar";
 
 function MenuButton({ onClick }: { onClick: () => void }) {
@@ -21,8 +23,25 @@ function MenuButton({ onClick }: { onClick: () => void }) {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isLoading, isAuthenticated } = useAuthGuard();
+  const { user } = useAuth();
+  const router   = useRouter();
+  const pathname = usePathname();
 
-  if (isLoading || !isAuthenticated) {
+  // Gate unverified non-admin users — send them to verify before entering the dashboard
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || !user) return;
+    const isAdmin    = user.role === "ADMIN" || user.role === "MODERATOR";
+    const isVerified = user.is_verified || user.email_verified;
+    if (!isAdmin && !isVerified) {
+      router.replace(`/verify-email?trigger=1&redirect=${encodeURIComponent(pathname)}`);
+    }
+  }, [isLoading, isAuthenticated, user, user?.is_verified, user?.email_verified, router, pathname]);
+
+  const isAdmin    = user?.role === "ADMIN" || user?.role === "MODERATOR";
+  const isVerified = user?.is_verified || user?.email_verified;
+  const pendingVerification = isAuthenticated && !isAdmin && !isVerified;
+
+  if (isLoading || !isAuthenticated || pendingVerification) {
     return (
       <div className="flex h-dvh items-center justify-center bg-gray-50">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />

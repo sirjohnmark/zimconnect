@@ -190,22 +190,23 @@ export function EmailVerificationForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [otpComplete, otpStatus]);
 
-  // Redirect away if the user was ALREADY verified before this page loaded.
-  // Guard on otpStatus so this never fires while handleVerify is in progress.
+  // Redirect away if the user is already verified (e.g. they navigated here manually,
+  // or verification completed in another tab). Guard on otpStatus === "success" so
+  // this doesn't race with handleVerify's own router.push.
   useEffect(() => {
-    if (!isLoading && user?.email_verified && otpStatus !== "success") {
+    if (!isLoading && (user?.email_verified || user?.is_verified) && otpStatus !== "success") {
       router.replace(redirectTo);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading]);
+  }, [isLoading, user?.email_verified, user?.is_verified, otpStatus, redirectTo, router]);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, preserving trigger and redirect so the
+  // user lands back here (with a fresh OTP send) after they log in.
   useEffect(() => {
     if (!isLoading && !user) {
-      router.replace("/login?redirect=/verify-email");
+      const verifyHref = `/verify-email?trigger=1&redirect=${encodeURIComponent(redirectTo)}`;
+      router.replace(`/login?redirect=${encodeURIComponent(verifyHref)}`);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isLoading]);
+  }, [user, isLoading, redirectTo, router]);
 
   function startCooldown() {
     setCooldown(60);

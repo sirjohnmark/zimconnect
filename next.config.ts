@@ -5,11 +5,17 @@ import type { NextConfig } from "next";
 const API_URL = process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL;
 if (!API_URL) throw new Error("BACKEND_URL or NEXT_PUBLIC_API_URL must be set");
 
-// VULN-14: Prevent mock mode from ever being active in production builds
-if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_USE_MOCK === "true") {
+// VULN-14: Prevent mock mode from ever being active in deployed production builds.
+// Only enforced in CI/deployment environments — local `next build` runs may have
+// NEXT_PUBLIC_USE_MOCK=true in .env.local (which overrides .env.production) and
+// that is intentional for local testing.
+const isDeployedBuild = Boolean(
+  process.env.VERCEL || process.env.CI || process.env.RAILWAY_ENVIRONMENT,
+);
+if (isDeployedBuild && process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_USE_MOCK === "true") {
   throw new Error(
     "NEXT_PUBLIC_USE_MOCK must not be 'true' in production. " +
-    "Set it to 'false' in your .env.production file.",
+    "Set it to 'false' in your deployment environment variables.",
   );
 }
 

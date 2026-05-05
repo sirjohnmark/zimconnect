@@ -137,6 +137,69 @@ function SkeletonCard() {
   return <div className="aspect-[4/3] animate-pulse rounded-2xl bg-gray-100" />;
 }
 
+function NewBuyerDashboard({ firstName }: { firstName: string }) {
+  return (
+    <div className="space-y-8 pb-10">
+      <div className="rounded-2xl bg-apple-blue px-6 py-8 text-white shadow-md sm:px-10 sm:py-10">
+        <p className="text-sm font-semibold uppercase tracking-wider text-white/60">
+          Welcome to Sanganai
+        </p>
+        <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">{firstName} 👋</h1>
+        <p className="mt-3 max-w-md text-sm text-white/80">
+          Discover great deals, save your favourites, and message sellers directly.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href="/listings"
+            className="rounded-lg bg-white px-6 py-3 text-sm font-bold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]"
+          >
+            Browse Marketplace
+          </Link>
+          <Link
+            href="/dashboard/saved"
+            className="rounded-lg border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
+          >
+            My Saved Items
+          </Link>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue">Getting Started</p>
+        <h2 className="mt-1 text-xl font-bold text-gray-900">Find what you need</h2>
+        <div className="mt-5 space-y-3">
+          {[
+            "Browse listings across all categories",
+            "Save items you like to revisit later",
+            "Message sellers directly to ask questions",
+          ].map((step, index) => (
+            <div key={step} className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-sm font-bold text-apple-blue shadow-sm">
+                {index + 1}
+              </span>
+              <p className="text-sm font-medium text-gray-700">{step}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue">Want to sell?</p>
+        <h2 className="mt-1 text-xl font-bold text-gray-900">Upgrade to Seller</h2>
+        <p className="mt-2 text-sm text-gray-500">
+          List your own items and reach thousands of buyers across Zimbabwe.
+        </p>
+        <Link
+          href="/dashboard/upgrade"
+          className="mt-4 inline-block rounded-xl bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90"
+        >
+          Become a Seller →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function NewUserDashboard({ firstName }: { firstName: string }) {
   return (
     <div className="space-y-8 pb-10">
@@ -337,16 +400,27 @@ export default function DashboardPage() {
 
   const firstName = user?.first_name || user?.username || "there";
 
-  const isAdminUser = user?.role === "ADMIN" || user?.role === "MODERATOR";
+  const isAdminUser  = user?.role === "ADMIN" || user?.role === "MODERATOR";
+  const isBuyerRole  = user?.role === "BUYER";
+  const isSellerRole = user?.role === "SELLER";
 
+  // Show buyer onboarding for a new buyer (no conversations yet)
+  const isNewBuyer =
+    !loading && isBuyerRole && conversations.length === 0;
+
+  // Show seller onboarding only for sellers — never for buyers
   const isNewSeller =
     !loading &&
-    !isAdminUser &&
+    isSellerRole &&
     activeListings === 0 &&
     conversations.length === 0 &&
     (totalViews === 0 || totalViews === null);
 
-  const shouldShowAnalytics = !loading && (activeListings ?? 0) > 0;
+  const shouldShowAnalytics = !loading && !isBuyerRole && (activeListings ?? 0) > 0;
+
+  if (isNewBuyer) {
+    return <NewBuyerDashboard firstName={firstName} />;
+  }
 
   if (isNewSeller) {
     return <NewUserDashboard firstName={firstName} />;
@@ -368,51 +442,76 @@ export default function DashboardPage() {
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href="/dashboard/listings/create"
-            className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]"
-          >
-            + Post a Listing
-          </Link>
-
+          {!isBuyerRole && (
+            <Link
+              href="/dashboard/listings/create"
+              className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]"
+            >
+              + Post a Listing
+            </Link>
+          )}
           <Link
             href="/listings"
             className="rounded-lg border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
           >
             Browse Marketplace
           </Link>
+          {isBuyerRole && (
+            <Link
+              href="/dashboard/upgrade"
+              className="rounded-lg border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
+            >
+              Become a Seller
+            </Link>
+          )}
         </div>
       </div>
 
-      <SellerMomentumCard
-        activeListings={activeListings}
-        totalViews={totalViews}
-        unreadMessages={unreadMessages}
-      />
+      {!isBuyerRole && (
+        <SellerMomentumCard
+          activeListings={activeListings}
+          totalViews={totalViews}
+          unreadMessages={unreadMessages}
+        />
+      )}
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          {
-            label: "Active Listings",
-            value: activeListings !== null ? String(activeListings) : "—",
-            color: "text-apple-blue",
-          },
-          {
-            label: "Total Views",
-            value: totalViews !== null ? totalViews.toLocaleString() : "—",
-            color: "text-blue-600",
-          },
-          {
-            label: "Unread Messages",
-            value: unreadMessages !== null ? String(unreadMessages) : "—",
-            color: "text-amber-600",
-          },
-          {
-            label: "Saved Items",
-            value: loading ? "—" : String(savedListings.length),
-            color: "text-purple-600",
-          },
-        ].map(({ label, value, color }) => (
+      <div className={cn("grid gap-4", isBuyerRole ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
+        {(isBuyerRole
+          ? [
+              {
+                label: "Unread Messages",
+                value: unreadMessages !== null ? String(unreadMessages) : "—",
+                color: "text-amber-600",
+              },
+              {
+                label: "Saved Items",
+                value: loading ? "—" : String(savedListings.length),
+                color: "text-purple-600",
+              },
+            ]
+          : [
+              {
+                label: "Active Listings",
+                value: activeListings !== null ? String(activeListings) : "—",
+                color: "text-apple-blue",
+              },
+              {
+                label: "Total Views",
+                value: totalViews !== null ? totalViews.toLocaleString() : "—",
+                color: "text-blue-600",
+              },
+              {
+                label: "Unread Messages",
+                value: unreadMessages !== null ? String(unreadMessages) : "—",
+                color: "text-amber-600",
+              },
+              {
+                label: "Saved Items",
+                value: loading ? "—" : String(savedListings.length),
+                color: "text-purple-600",
+              },
+            ]
+        ).map(({ label, value, color }) => (
           <div
             key={label}
             className="rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm"
