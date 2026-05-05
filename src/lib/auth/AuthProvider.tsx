@@ -7,7 +7,7 @@ import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
-import { getStoredUser, setMemoryToken, saveUser, setStaySignedIn, login as authLogin } from "@/lib/auth/auth";
+import { getStoredUser, setMemoryToken, saveUser, saveTokens, setStaySignedIn, login as authLogin } from "@/lib/auth/auth";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
@@ -71,7 +71,10 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     if (USE_MOCK) {
       const user = getStoredUser();
       if (user) {
-        setMemoryToken("mock-access");
+        // Re-hydrate in-memory token and re-set the HttpOnly cookies so the
+        // middleware keeps recognising the session after a page reload.
+        void saveTokens("mock-access", "mock-refresh", (user as unknown as AuthUser).role)
+          .catch(() => {});
         dispatch({ type: "SET_USER", user: user as unknown as AuthUser });
       } else {
         dispatch({ type: "CLEAR_USER" });

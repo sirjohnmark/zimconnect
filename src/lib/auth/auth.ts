@@ -253,7 +253,10 @@ export async function login(data: LoginInput, staySignedIn = false): Promise<Log
   const response = await loginUser(data);
   setStaySignedIn(staySignedIn);
   if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
-    setMemoryToken(response.tokens.access);
+    // Mock loginUser() skips saveTokens() — call it here so /api/auth/session
+    // writes the HttpOnly cookies the middleware needs to recognise the session.
+    // The session route doesn't validate tokens against Django, so mock values work.
+    await saveTokens(response.tokens.access, response.tokens.refresh, response.user.role);
   }
   return response;
 }
