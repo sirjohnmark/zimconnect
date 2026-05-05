@@ -227,7 +227,7 @@ export function EmailVerificationForm() {
       setUser(updated);
       setOtpStatus("success");
       await new Promise((r) => setTimeout(r, 600));
-      window.location.href = redirectTo;
+      router.push(redirectTo);
     } catch (err) {
       setOtpStatus("idle");
       if (err instanceof ApiError && err.status === 422) {

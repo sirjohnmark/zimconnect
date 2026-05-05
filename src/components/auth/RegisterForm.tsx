@@ -243,10 +243,11 @@ export function RegisterForm() {
     if (!USE_MOCK) {
       try {
         await registerAuth(data);
-        // Auto-login to get tokens; the backend already sent the email OTP
-        await login({ email: data.email, password: data.password });
+        // Navigate to email verification — do not auto-login here.
+        // If the backend requires email verification before allowing login,
+        // auto-login throws a 401 and the user sees a generic error.
+        // The verify-email page guides them through OTP then login.
         router.push(`/verify-email?trigger=1&redirect=${encodeURIComponent(redirectTo)}`);
-        router.refresh();
         return;
       } catch (err) {
         if (err instanceof ApiError && err.status === 409) {

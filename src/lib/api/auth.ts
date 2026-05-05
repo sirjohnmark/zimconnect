@@ -98,7 +98,6 @@ export async function registerUser(data: RegisterInput): Promise<AuthUser> {
     username: data.username,
     password: data.password,
     confirm_password: data.confirm_password,
-    role: "BUYER",
     phone: data.phone,
     first_name: data.first_name,
     last_name: data.last_name,

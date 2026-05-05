@@ -82,13 +82,11 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     dispatch({ type: "LOADING" });
 
     async function initSession() {
-      // Check if user wants to stay signed in
-      if (!getStaySignedIn()) {
-        dispatch({ type: "CLEAR_USER" });
-        return;
-      }
-
       // Try to restore the access token via the HttpOnly refresh cookie
+      // The /api/auth/refresh endpoint is the authoritative check — if no
+      // valid refresh cookie exists it returns 401 and we clear the user.
+      // The staySignedIn flag controls cookie maxAge at login time, not
+      // whether to attempt restoration on an already-open session.
       try {
         const res = await fetch("/api/auth/refresh", { method: "POST" });
         if (res.ok) {

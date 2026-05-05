@@ -8,13 +8,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createHmac } from "crypto";
 
-const REFRESH_COOKIE  = "sanganai_refresh";
-const SESSION_COOKIE  = "sanganai_session";
-const COOKIE_MAX_AGE  = 60 * 60 * 24 * 7; // 7 days
+const REFRESH_COOKIE = "sanganai_refresh";
+const SESSION_COOKIE = "sanganai_session";
+const COOKIE_MAX_AGE = parseInt(
+  process.env.REFRESH_TOKEN_LIFETIME_SECONDS ?? String(60 * 60 * 24 * 7),
+  10,
+);
 
-const SESSION_SECRET = process.env.SESSION_SECRET;
-if (!SESSION_SECRET) {
-  throw new Error("SESSION_SECRET env var is required. Add it to .env.local and .env.production");
+function getSecret(): string {
+  const s = process.env.SESSION_SECRET;
+  if (!s) throw new Error("SESSION_SECRET env var is required. Add it to .env.local and .env.production");
+  return s;
 }
 
 function signPayload(payload: object, secret: string): string {
@@ -43,7 +47,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "refresh and role are required" }, { status: 400 });
   }
 
-  const signedSession = signPayload({ role }, SESSION_SECRET!);
+  const signedSession = signPayload({ role }, getSecret());
 
   const res = NextResponse.json({ ok: true });
   res.cookies.set(REFRESH_COOKIE, refresh, { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
@@ -86,6 +90,6 @@ export async function PATCH(req: NextRequest) {
   }
 
   const res = NextResponse.json({ ok: true });
-  res.cookies.set(SESSION_COOKIE, signPayload({ role }, SESSION_SECRET!), { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
+  res.cookies.set(SESSION_COOKIE, signPayload({ role }, getSecret()), { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
   return res;
 }

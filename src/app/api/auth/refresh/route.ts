@@ -9,14 +9,23 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createHmac } from "crypto";
 
-const BACKEND_URL    = process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "";
 const REFRESH_COOKIE = "sanganai_refresh";
 const SESSION_COOKIE = "sanganai_session";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const COOKIE_MAX_AGE = parseInt(
+  process.env.REFRESH_TOKEN_LIFETIME_SECONDS ?? String(60 * 60 * 24 * 7),
+  10,
+);
 
-const SESSION_SECRET = process.env.SESSION_SECRET;
-if (!SESSION_SECRET) {
-  throw new Error("SESSION_SECRET env var is required");
+// Strip any /api/v1 suffix so BACKEND_URL and NEXT_PUBLIC_API_URL can be set
+// to the same value without doubling the path prefix.
+const BACKEND_ORIGIN = (
+  process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? ""
+).replace(/\/api\/v1\/?$/, "");
+
+function getSecret(): string {
+  const s = process.env.SESSION_SECRET;
+  if (!s) throw new Error("SESSION_SECRET env var is required.");
+  return s;
 }
 
 function signPayload(payload: object, secret: string): string {
@@ -57,7 +66,7 @@ export async function POST(req: NextRequest) {
 
   let djangoRes: Response;
   try {
-    djangoRes = await fetch(`${BACKEND_URL}/api/v1/auth/token/refresh/`, {
+    djangoRes = await fetch(`${BACKEND_ORIGIN}/api/v1/auth/token/refresh/`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ refresh: refreshToken }),
@@ -82,9 +91,10 @@ export async function POST(req: NextRequest) {
   // 2. Stale roles (e.g. from the hardcoded-BUYER bug) are propagated correctly
   //    until the AuthProvider's PATCH /api/auth/session call overwrites them with
   //    the authoritative role from getMe().
+  const secret = getSecret();
   const existingSession = req.cookies.get(SESSION_COOKIE)?.value ?? "";
-  const role = extractRoleFromSession(existingSession, SESSION_SECRET!);
-  res.cookies.set(SESSION_COOKIE, signPayload({ role }, SESSION_SECRET!), { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
+  const role = extractRoleFromSession(existingSession, secret);
+  res.cookies.set(SESSION_COOKIE, signPayload({ role }, secret), { ...COOKIE_BASE, maxAge: COOKIE_MAX_AGE });
 
   // If Django rotated the refresh token, store the new one
   if (data.refresh) {

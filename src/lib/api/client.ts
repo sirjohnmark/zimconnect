@@ -7,9 +7,10 @@ import {
 } from "@/lib/auth/auth";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ??
-  process.env.BACKEND_URL ??
-  "";
+  (typeof window === "undefined"
+    ? process.env.BACKEND_URL          // server: Node.js env only
+    : process.env.NEXT_PUBLIC_API_URL  // client: public env
+  ) ?? "";
 
 // ─── Error types ─────────────────────────────────────────────────────────────
 

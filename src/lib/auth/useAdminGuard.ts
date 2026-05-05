@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth/useAuth";
 
 export type AdminGuardStatus = "loading" | "allowed" | "denied";
@@ -13,16 +13,17 @@ export type AdminGuardStatus = "loading" | "allowed" | "denied";
  */
 export function useAdminGuard(): AdminGuardStatus {
   const { user, isLoading } = useAuth();
-  const router = useRouter();
+  const router   = useRouter();
+  const pathname = usePathname();
 
   const isAdmin = user?.role === "ADMIN" || user?.role === "MODERATOR";
 
   useEffect(() => {
     if (isLoading) return;
     if (!user || !isAdmin) {
-      router.replace("/login");
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
     }
-  }, [isLoading, user, isAdmin, router]);
+  }, [isLoading, user, isAdmin, router, pathname]);
 
   if (isLoading) return "loading";
   if (!user || !isAdmin) return "denied";

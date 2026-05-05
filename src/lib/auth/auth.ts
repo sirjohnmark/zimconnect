@@ -38,11 +38,15 @@ export function getAccessToken(): string | null { return _accessToken; }
 
 export async function saveTokens(access: string, refresh: string, role: string): Promise<void> {
   setMemoryToken(access);
-  await fetch("/api/auth/session", {
+  const res = await fetch("/api/auth/session", {
     method:  "POST",
     headers: { "Content-Type": "application/json" },
     body:    JSON.stringify({ refresh, role }),
   });
+  if (!res.ok) {
+    clearMemoryToken();
+    throw new Error("Failed to establish session. Please try again.");
+  }
 }
 
 export async function clearTokens(): Promise<void> {
