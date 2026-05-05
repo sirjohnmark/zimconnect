@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useAuthGuard } from "@/lib/auth/useAuthGuard";
 import { DesktopSidebar, MobileSidebar } from "@/components/dashboard/Sidebar";
-
-// ─── Hamburger button ─────────────────────────────────────────────────────────
 
 function MenuButton({ onClick }: { onClick: () => void }) {
   return (
@@ -19,28 +18,27 @@ function MenuButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isLoading, isAuthenticated } = useAuthGuard();
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-gray-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-dvh overflow-hidden bg-gray-50">
-      {/* Desktop sidebar — always visible on lg+ */}
       <DesktopSidebar />
-
-      {/* Mobile sidebar — drawer */}
       <MobileSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Mobile header */}
         <header className="flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:hidden">
           <MenuButton onClick={() => setSidebarOpen(true)} />
           <span className="text-base font-bold text-apple-blue">Sanganai</span>
         </header>
-
-        {/* Scrollable page content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>

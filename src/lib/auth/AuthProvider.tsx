@@ -1,13 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useReducer } from "react";
+import { createContext, useCallback, useContext, useEffect, useReducer, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getMe, logoutUser, registerUser, updateProfile } from "@/lib/api/auth";
 import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
-import { getStoredUser, setMemoryToken, saveUser, setStaySignedIn, getStaySignedIn, login as authLogin } from "@/lib/auth/auth";
+import { getStoredUser, setMemoryToken, saveUser, setStaySignedIn, login as authLogin } from "@/lib/auth/auth";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
@@ -52,8 +52,9 @@ export interface AuthProviderProps {
 }
 
 export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProviderProps) {
-  const router = useRouter();
+  const router         = useRouter();
   const [auth, dispatch] = useReducer(authReducer, { status: "loading" });
+  const initCancelRef  = useRef<(() => void) | null>(null);
 
   // When the API client fires this event after a failed token refresh, clear
   // auth state and send the user to the login page.
@@ -69,7 +70,7 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
   useEffect(() => {
     if (USE_MOCK) {
       const user = getStoredUser();
-      if (user && getStaySignedIn()) {
+      if (user) {
         setMemoryToken("mock-access");
         dispatch({ type: "SET_USER", user: user as unknown as AuthUser });
       } else {
@@ -79,23 +80,19 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     }
 
     let cancelled = false;
+    initCancelRef.current = () => { cancelled = true; };
     dispatch({ type: "LOADING" });
 
     async function initSession() {
-      // Try to restore the access token via the HttpOnly refresh cookie
-      // The /api/auth/refresh endpoint is the authoritative check — if no
-      // valid refresh cookie exists it returns 401 and we clear the user.
-      // The staySignedIn flag controls cookie maxAge at login time, not
-      // whether to attempt restoration on an already-open session.
       try {
         const res = await fetch("/api/auth/refresh", { method: "POST" });
-        if (res.ok) {
-          const { access } = await res.json() as { access: string };
-          setMemoryToken(access);
-        } else {
+        if (!res.ok) {
           if (!cancelled) dispatch({ type: "CLEAR_USER" });
           return;
         }
+        if (cancelled) return;
+        const { access } = await res.json() as { access: string };
+        setMemoryToken(access);
       } catch {
         if (!cancelled) dispatch({ type: "CLEAR_USER" });
         return;
@@ -103,9 +100,6 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
 
       try {
         const user = await getMe();
-        // Re-sync the session cookie role with the authoritative value from Django.
-        // Retry once after 2 s if the first attempt fails so that a transient
-        // network hiccup doesn't leave the middleware with a stale role.
         const patchRole = () => fetch("/api/auth/session", {
           method:  "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -125,10 +119,15 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     }
 
     initSession();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      initCancelRef.current = null;
+    };
   }, []);
 
   const login = useCallback(async (credentials: LoginInput, staySignedIn: boolean = false): Promise<LoginResponse> => {
+    // Cancel any in-flight initSession so a stale 401 can't CLEAR_USER after SET_USER
+    initCancelRef.current?.();
     const response = await authLogin(credentials, staySignedIn);
     dispatch({ type: "SET_USER", user: response.user });
     return response;
