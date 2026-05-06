@@ -7,7 +7,7 @@ import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser, LoginResponse } from "@/lib/api/auth";
 import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
-import { getStoredUser, setMemoryToken, saveUser, saveTokens, setStaySignedIn, login as authLogin } from "@/lib/auth/auth";
+import { getStoredUser, clearStoredUser, setMemoryToken, saveUser, saveTokens, setStaySignedIn, login as authLogin } from "@/lib/auth/auth";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
@@ -84,23 +84,37 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
 
     let cancelled = false;
     initCancelRef.current = () => { cancelled = true; };
-    dispatch({ type: "LOADING" });
+
+    // Optimistically restore the cached user so the UI renders immediately
+    // instead of showing a full-screen spinner on every page refresh.
+    // getMe() below will validate the session and replace or clear this.
+    const cached = getStoredUser();
+    if (cached) {
+      dispatch({ type: "SET_USER", user: cached });
+    } else {
+      dispatch({ type: "LOADING" });
+    }
 
     async function initSession() {
+      // 1. Exchange the HttpOnly refresh cookie for a fresh access token.
       try {
         const res = await fetch("/api/auth/refresh", { method: "POST" });
         if (!res.ok) {
-          if (!cancelled) dispatch({ type: "CLEAR_USER" });
+          // Refresh cookie absent or genuinely expired — log out.
+          if (!cancelled) { clearStoredUser(); dispatch({ type: "CLEAR_USER" }); }
           return;
         }
         if (cancelled) return;
         const { access } = await res.json() as { access: string };
         setMemoryToken(access);
       } catch {
-        if (!cancelled) dispatch({ type: "CLEAR_USER" });
+        // Network error reaching /api/auth/refresh (e.g. Next.js server restarting).
+        // Don't log out if we have a cached user — they may just be temporarily offline.
+        if (!cancelled && !cached) dispatch({ type: "CLEAR_USER" });
         return;
       }
 
+      // 2. Fetch the authoritative profile from Django.
       try {
         const user = await getMe();
         const patchRole = () => fetch("/api/auth/session", {
@@ -112,12 +126,14 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
         if (!cancelled) dispatch({ type: "SET_USER", user });
       } catch (err) {
         if (cancelled) return;
-        if (err instanceof ApiError || err instanceof NetworkError) {
-          dispatch({ type: "CLEAR_USER" });
-        } else {
-          console.error("[auth] unexpected error fetching profile:", err);
+        // 401/403 from getMe: the access token is invalid after a successful refresh.
+        // This is a genuine auth failure — clear everything.
+        if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+          clearStoredUser();
           dispatch({ type: "CLEAR_USER" });
         }
+        // NetworkError or 5xx: transient backend issue. Keep the cached user rather
+        // than logging out — the access token is valid and the session is intact.
       }
     }
 

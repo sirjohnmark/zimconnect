@@ -9,6 +9,7 @@ const ADMIN_ROUTES     = [
   "/dashboard/admin-listings",
   "/dashboard/users",
   "/dashboard/admin/messages",
+  "/dashboard/upgrade-requests",
 ];
 const AUTH_ROUTES      = ["/login", "/register", "/forgot-password"];
 
