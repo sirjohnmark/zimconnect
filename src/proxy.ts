@@ -11,7 +11,7 @@ const ADMIN_ROUTES     = [
   "/dashboard/admin/messages",
   "/dashboard/upgrade-requests",
 ];
-const AUTH_ROUTES      = ["/login", "/register", "/forgot-password"];
+const AUTH_ROUTES      = ["/login", "/register", "/forgot-password", "/home"];
 
 // ─── Cookie names ─────────────────────────────────────────────────────────────
 

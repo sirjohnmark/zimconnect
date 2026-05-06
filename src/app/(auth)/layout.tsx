@@ -1,6 +1,21 @@
+"use client";
+
 import Link from "next/link";
+import { usePublicGuard } from "@/lib/auth/usePublicGuard";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const { isLoading, isAuthenticated } = usePublicGuard();
+
+  // While auth state is resolving OR the user is authenticated (redirect pending),
+  // show a spinner so the login/register form never flashes for logged-in users.
+  if (isLoading || isAuthenticated) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-gray-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
       <Link href="/home" className="mb-8 flex items-center gap-2.5" aria-label="Sanganai home">

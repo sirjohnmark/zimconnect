@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { HomeAuthGuard }    from "@/components/auth/HomeAuthGuard";
 import { HeroSection }      from "@/components/marketing/HeroSection";
 import { FeaturedListings } from "@/components/marketing/FeaturedListings";
-import { HowItWorks }         from "@/components/marketing/HowItWorks";
-import { TrustSection }       from "@/components/marketing/TrustSection";
-import { CtaSection }         from "@/components/marketing/CtaSection";
+import { HowItWorks }       from "@/components/marketing/HowItWorks";
+import { TrustSection }     from "@/components/marketing/TrustSection";
+import { CtaSection }       from "@/components/marketing/CtaSection";
 
 export const metadata: Metadata = {
   title: "Sanganai — Buy and Sell Anything in Zimbabwe",
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      <HomeAuthGuard />
       <HeroSection />
       <FeaturedListings />
       <HowItWorks />
