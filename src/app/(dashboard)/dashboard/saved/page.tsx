@@ -42,13 +42,18 @@ function toListingShape(detail: SavedListingDetail): Listing {
 export default function SavedPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  function fetchSaved() {
+    setLoading(true);
+    setError(null);
     getSavedListings()
       .then((saved) => setListings(saved.map((s) => toListingShape(s.listing))))
-      .catch(() => setListings([]))
+      .catch(() => setError("Failed to load saved listings. Please try again."))
       .finally(() => setLoading(false));
-  }, []);
+  }
+
+  useEffect(() => { fetchSaved(); }, []);
 
   async function handleRemove(id: number) {
     setListings((prev) => prev.filter((l) => l.id !== id)); // optimistic
@@ -89,7 +94,16 @@ export default function SavedPage() {
         )}
       </div>
 
-      {listings.length === 0 ? (
+      {error && (
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+          <button type="button" onClick={fetchSaved} className="ml-auto text-xs font-medium underline">
+            Retry
+          </button>
+        </div>
+      )}
+
+      {error ? null : listings.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 py-20 text-center">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-12 w-12 text-gray-300 mb-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />

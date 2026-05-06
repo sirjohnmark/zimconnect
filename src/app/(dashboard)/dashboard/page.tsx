@@ -335,6 +335,8 @@ export default function DashboardPage() {
   const [totalViews, setTotalViews] = useState<number | null>(null);
   const [unreadMessages, setUnreadMessages] = useState<number | null>(null);
   const [conversations, setConversations] = useState<ConversationPreview[]>([]);
+  const [convsLoaded, setConvsLoaded] = useState(false);
+  const [convsError, setConvsError] = useState(false);
   const [suggested, setSuggested] = useState<Listing[]>([]);
   const [savedListings, setSavedListings] = useState<Listing[]>([]);
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
@@ -374,6 +376,9 @@ export default function DashboardPage() {
         setConversations(
           convs.value.results.slice(0, 4).map((c) => toPreview(c, user.id)),
         );
+        setConvsLoaded(true);
+      } else {
+        setConvsError(true);
       }
 
       if (suggestedListings.status === "fulfilled") {
@@ -404,16 +409,16 @@ export default function DashboardPage() {
   const isBuyerRole  = user?.role === "BUYER";
   const isSellerRole = user?.role === "SELLER";
 
-  // Show buyer onboarding for a new buyer (no conversations yet)
+  // Show buyer onboarding only when conversations loaded successfully and are empty
   const isNewBuyer =
-    !loading && isBuyerRole && conversations.length === 0;
+    !loading && isBuyerRole && convsLoaded && conversations.length === 0;
 
   // Show seller onboarding only for sellers — never for buyers
   const isNewSeller =
     !loading &&
     isSellerRole &&
     activeListings === 0 &&
-    conversations.length === 0 &&
+    convsLoaded && conversations.length === 0 &&
     (totalViews === 0 || totalViews === null);
 
   const shouldShowAnalytics = !loading && !isBuyerRole && (activeListings ?? 0) > 0;
@@ -651,6 +656,13 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : convsError ? (
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-red-100 bg-red-50 py-8 text-center px-4">
+                <p className="text-sm text-red-600">Could not load messages.</p>
+                <Link href="/dashboard/messages" className="mt-3 text-xs font-semibold text-apple-blue hover:underline">
+                  Open inbox →
+                </Link>
               </div>
             ) : conversations.length > 0 ? (
               <div className="divide-y divide-gray-50 rounded-2xl border border-gray-100 bg-white shadow-sm">
