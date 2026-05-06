@@ -25,6 +25,23 @@ export interface SubmitUpgradeData {
   company_registration?: File;
 }
 
+export interface AdminUpgradeRequest extends SellerUpgradeRequest {
+  user_id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  national_id_url:          string | null;
+  passport_url:             string | null;
+  company_registration_url: string | null;
+}
+
+export interface PaginatedUpgradeRequests {
+  count:    number;
+  next:     string | null;
+  previous: string | null;
+  results:  AdminUpgradeRequest[];
+}
+
 // ─── Mock helpers ─────────────────────────────────────────────────────────────
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
@@ -101,4 +118,44 @@ export async function getUpgradeStatus(): Promise<SellerUpgradeRequest | null> {
     if (err instanceof ApiError && err.status === 404) return null;
     throw err;
   }
+}
+
+// ─── Admin API functions ──────────────────────────────────────────────────────
+
+let _mockAdminRequests: AdminUpgradeRequest[] = [];
+
+export async function getAdminUpgradeRequests(params?: {
+  status?: "PENDING" | "APPROVED" | "REJECTED";
+  page?: number;
+  page_size?: number;
+}): Promise<PaginatedUpgradeRequests> {
+  if (USE_MOCK) {
+    let results = [..._mockAdminRequests];
+    if (params?.status) results = results.filter((r) => r.status === params.status);
+    return { count: results.length, next: null, previous: null, results };
+  }
+  return api.get<PaginatedUpgradeRequests>("/api/v1/admin/upgrade-requests/", { params });
+}
+
+export async function approveUpgradeRequest(id: number): Promise<AdminUpgradeRequest> {
+  if (USE_MOCK) {
+    const req = _mockAdminRequests.find((r) => r.id === id);
+    if (!req) throw new ApiError(404, "Not Found", "Request not found");
+    req.status = "APPROVED";
+    req.reviewed_at = new Date().toISOString();
+    return { ...req };
+  }
+  return api.post<AdminUpgradeRequest>(`/api/v1/admin/upgrade-requests/${id}/approve/`, {});
+}
+
+export async function rejectUpgradeRequest(id: number, reason: string): Promise<AdminUpgradeRequest> {
+  if (USE_MOCK) {
+    const req = _mockAdminRequests.find((r) => r.id === id);
+    if (!req) throw new ApiError(404, "Not Found", "Request not found");
+    req.status = "REJECTED";
+    req.rejection_reason = reason;
+    req.reviewed_at = new Date().toISOString();
+    return { ...req };
+  }
+  return api.post<AdminUpgradeRequest>(`/api/v1/admin/upgrade-requests/${id}/reject/`, { reason });
 }
