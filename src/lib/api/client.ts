@@ -7,10 +7,9 @@ import {
 } from "@/lib/auth/auth";
 
 const BASE_URL =
-  (typeof window === "undefined"
-    ? process.env.BACKEND_URL          // server: Node.js env only
-    : process.env.NEXT_PUBLIC_API_URL  // client: public env
-  ) ?? "";
+  typeof window === "undefined"
+    ? (process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "") // server
+    : ""; // client: use relative URLs → proxied by Next.js, avoids CORS + ConnectionRefused
 
 // ─── Error types ─────────────────────────────────────────────────────────────
 
@@ -48,20 +47,24 @@ export interface RequestOptions extends Omit<RequestInit, "body"> {
 
 function joinUrl(baseUrl: string, path: string): string {
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  if (!baseUrl) {
-    throw new NetworkError(
-      "Missing NEXT_PUBLIC_API_URL. Set it to your Django backend URL.",
-    );
-  }
+  if (!baseUrl) return path.startsWith("/") ? path : `/${path}`;
   const cleanBase = baseUrl.replace(/\/+$/, "");
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   return `${cleanBase}${cleanPath}`;
 }
 
 function ensureTrailingSlash(url: string): string {
-  const parsed = new URL(url);
-  if (!parsed.pathname.endsWith("/")) parsed.pathname += "/";
-  return parsed.toString();
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    const parsed = new URL(url);
+    if (!parsed.pathname.endsWith("/")) parsed.pathname += "/";
+    return parsed.toString();
+  }
+  // Relative URL — preserve query string, ensure trailing slash on path part
+  const qIdx = url.indexOf("?");
+  if (qIdx === -1) return url.endsWith("/") ? url : `${url}/`;
+  const pathPart  = url.slice(0, qIdx);
+  const queryPart = url.slice(qIdx);
+  return (pathPart.endsWith("/") ? pathPart : `${pathPart}/`) + queryPart;
 }
 
 function getClientAccessToken(): string | null {
@@ -113,12 +116,16 @@ async function request<T>(
   let rawUrl = joinUrl(BASE_URL, path);
   rawUrl = ensureTrailingSlash(rawUrl);
 
-  const url = new URL(rawUrl);
+  // Use a dummy origin so new URL() works for both absolute and relative paths.
+  // For relative URLs we extract just pathname+search for the actual fetch call.
+  const isRelative = !rawUrl.startsWith("http://") && !rawUrl.startsWith("https://");
+  const urlObj = new URL(rawUrl, isRelative ? "http://n" : undefined);
   if (params) {
     for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
-      if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
+      if (value !== undefined && value !== null) urlObj.searchParams.set(key, String(value));
     }
   }
+  const fetchUrl = isRelative ? `${urlObj.pathname}${urlObj.search}` : urlObj.toString();
 
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -135,7 +142,7 @@ async function request<T>(
 
   let res: Response;
   try {
-    res = await fetch(url.toString(), {
+    res = await fetch(fetchUrl, {
       ...rest,
       headers,
       body:     body !== undefined ? JSON.stringify(body) : undefined,

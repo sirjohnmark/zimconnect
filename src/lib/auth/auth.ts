@@ -36,12 +36,12 @@ export function getAccessToken(): string | null { return _accessToken; }
 // ─── Refresh token — server-side HttpOnly cookie only ─────────────────────────
 // Not readable from JS by design. Use /api/auth/refresh to exchange it.
 
-export async function saveTokens(access: string, refresh: string, role: string): Promise<void> {
+export async function saveTokens(access: string, refresh: string, role: string, stay = true): Promise<void> {
   setMemoryToken(access);
   const res = await fetch("/api/auth/session", {
     method:  "POST",
     headers: { "Content-Type": "application/json" },
-    body:    JSON.stringify({ refresh, role }),
+    body:    JSON.stringify({ refresh, role, stay }),
   });
   if (!res.ok) {
     clearMemoryToken();
@@ -250,13 +250,13 @@ export function clearOtp(): void {
 
 export async function login(data: LoginInput, staySignedIn = false): Promise<LoginResponse> {
   const { loginUser } = await import("@/lib/api/auth");
-  const response = await loginUser(data);
+  const response = await loginUser(data, staySignedIn);
   setStaySignedIn(staySignedIn);
   if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
     // Mock loginUser() skips saveTokens() — call it here so /api/auth/session
     // writes the HttpOnly cookies the middleware needs to recognise the session.
     // The session route doesn't validate tokens against Django, so mock values work.
-    await saveTokens(response.tokens.access, response.tokens.refresh, response.user.role);
+    await saveTokens(response.tokens.access, response.tokens.refresh, response.user.role, staySignedIn);
   }
   return response;
 }

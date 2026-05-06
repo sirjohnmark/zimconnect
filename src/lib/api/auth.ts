@@ -104,7 +104,7 @@ export async function registerUser(data: RegisterInput): Promise<AuthUser> {
   });
 }
 
-export async function loginUser(credentials: LoginInput): Promise<LoginResponse> {
+export async function loginUser(credentials: LoginInput, stay = false): Promise<LoginResponse> {
   if (USE_MOCK) {
     const account = findAccountByEmail(credentials.email);
     if (!account) {
@@ -122,7 +122,7 @@ export async function loginUser(credentials: LoginInput): Promise<LoginResponse>
   }
   const response = await api.post<{ tokens: { access: string; refresh: string }; user: BackendUser }>("/api/v1/auth/login", credentials);
   const user = normalizeUser(response.user);
-  await saveTokens(response.tokens.access, response.tokens.refresh, user.role);
+  await saveTokens(response.tokens.access, response.tokens.refresh, user.role, stay);
   saveUser(user);
   return { tokens: response.tokens, user };
 }

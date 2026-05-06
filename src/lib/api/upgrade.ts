@@ -68,11 +68,18 @@ export async function submitUpgradeRequest(
       requested_at: new Date().toISOString(),
       reviewed_at: null,
     };
+    _mockAdminRequests.push({
+      ..._mockRequest,
+      user_id: 1,
+      username: "mock-buyer",
+      email: "buyer@mock.local",
+      full_name: "Mock Buyer",
+      national_id_url: null,
+      passport_url: null,
+      company_registration_url: null,
+    });
     return _mockRequest;
   }
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) throw new Error("NEXT_PUBLIC_API_URL is not configured");
 
   const token = getAccessToken();
   const form  = new FormData();
@@ -93,7 +100,7 @@ export async function submitUpgradeRequest(
   const controller = new AbortController();
   const timeoutId  = setTimeout(() => controller.abort(), 30_000);
   try {
-    const res = await fetch(`${apiUrl}/api/v1/auth/upgrade-to-seller/`, {
+    const res = await fetch(`/api/v1/auth/upgrade-to-seller/`, {
       method:  "POST",
       headers,
       body:    form,

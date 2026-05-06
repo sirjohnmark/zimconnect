@@ -297,9 +297,6 @@ export async function uploadCv(
   data: Omit<CvProfile, "id" | "uploadedAt">,
   file?: File,
 ): Promise<CvProfile> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) throw new Error("NEXT_PUBLIC_API_URL is not configured");
-
   const token = getAccessToken();
   const headers: Record<string, string> = {};
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -318,7 +315,7 @@ export async function uploadCv(
     const controller = new AbortController();
     const timeoutId  = setTimeout(() => controller.abort(), 30_000);
     try {
-      const res = await fetch(`${apiUrl}/api/v1/jobs/cvs/mine/`, {
+      const res = await fetch(`/api/v1/jobs/cvs/mine/`, {
         method: "PUT",
         headers,
         body:   form,
@@ -373,9 +370,6 @@ export async function submitVerification(data: {
   docType: VerificationRequest["docType"];
   file: File;
 }): Promise<void> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) throw new Error("NEXT_PUBLIC_API_URL is not configured");
-
   const token = getAccessToken();
   const form  = new FormData();
   form.append("doc_type", data.docType);
@@ -387,7 +381,7 @@ export async function submitVerification(data: {
   const controller = new AbortController();
   const timeoutId  = setTimeout(() => controller.abort(), 30_000);
   try {
-    const res = await fetch(`${apiUrl}/api/v1/auth/verification/`, {
+    const res = await fetch(`/api/v1/auth/verification/`, {
       method: "POST",
       headers,
       body:   form,

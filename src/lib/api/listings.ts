@@ -223,12 +223,7 @@ export async function uploadImages(
   listingId: number,
   files: File[],
 ): Promise<ListingImage[]> {
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL ??
-    process.env.BACKEND_URL ??
-    "";
-
-  const url = `${BASE_URL.replace(/\/+$/, "")}/api/v1/listings/${listingId}/upload-images/`;
+  const url = `/api/v1/listings/${listingId}/upload-images/`;
 
   const formData = new FormData();
   for (const file of files) {
