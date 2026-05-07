@@ -262,11 +262,11 @@ export function RegisterForm() {
         return;
       } catch (err) {
         if (err instanceof NetworkError) {
-          setFormError("Unable to connect to the server. Check your internet connection.");
+          setFormError("Unable to connect to server.");
         } else if (err instanceof ApiError && err.status === 409) {
           setFormError("An account with this email already exists.");
         } else if (err instanceof ApiError && err.status >= 500) {
-          setFormError("Server error. Try again later.");
+          setFormError("Server error. Please try again later.");
         } else if (err instanceof ApiError) {
           setFormError(err.message);
         } else {
@@ -307,7 +307,7 @@ export function RegisterForm() {
       startResendCooldown();
     } catch (err) {
       setOtpError(
-        err instanceof NetworkError ? "Unable to connect to the server. Check your internet connection."
+        err instanceof NetworkError ? "Unable to connect to server."
         : err instanceof ApiError   ? err.message
         : "Failed to send code. Please try again."
       );

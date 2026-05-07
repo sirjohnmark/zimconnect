@@ -72,7 +72,7 @@ export default function OrdersPage() {
     getMyOrders()
       .then((res) => setOrders(res.results))
       .catch((err) => setError(err instanceof NetworkError
-        ? "Connection problem — check your internet and try again."
+        ? "Unable to connect to server."
         : "Couldn't load your orders right now. Please try again."))
       .finally(() => setLoading(false));
   }

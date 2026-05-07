@@ -75,16 +75,16 @@ export function LoginForm() {
       }
     } catch (err) {
       if (err instanceof NetworkError) {
-        setFormError("Unable to connect to the server. Check your internet connection.");
+        setFormError("Unable to connect to server.");
       } else if (err instanceof ApiError) {
         if (err.status === 401) {
-          setFormError("Invalid email or password.");
-        } else if (err.status === 404) {
-          setFormError("Authentication service unavailable. Please try again later.");
+          setFormError("Invalid login credentials.");
+        } else if (err.status === 403) {
+          setFormError("Account not verified.");
         } else if (err.status === 429) {
           setFormError("Too many attempts. Please wait a moment and try again.");
         } else if (err.status >= 500) {
-          setFormError("Server error. Try again later.");
+          setFormError("Server error. Please try again later.");
         } else {
           setFormError(err.message);
         }

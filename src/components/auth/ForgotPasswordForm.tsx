@@ -45,12 +45,10 @@ export function ForgotPasswordForm() {
       setSubmitted(true);
     } catch (err) {
       if (err instanceof NetworkError) {
-        setFormError("Unable to connect to the server. Check your internet connection.");
+        setFormError("Unable to connect to server.");
       } else if (err instanceof ApiError) {
-        if (err.status === 404) {
-          setFormError("Authentication service unavailable. Please try again later.");
-        } else if (err.status >= 500) {
-          setFormError("Server error. Try again later.");
+        if (err.status >= 500) {
+          setFormError("Server error. Please try again later.");
         } else {
           setFormError(err.message);
         }

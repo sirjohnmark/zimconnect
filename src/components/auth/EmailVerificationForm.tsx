@@ -10,7 +10,7 @@ import {
   resendEmailVerificationOtp,
 } from "@/lib/api/auth";
 import { generateAndStoreOtp } from "@/lib/auth/auth";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, NetworkError } from "@/lib/api/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -173,7 +173,8 @@ export function EmailVerificationForm() {
       sendEmailVerificationOtp()
         .then(() => startCooldown())
         .catch((err: unknown) => {
-          if (err instanceof ApiError) setError(err.message);
+          if (err instanceof NetworkError) setError("Unable to connect to server.");
+          else if (err instanceof ApiError) setError(err.message);
         })
         .finally(() => setSendingOtp(false));
     } else {
@@ -241,6 +242,8 @@ export function EmailVerificationForm() {
         setOtpStatus("error");
         setError("Incorrect code. Please try again.");
         setTimeout(() => { setOtpDigits(Array(6).fill("")); setOtpStatus("idle"); }, 800);
+      } else if (err instanceof NetworkError) {
+        setError("Unable to connect to server.");
       } else if (err instanceof ApiError) {
         setError(err.message);
       } else {
@@ -266,7 +269,9 @@ export function EmailVerificationForm() {
       }
       startCooldown();
     } catch (err) {
-      if (err instanceof ApiError) {
+      if (err instanceof NetworkError) {
+        setError("Unable to connect to server.");
+      } else if (err instanceof ApiError) {
         setError(err.message);
       } else {
         setError("Failed to resend code. Please try again.");

@@ -86,11 +86,14 @@ const SAFE_MESSAGES: Record<string, string> = {
 
 function sanitiseMessage(status: number, raw: string): string {
   if (SAFE_MESSAGES[raw]) return SAFE_MESSAGES[raw];
-  if (status === 0) return "Unable to reach the server. Check your connection and try again.";
-  if (status >= 500) return "Something went wrong on our end. Please try again later.";
+  if (status === 0)   return "Unable to connect to server.";
+  if (status >= 500)  return "Server error. Please try again later.";
   if (status === 429) return "Too many requests. Please wait a moment and try again.";
-  if (status === 404) return "The requested resource was not found.";
-  // For other 4xx pass through — these are typically validation messages safe to show
+  if (status === 422) return "Invalid form data.";
+  if (status === 404) return "API endpoint not found.";
+  if (status === 403) return "Account not verified.";
+  if (status === 401) return "Invalid login credentials.";
+  // For other 4xx pass through — typically validation messages safe to show
   return raw;
 }
 
@@ -158,12 +161,9 @@ async function request<T>(
   } catch (err) {
     console.error(`[API] ${rest.method ?? "GET"} ${fetchUrl} → FAILED`, err);
     if (err instanceof DOMException && err.name === "AbortError") {
-      throw new NetworkError("Request timed out. Please check your connection and try again.", err);
+      throw new NetworkError("Unable to connect to server.", err);
     }
-    throw new NetworkError(
-      "Unable to connect to the server. Check your internet connection.",
-      err,
-    );
+    throw new NetworkError("Unable to connect to server.", err);
   } finally {
     clearTimeout(timeoutId);
   }
@@ -202,9 +202,8 @@ async function request<T>(
     }
   }
 
-  // 403 → clear permission error so admin pages can distinguish it from a network failure
   if (res.status === 403) {
-    throw new ApiError(403, "Forbidden", "You do not have permission to perform this action.", data);
+    throw new ApiError(403, "Forbidden", "Account not verified.", data);
   }
 
   if (!res.ok) {

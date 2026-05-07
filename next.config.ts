@@ -28,7 +28,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://api.sanganai.co.zw https://picsum.photos https://via.placeholder.com",
   "font-src 'self'",
-  "connect-src 'self' https://api.sanganai.co.zw",
+  "connect-src 'self' https://api.sanganai.co.zw wss://api.sanganai.co.zw",
   "media-src 'none'",
   "object-src 'none'",
   "frame-ancestors 'none'",

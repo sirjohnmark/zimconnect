@@ -51,7 +51,7 @@ export default function SavedPage() {
     getSavedListings()
       .then((saved) => setListings(saved.map((s) => toListingShape(s.listing))))
       .catch((err) => setError(err instanceof NetworkError
-        ? "Connection problem — check your internet and try again."
+        ? "Unable to connect to server."
         : "Couldn't load your saved items right now. Please try again."))
       .finally(() => setLoading(false));
   }

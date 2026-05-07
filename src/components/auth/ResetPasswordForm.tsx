@@ -9,7 +9,6 @@ import { resetPasswordSchema, type ResetPasswordInput } from "@/lib/validations/
 import { confirmPasswordReset } from "@/lib/api/auth";
 import { ApiError, NetworkError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -131,13 +130,13 @@ export function ResetPasswordForm() {
       setTimeout(() => router.push("/login?reset=1"), 1500);
     } catch (err) {
       if (err instanceof NetworkError) {
-        setFormError("Unable to connect to the server. Check your internet connection.");
+        setFormError("Unable to connect to server.");
       } else if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
         setFormError(
           "This reset link has expired or is no longer valid. Please request a new one.",
         );
       } else if (err instanceof ApiError && err.status >= 500) {
-        setFormError("Server error. Try again later.");
+        setFormError("Server error. Please try again later.");
       } else if (err instanceof ApiError) {
         setFormError(err.message);
       } else {

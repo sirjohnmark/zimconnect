@@ -34,7 +34,7 @@ export default function DashboardListingsPage() {
       setTotal(res.count);
     } catch (err) {
       setError(err instanceof NetworkError
-        ? "Connection problem — check your internet and try again."
+        ? "Unable to connect to server."
         : "Couldn't load your listings right now. Please try again.");
     } finally {
       setLoading(false);

@@ -377,7 +377,7 @@ export default function MessagesPage() {
       setPage(p);
     } catch (err) {
       setError(err instanceof NetworkError
-        ? "Connection problem — check your internet and try again."
+        ? "Unable to connect to server."
         : "Couldn't load conversations right now. Please try again.");
     } finally {
       setLoading(false);
