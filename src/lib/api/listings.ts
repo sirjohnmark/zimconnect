@@ -253,10 +253,7 @@ export async function uploadImages(
     if (err instanceof DOMException && err.name === "AbortError") {
       throw new NetworkError("Upload timed out. Please try again.", err);
     }
-    throw new NetworkError(
-      "Unable to upload images. Check your connection.",
-      err,
-    );
+    throw new NetworkError("Unable to connect to server.", err);
   } finally {
     clearTimeout(timeoutId);
   }

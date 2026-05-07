@@ -1,4 +1,4 @@
-import { api } from "./client";
+import { api, ApiError, NetworkError } from "./client";
 import { getAccessToken } from "@/lib/auth/auth";
 
 // ─── Frontend types (shape the pages expect) ─────────────────────────────────
@@ -321,9 +321,19 @@ export async function uploadCv(
         body:   form,
         signal: controller.signal,
       });
-      if (!res.ok) throw new Error("CV save failed");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+        const msg  = (body.detail as string) ?? (body.message as string) ?? "Failed to save CV.";
+        throw new ApiError(res.status, res.statusText, msg);
+      }
       const raw = await res.json() as BackendCv;
       return mapCv(raw);
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new NetworkError("Upload timed out. Please try again.", err);
+      }
+      throw new NetworkError("Unable to connect to server.", err);
     } finally {
       clearTimeout(timeoutId);
     }
@@ -387,7 +397,17 @@ export async function submitVerification(data: {
       body:   form,
       signal: controller.signal,
     });
-    if (!res.ok) throw new Error("Verification submission failed");
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+      const msg  = (body.detail as string) ?? (body.message as string) ?? "Verification submission failed.";
+      throw new ApiError(res.status, res.statusText, msg);
+    }
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new NetworkError("Upload timed out. Please try again.", err);
+    }
+    throw new NetworkError("Unable to connect to server.", err);
   } finally {
     clearTimeout(timeoutId);
   }

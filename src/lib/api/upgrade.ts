@@ -1,4 +1,4 @@
-import { api, ApiError } from "./client";
+import { api, ApiError, NetworkError } from "./client";
 import { getAccessToken } from "@/lib/auth/auth";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -112,6 +112,12 @@ export async function submitUpgradeRequest(
       throw new ApiError(res.status, res.statusText, msg);
     }
     return res.json() as Promise<SellerUpgradeRequest>;
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new NetworkError("Upload timed out. Please try again.", err);
+    }
+    throw new NetworkError("Unable to connect to server.", err);
   } finally {
     clearTimeout(timeoutId);
   }

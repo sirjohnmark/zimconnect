@@ -70,11 +70,26 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     return [
+      // ── API proxy ──────────────────────────────────────────────────────────────
+      // Two rules ensure the destination ALWAYS has a trailing slash regardless of
+      // whether path* captured it from the source.  Without this, the destination
+      // would be missing the trailing slash, triggering Django's APPEND_SLASH 301
+      // redirect to the raw backend URL — which the browser then follows
+      // cross-origin, hitting a CORS wall and causing "Unable to connect to server."
+      //
+      // Rule 1 — URL already has trailing slash (the common case after ensureTrailingSlash):
+      //   source captures path* = "auth/login"  →  dest = …/auth/login/  ✓
       {
-        // Scoped to /api/v1/ so internal Next.js routes at /api/auth/* are NOT proxied
-        source:      "/api/v1/:path*",
-        destination: `${API_URL}/api/v1/:path*`,
+        source:      "/api/v1/:path*/",
+        destination: `${API_URL}/api/v1/:path*/`,
       },
+      // Rule 2 — URL without trailing slash (safety net / edge cases):
+      //   source captures path* = "auth/login"  →  dest = …/auth/login/  ✓
+      {
+        source:      "/api/v1/:path*",
+        destination: `${API_URL}/api/v1/:path*/`,
+      },
+      // ── WebSocket proxy ────────────────────────────────────────────────────────
       {
         source:      "/ws/:path*",
         destination: `${API_URL}/ws/:path*`,
