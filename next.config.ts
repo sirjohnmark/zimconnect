@@ -55,6 +55,9 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Django uses trailing slashes; keep Vercel consistent so fetch() URLs with trailing
+  // slashes are never redirected (which would cause opaqueredirect with redirect:"manual").
+  trailingSlash: true,
 
   async headers() {
     return [

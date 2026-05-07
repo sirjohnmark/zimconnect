@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { useAuthContext } from "@/lib/auth/AuthProvider";
 import { sendOtp, verifyOtpCode, type OtpMethod } from "@/lib/api/auth";
 import { generateAndStoreOtp, verifyOtp } from "@/lib/auth/auth";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser } from "@/lib/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -261,8 +261,12 @@ export function RegisterForm() {
         setStep(3);
         return;
       } catch (err) {
-        if (err instanceof ApiError && err.status === 409) {
+        if (err instanceof NetworkError) {
+          setFormError("Unable to connect to the server. Check your internet connection.");
+        } else if (err instanceof ApiError && err.status === 409) {
           setFormError("An account with this email already exists.");
+        } else if (err instanceof ApiError && err.status >= 500) {
+          setFormError("Server error. Try again later.");
         } else if (err instanceof ApiError) {
           setFormError(err.message);
         } else {
@@ -302,7 +306,11 @@ export function RegisterForm() {
       setStep(4);
       startResendCooldown();
     } catch (err) {
-      setOtpError(err instanceof ApiError ? err.message : "Failed to send code. Please try again.");
+      setOtpError(
+        err instanceof NetworkError ? "Unable to connect to the server. Check your internet connection."
+        : err instanceof ApiError   ? err.message
+        : "Failed to send code. Please try again."
+      );
     } finally {
       setSending(false);
     }

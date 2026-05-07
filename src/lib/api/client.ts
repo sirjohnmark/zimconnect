@@ -147,16 +147,21 @@ async function request<T>(
       ...rest,
       headers,
       body:     body !== undefined ? JSON.stringify(body) : undefined,
-      redirect: "manual",
+      // "follow" so Vercel/Next.js trailing-slash redirects and Django APPEND_SLASH
+      // redirects are handled transparently instead of producing opaqueredirects.
+      redirect: "follow",
       signal:   controller.signal,
       ...(next ? { next } : {}),
     });
+    // DEBUG: log every request/response (remove once auth is confirmed working)
+    console.debug(`[API] ${rest.method ?? "GET"} ${fetchUrl} → ${res.status}`);
   } catch (err) {
+    console.error(`[API] ${rest.method ?? "GET"} ${fetchUrl} → FAILED`, err);
     if (err instanceof DOMException && err.name === "AbortError") {
       throw new NetworkError("Request timed out. Please check your connection and try again.", err);
     }
     throw new NetworkError(
-      "Unable to reach the server. Check your connection, backend URL, or CORS settings.",
+      "Unable to connect to the server. Check your internet connection.",
       err,
     );
   } finally {
@@ -170,26 +175,6 @@ async function request<T>(
     else data = await res.text();
   } catch {
     data = null;
-  }
-
-  // Opaqueredirect: fetch with redirect:"manual" returns type="opaqueredirect", status=0
-  // when the server issues a 3xx. This happens when Django APPEND_SLASH redirects a URL.
-  // Treat it as a network-level misconfiguration, not an API error.
-  if (res.type === "opaqueredirect" || res.status === 0) {
-    throw new NetworkError(
-      "Unable to reach the server. Check your connection and try again.",
-    );
-  }
-
-  // Surface redirects as errors
-  if (res.status >= 300 && res.status < 400) {
-    const location = res.headers.get("location") ?? "(no location header)";
-    throw new ApiError(
-      res.status,
-      res.statusText,
-      `Unexpected redirect to ${location}. Check your API URL and Django settings.`,
-      data,
-    );
   }
 
   // 401 → try token refresh once (singleton — all concurrent callers share the same promise)

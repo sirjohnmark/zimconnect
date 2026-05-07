@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { useAuth } from "@/lib/auth/useAuth";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, NetworkError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -74,18 +74,20 @@ export function LoginForm() {
         router.push(redirectTo);
       }
     } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.status === 404) {
-          setFormError("No account found with this email. Please create an account first.");
-        } else if (err.status === 401) {
-          setFormError("Incorrect password. Please try again.");
+      if (err instanceof NetworkError) {
+        setFormError("Unable to connect to the server. Check your internet connection.");
+      } else if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setFormError("Invalid email or password.");
+        } else if (err.status === 404) {
+          setFormError("Authentication service unavailable. Please try again later.");
         } else if (err.status === 429) {
           setFormError("Too many attempts. Please wait a moment and try again.");
+        } else if (err.status >= 500) {
+          setFormError("Server error. Try again later.");
         } else {
           setFormError(err.message);
         }
-      } else if (err instanceof Error) {
-        setFormError(err.message);
       } else {
         setFormError("Something went wrong. Please try again.");
       }

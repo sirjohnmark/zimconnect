@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 import { requestPasswordReset } from "@/lib/api/auth";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, NetworkError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -44,8 +44,16 @@ export function ForgotPasswordForm() {
       }
       setSubmitted(true);
     } catch (err) {
-      if (err instanceof ApiError) {
-        setFormError(err.message);
+      if (err instanceof NetworkError) {
+        setFormError("Unable to connect to the server. Check your internet connection.");
+      } else if (err instanceof ApiError) {
+        if (err.status === 404) {
+          setFormError("Authentication service unavailable. Please try again later.");
+        } else if (err.status >= 500) {
+          setFormError("Server error. Try again later.");
+        } else {
+          setFormError(err.message);
+        }
       } else {
         setFormError("Something went wrong. Please try again.");
       }

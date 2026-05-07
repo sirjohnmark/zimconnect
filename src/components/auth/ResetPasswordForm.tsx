@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { resetPasswordSchema, type ResetPasswordInput } from "@/lib/validations/auth";
 import { confirmPasswordReset } from "@/lib/api/auth";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, NetworkError } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -130,10 +130,14 @@ export function ResetPasswordForm() {
       setSuccess(true);
       setTimeout(() => router.push("/login?reset=1"), 1500);
     } catch (err) {
-      if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
+      if (err instanceof NetworkError) {
+        setFormError("Unable to connect to the server. Check your internet connection.");
+      } else if (err instanceof ApiError && (err.status === 400 || err.status === 422)) {
         setFormError(
           "This reset link has expired or is no longer valid. Please request a new one.",
         );
+      } else if (err instanceof ApiError && err.status >= 500) {
+        setFormError("Server error. Try again later.");
       } else if (err instanceof ApiError) {
         setFormError(err.message);
       } else {
