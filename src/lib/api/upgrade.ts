@@ -20,8 +20,8 @@ export interface SubmitUpgradeData {
   business_type: BusinessType;
   business_name: string;
   business_description?: string;
-  national_id: File;
-  passport: File;
+  national_id?: File;           // at least one of national_id / passport is required
+  passport?: File;
   company_registration?: File;
 }
 
@@ -88,8 +88,8 @@ export async function submitUpgradeRequest(
   if (data.business_description) {
     form.append("business_description", data.business_description);
   }
-  form.append("national_id",  data.national_id);
-  form.append("passport",     data.passport);
+  if (data.national_id)  form.append("national_id", data.national_id);
+  if (data.passport)     form.append("passport",    data.passport);
   if (data.company_registration) {
     form.append("company_registration", data.company_registration);
   }

@@ -220,6 +220,7 @@ export default function UpgradePage() {
   const [companyRegistration, setCompanyRegistration] = useState<File | null>(null);
 
   // Document errors
+  const [idDocGroupError,          setIdDocGroupError]          = useState<string | null>(null);
   const [nationalIdError,          setNationalIdError]          = useState<string | null>(null);
   const [passportError,            setPassportError]            = useState<string | null>(null);
   const [companyRegistrationError, setCompanyRegistrationError] = useState<string | null>(null);
@@ -261,16 +262,22 @@ export default function UpgradePage() {
     e.preventDefault();
     if (!step1Data) return;
 
-    // Validate files
-    const nidErr  = validateFile(nationalId, true);
-    const passErr = validateFile(passport, true);
+    // At least one identity document (National ID or Passport) is required.
+    const groupErr = !nationalId && !passport
+      ? "Please upload at least one identity document — National ID or Passport."
+      : null;
+    setIdDocGroupError(groupErr);
+
+    // Validate format/size for any file that was provided (not required individually).
+    const nidErr  = validateFile(nationalId, false);
+    const passErr = validateFile(passport, false);
     const compErr = validateFile(companyRegistration, isCompany);
 
     setNationalIdError(nidErr);
     setPassportError(passErr);
     setCompanyRegistrationError(compErr);
 
-    if (nidErr || passErr || compErr) return;
+    if (groupErr || nidErr || passErr || compErr) return;
 
     setSubmitError(null);
     setIsSubmitting(true);
@@ -280,8 +287,8 @@ export default function UpgradePage() {
         business_type:        step1Data.business_type as BusinessType,
         business_name:        step1Data.business_name,
         business_description: step1Data.business_description,
-        national_id:          nationalId!,
-        passport:             passport!,
+        national_id:          nationalId ?? undefined,
+        passport:             passport ?? undefined,
         company_registration: companyRegistration ?? undefined,
       });
       setUpgradeStatus(result);
@@ -429,23 +436,32 @@ export default function UpgradePage() {
         Upload clear photos or scans. Accepted formats: JPG, PNG, WebP, PDF. Max {MAX_SIZE_MB} MB each.
       </div>
 
-      <FileField
-        label="National ID"
-        hint="Front and back of your national identity document"
-        required
-        value={nationalId}
-        error={nationalIdError}
-        onChange={(f) => { setNationalId(f); setNationalIdError(null); }}
-      />
+      {/* Identity document group — at least one required */}
+      <div className="space-y-3">
+        <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-700">
+          Upload <strong>at least one</strong> identity document — National ID <em>or</em> Passport.
+        </div>
 
-      <FileField
-        label="Passport"
-        hint="Photo page of your passport"
-        required
-        value={passport}
-        error={passportError}
-        onChange={(f) => { setPassport(f); setPassportError(null); }}
-      />
+        {idDocGroupError && (
+          <p className="text-xs text-red-600">{idDocGroupError}</p>
+        )}
+
+        <FileField
+          label="National ID"
+          hint="Front and back of your national identity document"
+          value={nationalId}
+          error={nationalIdError}
+          onChange={(f) => { setNationalId(f); setNationalIdError(null); if (f) setIdDocGroupError(null); }}
+        />
+
+        <FileField
+          label="Passport"
+          hint="Photo page of your passport"
+          value={passport}
+          error={passportError}
+          onChange={(f) => { setPassport(f); setPassportError(null); if (f) setIdDocGroupError(null); }}
+        />
+      </div>
 
       {isCompany && (
         <FileField
