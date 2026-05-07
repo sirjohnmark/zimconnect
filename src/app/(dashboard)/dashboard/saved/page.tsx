@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { getSavedListings, unsaveListing, type SavedListingDetail } from "@/lib/api/buyers";
+import { NetworkError } from "@/lib/api/client";
 import type { Listing } from "@/types/listing";
 
 function toListingShape(detail: SavedListingDetail): Listing {
@@ -49,7 +50,9 @@ export default function SavedPage() {
     setError(null);
     getSavedListings()
       .then((saved) => setListings(saved.map((s) => toListingShape(s.listing))))
-      .catch(() => setError("Failed to load saved listings. Please try again."))
+      .catch((err) => setError(err instanceof NetworkError
+        ? "Connection problem — check your internet and try again."
+        : "Couldn't load your saved items right now. Please try again."))
       .finally(() => setLoading(false));
   }
 

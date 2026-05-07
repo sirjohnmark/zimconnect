@@ -70,7 +70,7 @@ const nextConfig: NextConfig = {
       {
         // Scoped to /api/v1/ so internal Next.js routes at /api/auth/* are NOT proxied
         source:      "/api/v1/:path*",
-        destination: `${API_URL}/api/v1/:path*/`,
+        destination: `${API_URL}/api/v1/:path*`,
       },
       {
         source:      "/ws/:path*",

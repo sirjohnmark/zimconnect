@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { getMyListings, deleteListing } from "@/lib/api/listings";
+import { NetworkError } from "@/lib/api/client";
 import type { Listing } from "@/types/listing";
 
 function GridSkeleton() {
@@ -31,8 +32,10 @@ export default function DashboardListingsPage() {
       const res = await getMyListings({ page_size: 100 });
       setListings(res.results);
       setTotal(res.count);
-    } catch {
-      setError("Failed to load your listings. Please try again.");
+    } catch (err) {
+      setError(err instanceof NetworkError
+        ? "Connection problem — check your internet and try again."
+        : "Couldn't load your listings right now. Please try again.");
     } finally {
       setLoading(false);
     }

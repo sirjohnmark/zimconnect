@@ -16,6 +16,7 @@ import {
   type CvProfile,
   type VerificationRequest,
 } from "@/lib/api/jobs";
+import { NetworkError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 // ─── Verification banner ──────────────────────────────────────────────────────
@@ -330,6 +331,7 @@ export default function JobsDashboardPage() {
   const [jobs, setJobs]   = useState<JobListing[]>([]);
   const [cvs, setCvs]     = useState<CvProfile[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([getMyJobs(), getCvs()])
@@ -337,7 +339,9 @@ export default function JobsDashboardPage() {
         setJobs(myJobs);
         setCvs(allCvs);
       })
-      .catch(() => {/* show empty state */})
+      .catch((err) => setFetchError(err instanceof NetworkError
+        ? "Connection problem — check your internet and try again."
+        : "Couldn't load job data right now. Please try again."))
       .finally(() => setMounted(true));
   }, []);
 
@@ -400,6 +404,10 @@ export default function JobsDashboardPage() {
             {!mounted ? (
               <div className="space-y-2">
                 {[1, 2].map((n) => <div key={n} className="h-14 animate-pulse rounded-xl bg-gray-100" />)}
+              </div>
+            ) : fetchError ? (
+              <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {fetchError}
               </div>
             ) : jobs.length > 0 ? (
               <div className="space-y-2">

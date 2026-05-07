@@ -6,6 +6,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { cn } from "@/lib/utils";
 import { getMyOrders } from "@/lib/api/orders";
 import type { Order, OrderStatus } from "@/lib/api/orders";
+import { NetworkError } from "@/lib/api/client";
 
 // ─── Status badge ─────────────────────────────────────────────────────────────
 
@@ -70,7 +71,9 @@ export default function OrdersPage() {
     setError(null);
     getMyOrders()
       .then((res) => setOrders(res.results))
-      .catch(() => setError("Failed to load orders. Please try again."))
+      .catch((err) => setError(err instanceof NetworkError
+        ? "Connection problem — check your internet and try again."
+        : "Couldn't load your orders right now. Please try again."))
       .finally(() => setLoading(false));
   }
 

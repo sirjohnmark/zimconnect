@@ -12,6 +12,7 @@ import {
   type ConversationParticipant,
   type Message,
 } from "@/lib/api/inbox";
+import { NetworkError } from "@/lib/api/client";
 import { useWebSocket } from "@/lib/hooks/useWebSocket";
 import { cn } from "@/lib/utils";
 
@@ -374,8 +375,10 @@ export default function MessagesPage() {
       setConversations((prev) => append ? [...prev, ...data.results] : data.results);
       setHasMore(data.next !== null);
       setPage(p);
-    } catch {
-      setError("Failed to load conversations. Please try again.");
+    } catch (err) {
+      setError(err instanceof NetworkError
+        ? "Connection problem — check your internet and try again."
+        : "Couldn't load conversations right now. Please try again.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -458,13 +461,18 @@ export default function MessagesPage() {
               <ListSkeleton />
             ) : error ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center gap-3">
-                <p className="text-sm text-red-600">{error}</p>
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-red-400" aria-hidden="true">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-sm text-gray-700 font-medium">{error}</p>
                 <button
                   type="button"
                   onClick={() => loadConversations(1)}
-                  className="rounded-lg border border-gray-200 px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                  className="rounded-lg bg-apple-blue px-4 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
                 >
-                  Retry
+                  Try again
                 </button>
               </div>
             ) : filtered.length === 0 ? (

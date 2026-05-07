@@ -86,6 +86,7 @@ const SAFE_MESSAGES: Record<string, string> = {
 
 function sanitiseMessage(status: number, raw: string): string {
   if (SAFE_MESSAGES[raw]) return SAFE_MESSAGES[raw];
+  if (status === 0) return "Unable to reach the server. Check your connection and try again.";
   if (status >= 500) return "Something went wrong on our end. Please try again later.";
   if (status === 429) return "Too many requests. Please wait a moment and try again.";
   if (status === 404) return "The requested resource was not found.";
@@ -169,6 +170,15 @@ async function request<T>(
     else data = await res.text();
   } catch {
     data = null;
+  }
+
+  // Opaqueredirect: fetch with redirect:"manual" returns type="opaqueredirect", status=0
+  // when the server issues a 3xx. This happens when Django APPEND_SLASH redirects a URL.
+  // Treat it as a network-level misconfiguration, not an API error.
+  if (res.type === "opaqueredirect" || res.status === 0) {
+    throw new NetworkError(
+      "Unable to reach the server. Check your connection and try again.",
+    );
   }
 
   // Surface redirects as errors
