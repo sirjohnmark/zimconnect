@@ -298,3 +298,48 @@ export const sendPhoneOtp  = (phone?: string) => sendOtp("sms", undefined, phone
 export const verifyEmailOtp = (otp: string, email?: string) => verifyOtpCode(otp, "email", email);
 /** @deprecated Use verifyOtpCode(otp, "sms", undefined, phone) */
 export const verifyPhoneOtp = (otp: string, phone?: string) => verifyOtpCode(otp, "sms", undefined, phone);
+
+// ─── Password reset ───────────────────────────────────────────────────────────
+
+/**
+ * POST /api/v1/auth/password/reset/
+ * Requests a password reset link sent to the given email address.
+ * Always resolves (even if the email is not registered) to prevent enumeration.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  if (USE_MOCK) {
+    await new Promise((r) => setTimeout(r, 600));
+    return;
+  }
+  await api.post<void>("/api/v1/auth/password/reset/", { email });
+}
+
+/**
+ * POST /api/v1/auth/password/reset/confirm/
+ * Confirms the password reset using the uid + token from the email link and
+ * the user's chosen new password.
+ *
+ * In mock mode `uid` holds the user's email and the token is ignored; the
+ * stored account password is updated locally.
+ *
+ * Throws ApiError(400) for invalid/expired token.
+ */
+export async function confirmPasswordReset(
+  uid: string,
+  token: string,
+  newPassword1: string,
+  newPassword2: string,
+): Promise<void> {
+  if (USE_MOCK) {
+    const account = findAccountByEmail(uid);
+    if (account) await updateStoredPassword(account.id, newPassword1);
+    await new Promise((r) => setTimeout(r, 500));
+    return;
+  }
+  await api.post<void>("/api/v1/auth/password/reset/confirm/", {
+    uid,
+    token,
+    new_password1: newPassword1,
+    new_password2: newPassword2,
+  });
+}

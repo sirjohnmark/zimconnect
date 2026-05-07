@@ -48,3 +48,18 @@ export const registerSchema = z.object({
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    new_password1: z
+      .string()
+      .min(1, "Password is required")
+      .min(8, "Password must be at least 8 characters"),
+    new_password2: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((d) => d.new_password1 === d.new_password2, {
+    message: "Passwords do not match",
+    path: ["new_password2"],
+  });
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

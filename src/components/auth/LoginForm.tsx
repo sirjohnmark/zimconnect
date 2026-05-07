@@ -50,7 +50,8 @@ export function LoginForm() {
   const { login } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [staySignedIn, setStaySignedIn] = useState(false);
-  const redirectTo = safeLoginRedirect(searchParams.get("redirect"));
+  const redirectTo    = safeLoginRedirect(searchParams.get("redirect"));
+  const passwordReset = searchParams.get("reset") === "1";
 
   const {
     register,
@@ -99,6 +100,17 @@ export function LoginForm() {
       </Card.Header>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+        {passwordReset && (
+          <div
+            role="status"
+            className="flex items-center gap-2.5 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+          >
+            <svg className="h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+            </svg>
+            Password updated successfully. Sign in with your new password.
+          </div>
+        )}
         {/* Form-level error (wrong credentials, server error, etc.) */}
         {formError && <FormAlert message={formError} />}
 
