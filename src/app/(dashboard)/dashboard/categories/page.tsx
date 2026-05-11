@@ -10,7 +10,7 @@ import {
 } from "@/lib/api/categories";
 import type { Category } from "@/types/category";
 import type { CategoryInput } from "@/lib/api/categories";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, NetworkError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -248,15 +248,17 @@ function DeleteModal({
   onConfirm,
   onCancel,
   busy,
+  error,
 }: {
   category: Category;
   onConfirm: () => void;
   onCancel: () => void;
   busy: boolean;
+  error?: string;
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={busy ? undefined : onCancel} />
       <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl space-y-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 text-red-600">
@@ -270,9 +272,14 @@ function DeleteModal({
             <span className="font-semibold text-gray-700">
               {category.icon ? `${category.icon} ` : ""}{category.name}
             </span>
-            . Sub-categories and listings in this category may be affected.
+            . Any listings assigned to this category may be affected.
           </p>
         </div>
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs text-red-700">
+            {error}
+          </div>
+        )}
         <div className="flex gap-3">
           <button
             onClick={onCancel}
@@ -344,6 +351,7 @@ export default function AdminCategoriesPage() {
 
   const [modalCat,      setModalCat]      = useState<Category | null | undefined>(undefined);
   const [deleteTarget,  setDeleteTarget]  = useState<Category | null>(null);
+  const [deleteError,   setDeleteError]   = useState("");
 
   const PAGE_SIZE = 50;
 
@@ -385,9 +393,12 @@ export default function AdminCategoriesPage() {
       }
       setModalCat(undefined);
     } catch (e: unknown) {
-      setModalError(e instanceof ApiError && e.status === 403
-        ? "Permission denied."
-        : e instanceof Error ? e.message : "Failed to save category.");
+      setModalError(
+        e instanceof NetworkError      ? "Unable to connect to server." :
+        e instanceof ApiError && e.status === 403 ? "Permission denied." :
+        e instanceof ApiError          ? e.message :
+        "Failed to save category.",
+      );
     } finally {
       setSaving(false);
     }
@@ -395,18 +406,29 @@ export default function AdminCategoriesPage() {
 
   async function handleDelete(cat: Category) {
     setBusyId(cat.id);
+    setDeleteError("");
     try {
       await deleteCategory(cat.id);
       setCategories((prev) => prev.filter((c) => c.id !== cat.id));
       setTotalCount((n) => n - 1);
       setDeleteTarget(null);
+      setDeleteError("");
       showToast("Category deleted.");
     } catch (e: unknown) {
-      showToast(e instanceof ApiError && e.status === 403
-        ? "Permission denied."
-        : "Failed to delete category.", "error");
+      setDeleteError(
+        e instanceof NetworkError      ? "Unable to connect to server." :
+        e instanceof ApiError && e.status === 403 ? "Permission denied." :
+        e instanceof ApiError          ? e.message :
+        "Failed to delete category.",
+      );
+    } finally {
       setBusyId(null);
     }
+  }
+
+  function handleDeleteCancel() {
+    setDeleteTarget(null);
+    setDeleteError("");
   }
 
   // ─── Auth loading ──────────────────────────────────────────────────────────
@@ -650,7 +672,8 @@ export default function AdminCategoriesPage() {
           category={deleteTarget}
           busy={busyId === deleteTarget.id}
           onConfirm={() => handleDelete(deleteTarget)}
-          onCancel={() => setDeleteTarget(null)}
+          onCancel={handleDeleteCancel}
+          error={deleteError}
         />
       )}
     </>
