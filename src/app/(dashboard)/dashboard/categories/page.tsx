@@ -363,7 +363,11 @@ export default function AdminCategoriesPage() {
       setCategories(data.results);
       setTotalCount(data.count);
     } catch (e: unknown) {
-      setError(e instanceof ApiError && e.status === 403 ? "forbidden" : "unavailable");
+      setError(
+        e instanceof ApiError && e.status === 403 ? "forbidden" :
+        e instanceof NetworkError ? "network" :
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -503,11 +507,18 @@ export default function AdminCategoriesPage() {
                       <p className="mt-1 text-xs text-red-400">Try signing out and back in.</p>
                     </td>
                   </tr>
-                ) : error === "unavailable" ? (
+                ) : error === "network" ? (
                   <tr>
                     <td colSpan={6} className="py-14 text-center">
-                      <p className="text-sm font-semibold text-amber-700">Service unavailable</p>
-                      <p className="mt-1 text-xs text-amber-400">Please try again in a few minutes.</p>
+                      <p className="text-sm font-semibold text-amber-700">Unable to connect to server.</p>
+                      <button onClick={load} className="mt-2 text-xs font-semibold text-apple-blue hover:underline">Retry →</button>
+                    </td>
+                  </tr>
+                ) : error === "error" ? (
+                  <tr>
+                    <td colSpan={6} className="py-14 text-center">
+                      <p className="text-sm font-semibold text-red-700">Failed to load categories. Please try again.</p>
+                      <button onClick={load} className="mt-2 text-xs font-semibold text-apple-blue hover:underline">Retry →</button>
                     </td>
                   </tr>
                 ) : categories.length === 0 ? (

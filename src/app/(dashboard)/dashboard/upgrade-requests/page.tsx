@@ -8,7 +8,7 @@ import {
   rejectUpgradeRequest,
   type AdminUpgradeRequest,
 } from "@/lib/api/upgrade";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, NetworkError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -266,7 +266,11 @@ export default function UpgradeRequestsPage() {
       const data = await getAdminUpgradeRequests({ ...params, page_size: 50 });
       setRequests(data.results);
     } catch (e: unknown) {
-      setError(e instanceof ApiError && e.status === 403 ? "forbidden" : "unavailable");
+      setError(
+        e instanceof ApiError && e.status === 403 ? "forbidden" :
+        e instanceof NetworkError ? "network" :
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -372,10 +376,15 @@ export default function UpgradeRequestsPage() {
             <p className="text-sm font-semibold text-red-700">Permission denied</p>
             <p className="mt-1 text-xs text-red-400">Try signing out and back in.</p>
           </div>
-        ) : error === "unavailable" ? (
+        ) : error === "network" ? (
           <div className="py-16 text-center">
-            <p className="text-sm font-semibold text-amber-700">Service unavailable</p>
-            <p className="mt-1 text-xs text-amber-400">Please try again in a few minutes.</p>
+            <p className="text-sm font-semibold text-amber-700">Unable to connect to server.</p>
+            <button onClick={load} className="mt-2 text-xs font-semibold text-apple-blue hover:underline">Retry →</button>
+          </div>
+        ) : error === "error" ? (
+          <div className="py-16 text-center">
+            <p className="text-sm font-semibold text-red-700">Failed to load applications. Please try again.</p>
+            <button onClick={load} className="mt-2 text-xs font-semibold text-apple-blue hover:underline">Retry →</button>
           </div>
         ) : requests.length === 0 ? (
           <div className="py-16 text-center">

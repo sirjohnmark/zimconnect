@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { getAdminStats } from "@/lib/api/admin";
 import { getAllListingsAdmin, approveListing } from "@/lib/api/listings";
 import { getUsers, updateUserAdmin } from "@/lib/api/users";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AdminStats } from "@/lib/api/admin";
 import type { Listing } from "@/types/listing";
 import type { AdminUser } from "@/lib/api/users";
@@ -169,7 +169,11 @@ export default function AdminOverviewPage() {
       setRecentUsers(usersData.results);
       setRefreshedAt(new Date());
     } catch (e: unknown) {
-      setError(e instanceof ApiError && e.status === 403 ? "forbidden" : "unavailable");
+      setError(
+        e instanceof ApiError && e.status === 403 ? "forbidden" :
+        e instanceof NetworkError ? "network" :
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -359,10 +363,18 @@ export default function AdminOverviewPage() {
           <p className="mt-1 text-xs text-red-500">Your account does not have admin access. Try signing out and back in.</p>
         </div>
       )}
-      {!loading && error === "unavailable" && (
+      {!loading && error === "network" && (
         <div className="rounded-2xl border border-amber-100 bg-amber-50 py-12 text-center">
-          <p className="text-sm font-semibold text-amber-700">We are currently unavailable</p>
-          <p className="mt-1 text-xs text-amber-500">Please come back in a few minutes.</p>
+          <p className="text-sm font-semibold text-amber-700">Unable to connect to server.</p>
+          <p className="mt-1 text-xs text-amber-500">Check your connection and try again.</p>
+          <button onClick={load} className="mt-3 text-xs font-semibold text-apple-blue hover:underline">↻ Retry</button>
+        </div>
+      )}
+      {!loading && error === "error" && (
+        <div className="rounded-2xl border border-red-100 bg-red-50 py-12 text-center">
+          <p className="text-sm font-semibold text-red-700">Failed to load dashboard data.</p>
+          <p className="mt-1 text-xs text-red-500">Please try again.</p>
+          <button onClick={load} className="mt-3 text-xs font-semibold text-apple-blue hover:underline">↻ Retry</button>
         </div>
       )}
 
