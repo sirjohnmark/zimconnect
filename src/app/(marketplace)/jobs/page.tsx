@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
 import { ReportModal } from "@/components/jobs/ReportModal";
 import { getJobs, getCvs, type JobListing, type CvProfile } from "@/lib/api/jobs";
+import { NetworkError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 // ─── Disclaimer ───────────────────────────────────────────────────────────────
@@ -180,6 +181,7 @@ export default function JobsPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "full-time" | "part-time" | "contract" | "internship" | "remote">("all");
   const [mounted, setMounted] = useState(false);
+  const [error,   setError]   = useState<"" | "network" | "error">("");
 
   useEffect(() => {
     Promise.all([getJobs(), getCvs()])
@@ -187,7 +189,9 @@ export default function JobsPage() {
         setJobs(fetchedJobs);
         setCvs(fetchedCvs);
       })
-      .catch(() => {/* show empty state on error */})
+      .catch((err: unknown) => {
+        setError(err instanceof NetworkError ? "network" : "error");
+      })
       .finally(() => setMounted(true));
   }, []);
 
@@ -311,6 +315,15 @@ export default function JobsPage() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="rounded-2xl border border-gray-100 bg-white h-48 animate-pulse" />
           ))}
+        </div>
+      ) : error === "network" ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-amber-100 bg-amber-50 py-16 text-center">
+          <p className="text-sm font-semibold text-amber-800">Unable to connect to server.</p>
+          <p className="mt-1 text-xs text-amber-600">Check your connection and try again.</p>
+        </div>
+      ) : error === "error" ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-red-100 bg-red-50 py-16 text-center">
+          <p className="text-sm font-semibold text-red-700">Failed to load jobs.</p>
         </div>
       ) : tab === "jobs" ? (
         filteredJobs.length === 0 ? (

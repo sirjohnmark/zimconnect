@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { getListings } from "@/lib/api/listings";
+import { NetworkError } from "@/lib/api/client";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { CITY_LABELS } from "@/lib/validations/listing";
 import type { Listing } from "@/types/listing";
@@ -93,9 +94,11 @@ export default function ListingsPage() {
   const [total,    setTotal]    = useState(0);
   const [hasNext,  setHasNext]  = useState(false);
   const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState<"" | "network" | "error">("");
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
       const res = await getListings({
         search:   urlSearch   || undefined,
@@ -107,8 +110,11 @@ export default function ListingsPage() {
       setListings(res.results);
       setTotal(res.count);
       setHasNext(res.next !== null);
-    } catch {
+    } catch (err: unknown) {
+      setError(err instanceof NetworkError ? "network" : "error");
       setListings([]);
+      setTotal(0);
+      setHasNext(false);
     } finally {
       setLoading(false);
     }
@@ -227,6 +233,17 @@ export default function ListingsPage() {
       {/* Results */}
       {loading ? (
         <GridSkeleton />
+      ) : error === "network" ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-amber-100 bg-amber-50 py-16 text-center">
+          <p className="text-sm font-semibold text-amber-800">Unable to connect to server.</p>
+          <p className="mt-1 text-xs text-amber-600">Check your connection and try again.</p>
+          <button onClick={fetchListings} className="mt-3 text-xs font-semibold text-apple-blue hover:underline">↻ Retry</button>
+        </div>
+      ) : error === "error" ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-red-100 bg-red-50 py-16 text-center">
+          <p className="text-sm font-semibold text-red-700">Failed to load listings.</p>
+          <button onClick={fetchListings} className="mt-3 text-xs font-semibold text-apple-blue hover:underline">↻ Retry</button>
+        </div>
       ) : listings.length === 0 ? (
         <EmptyState search={urlSearch} location={urlLocation} category={urlCategory} />
       ) : (

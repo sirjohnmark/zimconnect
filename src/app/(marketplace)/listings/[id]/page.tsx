@@ -7,6 +7,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { SaveButton } from "@/components/marketplace/SaveButton";
 import { ReviewsSection } from "@/components/marketplace/ReviewsSection";
 import { getListing } from "@/lib/api/listings";
+import { ApiError, NetworkError } from "@/lib/api/client";
 import type { Listing, ListingCondition } from "@/types/listing";
 import { cn } from "@/lib/utils";
 
@@ -145,9 +146,9 @@ export default function ListingDetailPage() {
     getListing(numericId)
       .then(setListing)
       .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : "";
-        if (msg.includes("404") || msg.includes("not found")) setNotFound(true);
-        else setError("Failed to load listing. Please try again.");
+        if (err instanceof ApiError && err.status === 404) setNotFound(true);
+        else if (err instanceof NetworkError) setError("Unable to connect to server.");
+        else setError("Failed to load listing.");
       });
   }, [id]);
 
