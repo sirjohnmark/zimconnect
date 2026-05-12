@@ -6,6 +6,7 @@ import { BackButton } from "@/components/ui/BackButton";
 import { ReportModal } from "@/components/jobs/ReportModal";
 import { getJobs, getCvs, type JobListing, type CvProfile } from "@/lib/api/jobs";
 import { NetworkError } from "@/lib/api/client";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
 
 // ─── Disclaimer ───────────────────────────────────────────────────────────────
@@ -327,10 +328,12 @@ export default function JobsPage() {
         </div>
       ) : tab === "jobs" ? (
         filteredJobs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 py-16 text-center">
-            <p className="text-sm font-semibold text-gray-700">No jobs found</p>
-            <p className="mt-1 text-xs text-gray-400">Try a different search or filter.</p>
-          </div>
+          <EmptyState
+            icon={search ? "search" : "generic"}
+            title={search ? "No results found" : "No jobs found"}
+            description={search ? "Try a different search or filter." : "No open positions at the moment."}
+            size="sm"
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {filteredJobs.map((job) => <JobCard key={job.id} job={job} />)}
@@ -338,10 +341,12 @@ export default function JobsPage() {
         )
       ) : (
         filteredCvs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 py-16 text-center">
-            <p className="text-sm font-semibold text-gray-700">No CVs found</p>
-            <p className="mt-1 text-xs text-gray-400">Try a different search.</p>
-          </div>
+          <EmptyState
+            icon={search ? "search" : "generic"}
+            title={search ? "No results found" : "No CVs posted yet"}
+            description={search ? "Try a different search." : undefined}
+            size="sm"
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {filteredCvs.map((cv) => <CvCard key={cv.id} cv={cv} />)}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getListings } from "@/lib/api/listings";
 import { NetworkError } from "@/lib/api/client";
 import { ListingCard } from "@/components/marketplace/ListingCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { CITY_LABELS } from "@/lib/validations/listing";
 import type { Listing } from "@/types/listing";
 import { cn } from "@/lib/utils";
@@ -54,26 +55,6 @@ function GridSkeleton() {
   );
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
-
-function EmptyState({ search, location, category }: { search: string; location: string; category: string }) {
-  const reason =
-    search && location ? `No listings for "${search}" in ${CITY_LABELS[location] ?? location}`
-    : search   ? `No listings found for "${search}"`
-    : location ? `No listings found in ${CITY_LABELS[location] ?? location}`
-    : category ? "No listings in this category yet"
-    : "No listings yet";
-
-  return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 py-20 text-center">
-      <svg className="mb-4 h-10 w-10 text-gray-300" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 16.318A4.486 4.486 0 0 0 12.016 15a4.486 4.486 0 0 0-3.198 1.318M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
-      </svg>
-      <p className="text-sm font-semibold text-gray-700">{reason}</p>
-      <p className="mt-1 text-xs text-gray-400">Try a different search or browse all categories.</p>
-    </div>
-  );
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -245,7 +226,21 @@ export default function ListingsPage() {
           <button onClick={fetchListings} className="mt-3 text-xs font-semibold text-apple-blue hover:underline">↻ Retry</button>
         </div>
       ) : listings.length === 0 ? (
-        <EmptyState search={urlSearch} location={urlLocation} category={urlCategory} />
+        <EmptyState
+          icon={urlSearch || urlLocation ? "search" : "generic"}
+          title={
+            urlSearch || urlLocation
+              ? "No results found"
+              : urlCategory
+              ? "No listings in this category yet"
+              : "No listings available"
+          }
+          description={
+            urlSearch || urlLocation
+              ? "Try a different search or browse all categories."
+              : undefined
+          }
+        />
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { getSavedListings, unsaveListing, type SavedListingDetail } from "@/lib/api/buyers";
 import { NetworkError } from "@/lib/api/client";
@@ -107,16 +108,12 @@ export default function SavedPage() {
       )}
 
       {error ? null : listings.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 py-20 text-center">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-12 w-12 text-gray-300 mb-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
-          </svg>
-          <p className="text-sm font-semibold text-gray-600">No saved listings yet</p>
-          <p className="mt-1 text-xs text-gray-400">Tap the heart icon on any listing to save it here.</p>
-          <Link href="/listings" className="mt-5 rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
-            Browse Listings
-          </Link>
-        </div>
+        <EmptyState
+          icon="heart"
+          title="No saved items yet"
+          description="Tap the heart icon on any listing to save it here."
+          action={{ label: "Browse Listings", href: "/listings" }}
+        />
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
           {listings.map((listing) => (

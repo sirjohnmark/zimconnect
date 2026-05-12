@@ -11,6 +11,7 @@ import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AdminStats } from "@/lib/api/admin";
 import type { Listing } from "@/types/listing";
 import type { AdminUser } from "@/lib/api/users";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
 
 // ─── Primary summary card ─────────────────────────────────────────────────────
@@ -95,16 +96,6 @@ function SectionHeader({ title, href }: { title: string; href: string }) {
       <Link href={href} className="text-xs font-semibold text-apple-blue hover:underline">
         View all →
       </Link>
-    </div>
-  );
-}
-
-// ─── Empty state ──────────────────────────────────────────────────────────────
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 py-10">
-      <p className="text-sm text-gray-400">{message}</p>
     </div>
   );
 }
@@ -387,7 +378,7 @@ export default function AdminOverviewPage() {
             <section className="space-y-3">
               <SectionHeader title="Needs Attention" href="/dashboard/admin-listings" />
               {pendingListings.length === 0 ? (
-                <EmptyState message="No listings pending review." />
+                <EmptyState icon="listing" title="No listings pending review." variant="plain" size="sm" />
               ) : (
                 <div className="divide-y divide-gray-50 rounded-2xl border border-gray-100 bg-white shadow-sm">
                   {pendingListings.map((listing) => {
@@ -437,7 +428,7 @@ export default function AdminOverviewPage() {
             <section className="space-y-3">
               <SectionHeader title="Recent Sign-ups" href="/dashboard/users" />
               {recentUsers.length === 0 ? (
-                <EmptyState message="No users yet." />
+                <EmptyState icon="generic" title="No users yet." variant="plain" size="sm" />
               ) : (
                 <div className="divide-y divide-gray-50 rounded-2xl border border-gray-100 bg-white shadow-sm">
                   {recentUsers.map((u) => {

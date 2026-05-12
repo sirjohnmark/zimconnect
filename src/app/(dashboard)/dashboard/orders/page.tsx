@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BackButton } from "@/components/ui/BackButton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
 import { getMyOrders } from "@/lib/api/orders";
 import type { Order, OrderStatus } from "@/lib/api/orders";
@@ -182,16 +183,12 @@ export default function OrdersPage() {
             </div>
           </div>
         ) : error ? null : (
-          <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 py-20 text-center">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-12 w-12 text-gray-300 mb-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007Z" />
-            </svg>
-            <p className="text-sm font-semibold text-gray-600">No orders yet</p>
-            <p className="mt-1 text-xs text-gray-400">Browse listings to start buying.</p>
-            <Link href="/listings" className="mt-4 rounded-lg bg-apple-blue px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity">
-              Browse Listings
-            </Link>
-          </div>
+          <EmptyState
+            icon="bag"
+            title="No orders yet"
+            description="Browse listings to start buying."
+            action={{ label: "Browse Listings", href: "/listings" }}
+          />
       )}
 
       <p className="text-xs text-gray-400 text-center">

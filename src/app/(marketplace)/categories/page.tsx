@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CategoryCard } from "@/components/marketplace/CategoryCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { getCategories } from "@/lib/api/categories";
 import { NetworkError } from "@/lib/api/client";
 import type { Category } from "@/types/category";
@@ -56,7 +57,7 @@ export default function CategoriesPage() {
           <button onClick={fetchCategories} className="mt-3 text-xs font-semibold text-apple-blue hover:underline">↻ Retry</button>
         </div>
       ) : categories.length === 0 ? (
-        <p className="py-16 text-center text-sm text-gray-400">No categories yet.</p>
+        <EmptyState icon="generic" title="No categories yet" description="Check back soon." />
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
           {categories.map((category) => (
