@@ -102,6 +102,7 @@ class CategoryDetailView(APIView):
     """
     GET   /api/v1/categories/{id}/ â€” category detail + direct children.
     PATCH /api/v1/categories/{id}/ â€” update category (admin only).
+    DELETE /api/v1/categories/{id}/ â€” delete category (admin only).
     """
 
     permission_classes = (IsAdminOrReadOnly,)
@@ -146,3 +147,20 @@ class CategoryDetailView(APIView):
             CategoryDetailSerializer(updated).data,
             status=status.HTTP_200_OK,
         )
+
+    @extend_schema(
+        tags=["Categories"],
+        operation_id="categories_delete",
+        summary="Delete a category",
+        description="Permanently delete a category. **Admin only.**",
+        responses={
+            204: OpenApiResponse(description="Category deleted"),
+            403: OpenApiResponse(description="Not an admin"),
+            404: OpenApiResponse(description="Category not found"),
+            409: OpenApiResponse(description="Category has child categories or listings"),
+        },
+    )
+    def delete(self, request: Request, category_id: int) -> Response:
+        category = selectors.get_category_by_id(category_id)
+        services.delete_category(category)
+        return Response(status=status.HTTP_204_NO_CONTENT)

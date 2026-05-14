@@ -5,8 +5,10 @@ Business-logic service layer for categories.
 from __future__ import annotations
 
 from django.db import transaction
+from django.db.models.deletion import ProtectedError
 
 from apps.common.cache import invalidate_category_tree
+from apps.common.exceptions import ConflictError
 from apps.common.sanitizers import sanitize_plain
 
 from .models import Category
@@ -54,3 +56,15 @@ def toggle_category_active(category: Category) -> Category:
     category.refresh_from_db()
     invalidate_category_tree()
     return category
+
+
+@transaction.atomic
+def delete_category(category: Category) -> None:
+    """Permanently delete a category when it is not referenced elsewhere."""
+    try:
+        category.delete()
+    except ProtectedError:
+        raise ConflictError(
+            "This category cannot be deleted because it has child categories or listings."
+        )
+    invalidate_category_tree()

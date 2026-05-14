@@ -57,3 +57,27 @@ class TestCategoryDetail:
     def test_category_not_found(self, api_client):
         resp = api_client.get(_detail_url(99999))
         assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_admin_can_delete_category(self, admin_client):
+        category = CategoryFactory()
+
+        resp = admin_client.delete(_detail_url(category.pk))
+
+        assert resp.status_code == status.HTTP_204_NO_CONTENT
+        assert not CategoryFactory._meta.model.objects.filter(pk=category.pk).exists()
+
+    def test_non_admin_cannot_delete_category(self, buyer_client):
+        category = CategoryFactory()
+
+        resp = buyer_client.delete(_detail_url(category.pk))
+
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
+        assert CategoryFactory._meta.model.objects.filter(pk=category.pk).exists()
+
+    def test_delete_protected_category_returns_conflict(
+        self, admin_client, sample_category, child_category
+    ):
+        resp = admin_client.delete(_detail_url(sample_category.pk))
+
+        assert resp.status_code == status.HTTP_409_CONFLICT
+        assert CategoryFactory._meta.model.objects.filter(pk=sample_category.pk).exists()
