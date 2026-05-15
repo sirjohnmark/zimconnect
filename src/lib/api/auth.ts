@@ -311,7 +311,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
     await new Promise((r) => setTimeout(r, 600));
     return;
   }
-  await api.post<void>("/api/v1/auth/password/reset/", { email });
+  await api.post<void>("/api/v1/auth/password/forgot/", { email });
 }
 
 /**
@@ -336,10 +336,9 @@ export async function confirmPasswordReset(
     await new Promise((r) => setTimeout(r, 500));
     return;
   }
-  await api.post<void>("/api/v1/auth/password/reset/confirm/", {
-    uid,
+  await api.post<void>("/api/v1/auth/password/reset/", {
     token,
-    new_password1: newPassword1,
-    new_password2: newPassword2,
+    new_password: newPassword1,
+    confirm_password: newPassword2,
   });
 }

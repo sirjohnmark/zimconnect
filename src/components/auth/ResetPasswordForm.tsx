@@ -96,9 +96,8 @@ export function ResetPasswordForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
 
-  // Link-based (real): /reset-password?uid=<uidb64>&token=<token>
+  // Link-based (real): /reset-password?token=<token>
   // Mock-based:        /reset-password?mock=1&email=<encoded-email>
-  const uid   = searchParams.get("uid")   ?? "";
   const token = searchParams.get("token") ?? "";
   const email = searchParams.get("email") ?? "";
   const isMock = searchParams.get("mock") === "1";
@@ -114,14 +113,14 @@ export function ResetPasswordForm() {
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordInput>({ resolver: zodResolver(resetPasswordSchema) });
 
-  // Missing token params — the user navigated here directly without a real link
-  const missingToken = !isMock && (!uid || !token);
+  // Missing token — the user navigated here directly without a real link
+  const missingToken = !isMock && !token;
 
   async function onSubmit(data: ResetPasswordInput) {
     setFormError(null);
     try {
       await confirmPasswordReset(
-        isMock ? email : uid,
+        isMock ? email : "",
         isMock ? "mock-reset" : token,
         data.new_password1,
         data.new_password2,
