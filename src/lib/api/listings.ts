@@ -311,3 +311,39 @@ export async function featureListing(
     is_featured: featured,
   });
 }
+
+// ─── Trash endpoints ──────────────────────────────────────────────────────────
+
+export interface DeletedListing {
+  id: number;
+  title: string;
+  owner: { email: string; username: string };
+  category: { name: string; slug: string } | null;
+  location: string;
+  price: string;
+  currency: string;
+  status: string;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  deleted_by: { id: number; email: string; username: string } | null;
+  created_at: string;
+}
+
+export interface PaginatedDeletedListings {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: DeletedListing[];
+}
+
+export async function getDeletedListings(page = 1): Promise<PaginatedDeletedListings> {
+  assertPermission(getStoredUser(), "manage:users");
+  return api.get<PaginatedDeletedListings>("/api/v1/admin/listings/deleted/", {
+    params: { page },
+  });
+}
+
+export async function restoreListing(id: number): Promise<DeletedListing> {
+  assertPermission(getStoredUser(), "manage:users");
+  return api.post<DeletedListing>(`/api/v1/admin/listings/${id}/restore/`, {});
+}

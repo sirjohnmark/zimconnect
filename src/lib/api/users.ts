@@ -70,3 +70,32 @@ export async function deleteUser(id: number): Promise<void> {
   assertPermission(getStoredUser(), "manage:users");
   await api.delete<void>(`/api/v1/admin/users/${id}/`);
 }
+
+// ─── Trash endpoints ──────────────────────────────────────────────────────────
+
+export interface DeletedUser {
+  id: number;
+  email: string;
+  username: string;
+  role: string;
+  is_active: boolean;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  listings_count: number;
+  created_at: string;
+}
+
+export interface PaginatedDeletedUsers {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: DeletedUser[];
+}
+
+/** Admin: list soft-deleted users. */
+export async function getDeletedUsers(page = 1): Promise<PaginatedDeletedUsers> {
+  assertPermission(getStoredUser(), "manage:users");
+  return api.get<PaginatedDeletedUsers>("/api/v1/admin/users/deleted/", {
+    params: { page },
+  });
+}
