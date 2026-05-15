@@ -65,6 +65,14 @@ export function LoginForm() {
     setFormError(null);
     try {
       const response = await login(data, staySignedIn);
+
+      if ("requires_2fa" in response && response.requires_2fa) {
+        router.push(
+          `/verify-2fa?token=${encodeURIComponent(response.challenge_token)}&redirect=${encodeURIComponent(redirectTo)}&stay=${staySignedIn ? "1" : "0"}`,
+        );
+        return;
+      }
+
       const u = response.user;
       const isAdmin = u.role === "ADMIN" || u.role === "MODERATOR";
       const isVerified = u.is_verified || u.email_verified;

@@ -14,7 +14,7 @@
  * localStorage.  Plaintext passwords are never persisted.
  */
 
-import type { AuthUser, LoginResponse } from "@/lib/api/auth";
+import type { AuthUser, LoginResponse, LoginResult, TwoFAChallengeResponse } from "@/lib/api/auth";
 import type { LoginInput } from "@/lib/validations/auth";
 
 const SESSION_KEY     = "sanganai_user";
@@ -248,15 +248,18 @@ export function clearOtp(): void {
 // ─── Login (consolidated side-effect wrapper) ─────────────────────────────────
 // Dynamic import breaks the lib/auth ↔ lib/api circular dependency at runtime.
 
-export async function login(data: LoginInput, staySignedIn = false): Promise<LoginResponse> {
+export async function login(data: LoginInput, staySignedIn = false): Promise<LoginResult> {
   const { loginUser } = await import("@/lib/api/auth");
   const response = await loginUser(data, staySignedIn);
   setStaySignedIn(staySignedIn);
-  if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
-    // Mock loginUser() skips saveTokens() — call it here so /api/auth/session
-    // writes the HttpOnly cookies the middleware needs to recognise the session.
-    // The session route doesn't validate tokens against Django, so mock values work.
-    await saveTokens(response.tokens.access, response.tokens.refresh, response.user.role, staySignedIn);
+
+  if ("requires_2fa" in response && response.requires_2fa) {
+    return response as TwoFAChallengeResponse;
   }
-  return response;
+
+  const lr = response as LoginResponse;
+  if (process.env.NEXT_PUBLIC_USE_MOCK === "true") {
+    await saveTokens(lr.tokens.access, lr.tokens.refresh, lr.user.role, staySignedIn);
+  }
+  return lr;
 }

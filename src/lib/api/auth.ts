@@ -41,15 +41,41 @@ export interface AuthUser {
   phone_verified: boolean;
   email_verified: boolean;
   is_verified: boolean;
+  totp_enabled: boolean;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// ─── 2FA types ────────────────────────────────────────────────────────────────
+
+export interface TwoFAChallengeResponse {
+  requires_2fa: true;
+  challenge_token: string;
+}
+
+export interface TwoFAStatus {
+  is_enabled: boolean;
+  enabled_at: string | null;
+  backup_codes_remaining: number;
+}
+
+export interface TwoFASetupData {
+  secret: string;
+  uri: string;
+  qr_code: string; // data:image/png;base64,... URI
+}
+
+export interface BackupCodesResponse {
+  backup_codes: string[];
 }
 
 export interface LoginResponse {
   tokens: { access: string; refresh: string };
   user: AuthUser;
 }
+
+export type LoginResult = LoginResponse | TwoFAChallengeResponse;
 
 // ─── Mock helpers ─────────────────────────────────────────────────────────────
 
@@ -104,7 +130,7 @@ export async function registerUser(data: RegisterInput): Promise<AuthUser> {
   });
 }
 
-export async function loginUser(credentials: LoginInput, stay = false): Promise<LoginResponse> {
+export async function loginUser(credentials: LoginInput, stay = false): Promise<LoginResult> {
   if (USE_MOCK) {
     const account = findAccountByEmail(credentials.email);
     if (!account) {
@@ -120,11 +146,19 @@ export async function loginUser(credentials: LoginInput, stay = false): Promise<
     saveUser(user);
     return { tokens: { access: "mock-access", refresh: "mock-refresh" }, user };
   }
-  const response = await api.post<{ tokens: { access: string; refresh: string }; user: BackendUser }>("/api/v1/auth/login", credentials);
-  const user = normalizeUser(response.user);
-  await saveTokens(response.tokens.access, response.tokens.refresh, user.role, stay);
+  const response = await api.post<
+    { tokens: { access: string; refresh: string }; user: BackendUser } | TwoFAChallengeResponse
+  >("/api/v1/auth/login", credentials);
+
+  if ("requires_2fa" in response && response.requires_2fa) {
+    return response as TwoFAChallengeResponse;
+  }
+
+  const typed = response as { tokens: { access: string; refresh: string }; user: BackendUser };
+  const user = normalizeUser(typed.user);
+  await saveTokens(typed.tokens.access, typed.tokens.refresh, user.role, stay);
   saveUser(user);
-  return { tokens: response.tokens, user };
+  return { tokens: typed.tokens, user };
 }
 
 export async function refreshAccessToken(): Promise<string> {
@@ -286,6 +320,49 @@ export async function verifyEmailAddress(otp: string): Promise<AuthUser> {
 export async function resendEmailVerificationOtp(): Promise<void> {
   if (USE_MOCK) return;
   await api.post<void>("/api/v1/auth/email/resend/", {});
+}
+
+// ─── Two-Factor Authentication ────────────────────────────────────────────────
+
+export async function get2FAStatus(): Promise<TwoFAStatus> {
+  if (USE_MOCK) return { is_enabled: false, enabled_at: null, backup_codes_remaining: 0 };
+  return api.get<TwoFAStatus>("/api/v1/auth/2fa/status/");
+}
+
+export async function setup2FA(): Promise<TwoFASetupData> {
+  if (USE_MOCK) throw new ApiError(501, "Not Implemented", "2FA not available in mock mode.");
+  return api.post<TwoFASetupData>("/api/v1/auth/2fa/setup/", {});
+}
+
+export async function confirm2FA(code: string): Promise<BackupCodesResponse> {
+  if (USE_MOCK) throw new ApiError(501, "Not Implemented", "2FA not available in mock mode.");
+  return api.post<BackupCodesResponse>("/api/v1/auth/2fa/confirm/", { code });
+}
+
+export async function verify2FAChallenge(
+  challengeToken: string,
+  code: string,
+  stay = false,
+): Promise<LoginResponse> {
+  if (USE_MOCK) throw new ApiError(501, "Not Implemented", "2FA not available in mock mode.");
+  const response = await api.post<{ tokens: { access: string; refresh: string }; user: BackendUser }>(
+    "/api/v1/auth/2fa/verify/",
+    { challenge_token: challengeToken, code },
+  );
+  const user = normalizeUser(response.user);
+  await saveTokens(response.tokens.access, response.tokens.refresh, user.role, stay);
+  saveUser(user);
+  return { tokens: response.tokens, user };
+}
+
+export async function disable2FA(password: string, code: string): Promise<void> {
+  if (USE_MOCK) return;
+  await api.post<void>("/api/v1/auth/2fa/disable/", { password, code });
+}
+
+export async function regenerateBackupCodes(password: string, code: string): Promise<BackupCodesResponse> {
+  if (USE_MOCK) throw new ApiError(501, "Not Implemented", "2FA not available in mock mode.");
+  return api.post<BackupCodesResponse>("/api/v1/auth/2fa/backup-codes/regenerate/", { password, code });
 }
 
 // ─── Legacy aliases (kept for any other callers) ──────────────────────────────

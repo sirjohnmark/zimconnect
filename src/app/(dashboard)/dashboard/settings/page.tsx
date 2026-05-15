@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/useAuth";
-import { changePassword } from "@/lib/api/auth";
+import {
+  changePassword,
+  get2FAStatus,
+  setup2FA,
+  confirm2FA,
+  disable2FA,
+  regenerateBackupCodes,
+  type TwoFAStatus,
+  type TwoFASetupData,
+} from "@/lib/api/auth";
 import { BackButton } from "@/components/ui/BackButton";
 import {
   getStoredPreferences,
@@ -91,6 +100,423 @@ function SaveRow({ saving, saved, error, onSave }: { saving: boolean; saved: boo
       )}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
+  );
+}
+
+// ─── Two-Factor Authentication section ───────────────────────────────────────
+
+type TwoFAView =
+  | "status"
+  | "setup-qr"
+  | "setup-confirm"
+  | "backup-display"
+  | "disable"
+  | "regen-confirm";
+
+function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  async function handleCopy() {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="rounded px-2.5 py-1 text-xs font-medium text-apple-blue border border-apple-blue/30 hover:bg-apple-blue/5 transition-colors"
+    >
+      {copied ? "Copied!" : label}
+    </button>
+  );
+}
+
+function TwoFASection() {
+  const { user, setUser } = useAuth();
+  const [view, setView]           = useState<TwoFAView>("status");
+  const [status2fa, setStatus2fa] = useState<TwoFAStatus | null>(null);
+  const [setupData, setSetupData] = useState<TwoFASetupData | null>(null);
+  const [backupCodes, setBackupCodes]   = useState<string[]>([]);
+  const [confirmCode, setConfirmCode]   = useState("");
+  const [password, setPassword]         = useState("");
+  const [disableCode, setDisableCode]   = useState("");
+  const [regenCode, setRegenCode]       = useState("");
+  const [regenPassword, setRegenPassword] = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState<string | null>(null);
+
+  const loadStatus = useCallback(async () => {
+    try {
+      const s = await get2FAStatus();
+      setStatus2fa(s);
+    } catch {
+      // non-critical — silently ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  function clearError() { setError(null); }
+
+  async function handleStartSetup() {
+    clearError();
+    setLoading(true);
+    try {
+      const data = await setup2FA();
+      setSetupData(data);
+      setConfirmCode("");
+      setView("setup-qr");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not start setup. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleConfirmSetup(e: React.FormEvent) {
+    e.preventDefault();
+    clearError();
+    if (confirmCode.length !== 6) { setError("Enter the 6-digit code from your authenticator app."); return; }
+    setLoading(true);
+    try {
+      const res = await confirm2FA(confirmCode);
+      setBackupCodes(res.backup_codes);
+      await loadStatus();
+      if (user) setUser({ ...user, totp_enabled: true });
+      setView("backup-display");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Invalid code. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDisable(e: React.FormEvent) {
+    e.preventDefault();
+    clearError();
+    if (!password) { setError("Enter your account password."); return; }
+    if (disableCode.length < 6) { setError("Enter a valid authenticator or backup code."); return; }
+    setLoading(true);
+    try {
+      await disable2FA(password, disableCode);
+      await loadStatus();
+      if (user) setUser({ ...user, totp_enabled: false });
+      setPassword("");
+      setDisableCode("");
+      setView("status");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not disable 2FA. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleRegenCodes(e: React.FormEvent) {
+    e.preventDefault();
+    clearError();
+    if (!regenPassword) { setError("Enter your account password."); return; }
+    if (regenCode.length !== 6) { setError("Enter the 6-digit code from your authenticator app."); return; }
+    setLoading(true);
+    try {
+      const res = await regenerateBackupCodes(regenPassword, regenCode);
+      setBackupCodes(res.backup_codes);
+      await loadStatus();
+      setRegenPassword("");
+      setRegenCode("");
+      setView("backup-display");
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not regenerate codes. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const INPUT_CLS = cn(
+    "w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm",
+    "placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors",
+    "disabled:bg-gray-50 disabled:cursor-not-allowed",
+  );
+
+  const isEnabled = status2fa?.is_enabled ?? user?.totp_enabled ?? false;
+
+  return (
+    <SectionCard
+      title="Two-Factor Authentication"
+      description="Two-factor authentication adds an extra layer of protection to your account."
+    >
+      {error && (
+        <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+          <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 3.5a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-1.5 0v-3A.75.75 0 0 1 8 4.5zm0 6.5a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z" />
+          </svg>
+          {error}
+        </div>
+      )}
+
+      {/* ── Status view ─────────────────────────────────────────────── */}
+      {view === "status" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-full",
+                isEnabled ? "bg-green-100" : "bg-gray-100",
+              )}>
+                {isEnabled ? (
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-green-600">
+                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-gray-400">
+                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </span>
+              <div>
+                <p className="text-sm font-medium text-gray-800">
+                  Authenticator app
+                </p>
+                <p className={cn("text-xs", isEnabled ? "text-green-600 font-medium" : "text-gray-400")}>
+                  {isEnabled ? "Enabled" : "Not enabled"}
+                </p>
+              </div>
+            </div>
+            {isEnabled ? (
+              <button
+                type="button"
+                onClick={() => { clearError(); setPassword(""); setDisableCode(""); setView("disable"); }}
+                className="rounded-lg border border-gray-200 px-3.5 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Disable
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleStartSetup}
+                disabled={loading}
+                className="rounded-lg bg-apple-blue px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-apple-blue disabled:opacity-60 transition-colors"
+              >
+                {loading ? "Loading…" : "Enable"}
+              </button>
+            )}
+          </div>
+
+          {isEnabled && status2fa && (
+            <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600 space-y-1">
+              <p>{status2fa.backup_codes_remaining} backup code{status2fa.backup_codes_remaining !== 1 ? "s" : ""} remaining.</p>
+              <button
+                type="button"
+                onClick={() => { clearError(); setRegenPassword(""); setRegenCode(""); setView("regen-confirm"); }}
+                className="text-xs text-apple-blue hover:underline"
+              >
+                Regenerate backup codes
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Setup: QR code view ──────────────────────────────────────── */}
+      {view === "setup-qr" && setupData && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, Microsoft Authenticator, etc.).
+          </p>
+          <div className="flex justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={setupData.qr_code} alt="Scan this QR code with your authenticator app" className="h-48 w-48 rounded-lg border border-gray-200" />
+          </div>
+          <details className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+            <summary className="cursor-pointer text-xs font-medium text-gray-600">
+              Can&apos;t scan the QR code? Enter key manually
+            </summary>
+            <div className="mt-2 flex items-center gap-2">
+              <code className="flex-1 rounded bg-white border border-gray-200 px-2.5 py-1.5 text-xs font-mono text-gray-700 break-all">
+                {setupData.secret}
+              </code>
+              <CopyButton text={setupData.secret} label="Copy key" />
+            </div>
+          </details>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => { clearError(); setView("status"); }}
+              className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => { clearError(); setConfirmCode(""); setView("setup-confirm"); }}
+              className="flex-1 rounded-lg bg-apple-blue py-2 text-sm font-semibold text-white hover:bg-apple-blue transition-colors"
+            >
+              Next — enter code
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Setup: confirm code ──────────────────────────────────────── */}
+      {view === "setup-confirm" && (
+        <form onSubmit={handleConfirmSetup} noValidate className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Enter the 6-digit code from your authenticator app to complete setup.
+          </p>
+          <div className="space-y-1.5">
+            <label htmlFor="2fa-confirm-code" className="text-sm font-medium text-gray-700">
+              Verification code
+            </label>
+            <input
+              id="2fa-confirm-code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              value={confirmCode}
+              onChange={(e) => setConfirmCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="123456"
+              maxLength={6}
+              className={cn(INPUT_CLS, "text-center text-xl font-mono tracking-[0.4em]")}
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => { clearError(); setView("setup-qr"); }}
+              className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Back
+            </button>
+            <button
+              type="submit"
+              disabled={loading || confirmCode.length !== 6}
+              className="flex-1 rounded-lg bg-apple-blue py-2 text-sm font-semibold text-white hover:bg-apple-blue disabled:opacity-60 transition-colors"
+            >
+              {loading ? "Verifying…" : "Activate 2FA"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ── Backup codes display ─────────────────────────────────────── */}
+      {view === "backup-display" && backupCodes.length > 0 && (
+        <div className="space-y-4">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-semibold text-amber-800">Save these backup codes somewhere safe.</p>
+            <p className="mt-0.5 text-xs text-amber-700">
+              You will only see them once. Each code can be used once to access your account if you lose your authenticator.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {backupCodes.map((code) => (
+              <code key={code} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-center text-sm font-mono text-gray-700">
+                {code}
+              </code>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <CopyButton text={backupCodes.join("\n")} label="Copy all codes" />
+            <button
+              type="button"
+              onClick={() => {
+                const blob = new Blob([backupCodes.join("\n")], { type: "text/plain" });
+                const url  = URL.createObjectURL(blob);
+                const a    = document.createElement("a");
+                a.href     = url;
+                a.download = "sanganai-backup-codes.txt";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="rounded px-2.5 py-1 text-xs font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              Download
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setBackupCodes([]); setView("status"); }}
+            className="w-full rounded-lg bg-apple-blue py-2 text-sm font-semibold text-white hover:bg-apple-blue transition-colors"
+          >
+            Done — I&apos;ve saved my codes
+          </button>
+        </div>
+      )}
+
+      {/* ── Disable 2FA ──────────────────────────────────────────────── */}
+      {view === "disable" && (
+        <form onSubmit={handleDisable} noValidate className="space-y-4">
+          <div className="rounded-lg border border-red-100 bg-red-50 px-4 py-3">
+            <p className="text-sm font-semibold text-red-700">Disable two-factor authentication?</p>
+            <p className="mt-0.5 text-xs text-red-600">
+              Your account will be less secure. Enter your password and a valid code to confirm.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Account password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" className={INPUT_CLS} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Authenticator or backup code</label>
+              <input
+                type="text"
+                value={disableCode}
+                onChange={(e) => setDisableCode(e.target.value)}
+                placeholder="123456 or backup code"
+                autoComplete="one-time-code"
+                className={INPUT_CLS}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { clearError(); setView("status"); }} className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 transition-colors">
+              {loading ? "Disabling…" : "Disable 2FA"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ── Regenerate backup codes ───────────────────────────────────── */}
+      {view === "regen-confirm" && (
+        <form onSubmit={handleRegenCodes} noValidate className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Enter your password and a 6-digit authenticator code to generate new backup codes.
+            All existing backup codes will be invalidated.
+          </p>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Account password</label>
+              <input type="password" value={regenPassword} onChange={(e) => setRegenPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" className={INPUT_CLS} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Authenticator code</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={regenCode}
+                onChange={(e) => setRegenCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="123456"
+                maxLength={6}
+                className={cn(INPUT_CLS, "text-center font-mono tracking-[0.3em]")}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => { clearError(); setView("status"); }} className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={loading} className="flex-1 rounded-lg bg-apple-blue py-2 text-sm font-semibold text-white hover:bg-apple-blue disabled:opacity-60 transition-colors">
+              {loading ? "Generating…" : "Generate new codes"}
+            </button>
+          </div>
+        </form>
+      )}
+    </SectionCard>
   );
 }
 
@@ -501,6 +927,7 @@ export default function SettingsPage() {
         <p className="mt-1 text-sm text-gray-500">Manage your account security, notifications, and preferences.</p>
       </div>
 
+      <TwoFASection />
       <PasswordSection />
       <NotificationsSection prefs={prefs} onChange={setPrefs} />
       <PrivacySection prefs={prefs} onChange={setPrefs} />
