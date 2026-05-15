@@ -337,7 +337,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         </Link>
       </div>
 
-      {!isLoading && can("manage:own-listings") && (
+      {!isLoading && isSeller && (
         <div className="px-4 pt-4">
           <Link
             href="/dashboard/listings/create"

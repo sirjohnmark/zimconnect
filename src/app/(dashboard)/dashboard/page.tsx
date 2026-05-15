@@ -102,7 +102,7 @@ function SectionHeader({
 }
 
 function CompactListingCard({ listing }: { listing: Listing }) {
-  const image = listing.primary_image ?? listing.images[0]?.image;
+  const image = listing.primary_image ?? listing.images?.[0]?.image;
 
   return (
     <Link
@@ -329,6 +329,156 @@ function SellerMomentumCard({
   );
 }
 
+function AdminDashboard({
+  firstName,
+  unreadMessages,
+  suggested,
+  conversations,
+  convsLoaded,
+  convsError,
+  loading,
+  userId,
+}: {
+  firstName: string;
+  unreadMessages: number | null;
+  suggested: Listing[];
+  conversations: ConversationPreview[];
+  convsLoaded: boolean;
+  convsError: boolean;
+  loading: boolean;
+  userId: number;
+}) {
+  const adminActions = [
+    { label: "Listing Review", href: "/dashboard/admin-listings", desc: "Approve or reject pending listings", color: "bg-blue-50 border-blue-100", iconColor: "text-blue-500" },
+    { label: "Users", href: "/dashboard/users", desc: "Manage accounts and roles", color: "bg-purple-50 border-purple-100", iconColor: "text-purple-500" },
+    { label: "Seller Applications", href: "/dashboard/upgrade-requests", desc: "Review upgrade requests", color: "bg-amber-50 border-amber-100", iconColor: "text-amber-500" },
+    { label: "Categories", href: "/dashboard/categories", desc: "Add and edit categories", color: "bg-green-50 border-green-100", iconColor: "text-green-500" },
+  ];
+
+  return (
+    <div className="space-y-10 pb-10">
+      <div className="rounded-2xl bg-apple-blue px-5 py-7 text-white shadow-md sm:px-10 sm:py-10">
+        <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-white/50">Admin Panel</p>
+        <h1 className="text-2xl font-extrabold sm:text-3xl">{firstName} 👋</h1>
+        <p className="mt-2 max-w-md text-sm text-white/70">
+          Manage the platform — review listings, moderate users, and handle seller applications.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/dashboard/admin" className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]">
+            Admin Overview
+          </Link>
+          <Link href="/listings" className="rounded-lg border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]">
+            Browse Marketplace
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {adminActions.map((action) => (
+          <Link
+            key={action.href}
+            href={action.href}
+            className={cn("flex flex-col gap-2 rounded-2xl border p-5 shadow-sm transition-shadow hover:shadow-md", action.color)}
+          >
+            <p className={cn("text-sm font-bold", action.iconColor)}>{action.label}</p>
+            <p className="text-xs text-gray-500 leading-snug">{action.desc}</p>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Unread Messages</p>
+          <p className="mt-2 text-3xl font-bold text-amber-600">
+            {unreadMessages !== null ? String(unreadMessages) : "—"}
+          </p>
+        </div>
+        <Link href="/dashboard/messages" className="flex flex-col justify-center rounded-2xl border border-apple-blue/10 bg-blue-50 px-5 py-4 shadow-sm hover:shadow-md transition-shadow">
+          <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue">Messages</p>
+          <p className="mt-1 text-sm text-gray-600">View your inbox</p>
+        </Link>
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+        <section>
+          <SectionHeader eyebrow="Marketplace" title="Recent Listings" href="/listings" linkLabel="View all" />
+          {loading ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : suggested.length > 0 ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+              {suggested.map((listing) => <CompactListingCard key={listing.id} listing={listing} />)}
+            </div>
+          ) : (
+            <EmptyState icon="listing" title="No listings yet" description="The marketplace has no listings yet." size="sm" />
+          )}
+        </section>
+
+        <section>
+          <SectionHeader
+            eyebrow="Messages"
+            title={`Inbox${unreadMessages ? ` (${unreadMessages})` : ""}`}
+            href="/dashboard/messages"
+            linkLabel="Open inbox"
+          />
+          {loading ? (
+            <div className="divide-y divide-gray-50 rounded-2xl border border-gray-100 bg-white shadow-sm">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3 px-4 py-3.5">
+                  <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-gray-100" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-24 animate-pulse rounded bg-gray-100" />
+                    <div className="h-3 w-40 animate-pulse rounded bg-gray-100" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : convsError ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-red-100 bg-red-50 py-8 text-center px-4">
+              <p className="text-sm text-red-600">Could not load messages.</p>
+              <Link href="/dashboard/messages" className="mt-3 text-xs font-semibold text-apple-blue hover:underline">Open inbox →</Link>
+            </div>
+          ) : conversations.length > 0 ? (
+            <div className="divide-y divide-gray-50 rounded-2xl border border-gray-100 bg-white shadow-sm">
+              {conversations.map((conversation) => (
+                <Link
+                  key={conversation.id}
+                  href="/dashboard/messages"
+                  className={cn("flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50", conversation.unread > 0 && "bg-blue-50/40")}
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-sm font-bold text-apple-blue">
+                    {conversation.initial}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={cn("truncate text-sm", conversation.unread > 0 ? "font-semibold text-gray-900" : "font-medium text-gray-700")}>
+                        {conversation.name}
+                      </p>
+                      <span className="shrink-0 text-xs text-gray-400">{conversation.time}</span>
+                    </div>
+                    {conversation.listingTitle && <p className="truncate text-xs text-gray-400">{conversation.listingTitle}</p>}
+                    <p className={cn("mt-0.5 truncate text-sm", conversation.unread > 0 ? "text-gray-800" : "text-gray-500")}>
+                      {conversation.preview}
+                    </p>
+                  </div>
+                  {conversation.unread > 0 && (
+                    <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-apple-blue text-[11px] font-bold text-white">
+                      {conversation.unread}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <EmptyState icon="chat" title="No conversations" description="No messages yet." size="sm" />
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
 
@@ -422,7 +572,7 @@ export default function DashboardPage() {
     convsLoaded && conversations.length === 0 &&
     (totalViews === 0 || totalViews === null);
 
-  const shouldShowAnalytics = !loading && !isBuyerRole && (activeListings ?? 0) > 0;
+  const shouldShowAnalytics = !loading && isSellerRole && (activeListings ?? 0) > 0;
 
   if (isNewBuyer) {
     return <NewBuyerDashboard firstName={firstName} />;
@@ -430,6 +580,21 @@ export default function DashboardPage() {
 
   if (isNewSeller) {
     return <NewUserDashboard firstName={firstName} />;
+  }
+
+  if (isAdminUser) {
+    return (
+      <AdminDashboard
+        firstName={firstName}
+        unreadMessages={unreadMessages}
+        suggested={suggested}
+        conversations={conversations}
+        convsLoaded={convsLoaded}
+        convsError={convsError}
+        loading={loading}
+        userId={user?.id ?? 0}
+      />
+    );
   }
 
   return (
@@ -448,7 +613,7 @@ export default function DashboardPage() {
         </p>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          {!isBuyerRole && (
+          {isSellerRole && (
             <Link
               href="/dashboard/listings/create"
               className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]"
@@ -473,7 +638,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {!isBuyerRole && (
+      {isSellerRole && (
         <SellerMomentumCard
           activeListings={activeListings}
           totalViews={totalViews}
@@ -481,8 +646,8 @@ export default function DashboardPage() {
         />
       )}
 
-      <div className={cn("grid gap-4", isBuyerRole ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
-        {(isBuyerRole
+      <div className={cn("grid gap-4", isSellerRole ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2")}>
+        {(isSellerRole
           ? [
               {
                 label: "Unread Messages",
