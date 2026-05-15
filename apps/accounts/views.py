@@ -24,7 +24,7 @@ from apps.accounts.serializers import (
     UserRegistrationSerializer,
     UserUpdateSerializer,
 )
-from apps.accounts.tasks import send_email_otp_task, send_otp_task, send_welcome_email
+from apps.accounts.tasks import send_otp_task, send_welcome_email
 from apps.common.permissions import IsBuyer
 from apps.common.throttling import (
     EmailOTPSendThrottle,
@@ -80,7 +80,11 @@ class RegisterView(APIView):
             send_welcome_email.delay(user.pk)
             if user.phone:
                 send_otp_task.delay(user.pk)
-            send_email_otp_task.delay(user.pk)
+            # Email OTP is NOT sent here — the verify-email page calls
+            # POST /auth/email/send-otp/ (trigger=1) after login, making it
+            # the single source of truth. Sending here caused a double-OTP
+            # race: registration code A → verify-email overwrites with code B
+            # → user enters A → "Incorrect code" even though code is correct.
         except Exception:
             logger.exception("post-registration tasks failed for user %d", user.pk)
 
