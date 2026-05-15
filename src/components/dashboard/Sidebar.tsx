@@ -253,13 +253,16 @@ function NavLink({
       onClick={onClick}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
+        "relative flex items-center gap-3 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150",
         isActive
-          ? "bg-light-gray text-near-black"
-          : "text-[rgba(0,0,0,0.6)] hover:bg-light-gray hover:text-near-black",
+          ? "bg-gray-100 text-gray-900"
+          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900",
       )}
     >
-      <span className={cn(isActive ? "text-apple-blue" : "text-[rgba(0,0,0,0.3)]")}>
+      {isActive && (
+        <span className="absolute inset-y-0 left-0 w-0.5 rounded-full bg-apple-blue" />
+      )}
+      <span className={cn(isActive ? "text-apple-blue" : "text-gray-400")}>
         {item.icon}
       </span>
       <span className="flex-1">{item.label}</span>
@@ -447,10 +450,20 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             <div className="h-8 animate-pulse rounded-lg bg-gray-100" />
           </div>
         ) : isStaff ? (
-          <div className="space-y-0.5">
-            {ADMIN_NAV.map((item) => (
-              <NavLink key={item.href} item={item} onClick={onNavClick} />
-            ))}
+          <div className="space-y-5">
+            <NavSection title="Overview">
+              <NavLink item={ADMIN_NAV[0]} onClick={onNavClick} />
+            </NavSection>
+            <NavSection title="Marketplace">
+              <NavLink item={ADMIN_NAV[1]} onClick={onNavClick} />
+              <NavLink item={ADMIN_NAV[3]} onClick={onNavClick} />
+            </NavSection>
+            <NavSection title="Moderation">
+              <NavLink item={ADMIN_NAV[2]} onClick={onNavClick} />
+              <NavLink item={ADMIN_NAV[4]} onClick={onNavClick} />
+              <NavLink item={ADMIN_NAV[5]} onClick={onNavClick} />
+              <NavLink item={ADMIN_NAV[6]} onClick={onNavClick} />
+            </NavSection>
           </div>
         ) : null}
 

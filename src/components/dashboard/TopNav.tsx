@@ -63,6 +63,14 @@ function BellIcon() {
   );
 }
 
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+      <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 function ChevronDownIcon({ open }: { open: boolean }) {
   return (
     <svg viewBox="0 0 20 20" fill="currentColor" className={cn("h-3.5 w-3.5 text-gray-400 transition-transform duration-150", open && "rotate-180")}>
@@ -142,10 +150,10 @@ export function TopNav({ onMenuClick }: { onMenuClick: () => void }) {
   const initials = (displayName.charAt(0) || "U").toUpperCase();
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-gray-200 bg-white px-4 lg:px-6">
 
       {/* Left: hamburger (mobile) + page label */}
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-3">
         <button
           type="button"
           onClick={onMenuClick}
@@ -157,15 +165,45 @@ export function TopNav({ onMenuClick }: { onMenuClick: () => void }) {
         <h1 className="text-sm font-semibold text-gray-900">{pageLabel}</h1>
       </div>
 
-      {/* Right: bell (admin) + avatar dropdown */}
-      <div className="flex items-center gap-2">
+      {/* Center: global search (desktop only) */}
+      <div className="hidden flex-1 lg:flex" style={{ maxWidth: "300px" }}>
+        <div className="relative w-full">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+            <SearchIcon />
+          </span>
+          <input
+            type="search"
+            placeholder="Search users, listings…"
+            aria-label="Search"
+            className="h-8 w-full rounded-lg border border-gray-200 bg-gray-50 pl-8 pr-3 text-xs text-gray-900 placeholder:text-gray-400 focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Right: review queue + bell (admin) + avatar dropdown */}
+      <div className="ml-auto flex items-center gap-2">
+
+        {/* Review Queue quick action — staff with pending items */}
+        {isStaff && pendingCount != null && pendingCount > 0 && (
+          <Link
+            href="/dashboard/admin-listings"
+            className="hidden items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100 sm:flex"
+          >
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+            Review Queue
+            <span className="ml-0.5 rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+              {pendingCount > 99 ? "99+" : pendingCount}
+            </span>
+          </Link>
+        )}
 
         {/* Notification bell — admin only */}
         {isStaff && (
           <Link
             href="/dashboard/admin-listings"
-            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+            className="relative flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
             title="Pending listings"
+            aria-label={`Pending listings${pendingCount ? `: ${pendingCount}` : ""}`}
           >
             <BellIcon />
             {pendingCount != null && pendingCount > 0 && (
