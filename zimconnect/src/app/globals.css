@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  --apple-blue: #0071e3;
+  --link-blue: #0066cc;
+  --link-blue-dark: #2997ff;
+  --near-black: #1d1d1f;
+  --pure-black: #000000;
+  --light-gray: #f5f5f7;
+  --filter-bg: #fafafc;
+  --button-active: #ededf2;
+  --border-color: #d2d2d7;
+  --dark-surface-1: #272729;
+  --dark-surface-2: #28282a;
+  --dark-surface-3: #2a2a2d;
+  --background: #ffffff;
+  --foreground: #1d1d1f;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+
+  /* Apple Design System tokens */
+  --color-apple-blue: var(--apple-blue);
+  --color-link-blue: var(--link-blue);
+  --color-link-blue-dark: var(--link-blue-dark);
+  --color-near-black: var(--near-black);
+  --color-pure-black: var(--pure-black);
+  --color-light-gray: var(--light-gray);
+  --color-filter-bg: var(--filter-bg);
+  --color-button-active: var(--button-active);
+  --color-border-base: var(--border-color);
+  --color-dark-surface-1: var(--dark-surface-1);
+  --color-dark-surface-2: var(--dark-surface-2);
+  --color-dark-surface-3: var(--dark-surface-3);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure all interactive elements feel instant */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a, button {
+  touch-action: manipulation;
+}
+
+/* OTP shake animation on wrong code */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+/* Hide scrollbar for category pills strip and any horizontal scroll containers */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
