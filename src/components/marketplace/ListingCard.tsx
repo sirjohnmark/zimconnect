@@ -61,7 +61,7 @@ const IMAGE_ASPECT: Record<NonNullable<ListingCardProps["imageAspect"]>, string>
 export function ListingCard({ listing, href, imageAspect = "4/3", className }: ListingCardProps) {
   const { id, title, price, currency, location, condition, description, images, primary_image, category, is_featured } = listing;
   const destination = href ?? `/listings/${id}`;
-  const coverImage  = primary_image ?? images[0]?.image ?? null;
+  const coverImage  = primary_image ?? images?.[0]?.image ?? null;
 
   return (
     <div className={cn(
