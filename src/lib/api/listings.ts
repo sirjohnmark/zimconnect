@@ -287,19 +287,19 @@ export async function getAllListingsAdmin(
   params: AdminListingsParams = {},
 ): Promise<PaginatedListings> {
   assertPermission(getStoredUser(), "moderate:listings");
-  return api.get<PaginatedListings>("/api/v1/admin/listings/", {
+  return api.get<PaginatedListings>("/api/v1/admin/listings/moderation/", {
     params: params as Record<string, string | number | boolean | undefined | null>,
   });
 }
 
 export async function approveListing(id: number): Promise<void> {
   assertPermission(getStoredUser(), "moderate:listings");
-  await api.post<void>(`/api/v1/admin/listings/${id}/approve/`, {});
+  await api.post<void>(`/api/v1/admin/listings/moderation/${id}/approve/`, {});
 }
 
 export async function rejectListing(id: number, reason: string): Promise<void> {
   assertPermission(getStoredUser(), "moderate:listings");
-  await api.post<void>(`/api/v1/admin/listings/${id}/reject/`, { reason });
+  await api.post<void>(`/api/v1/admin/listings/moderation/${id}/reject/`, { reason });
 }
 
 export async function featureListing(
