@@ -250,7 +250,7 @@ export async function verifyOtpCode(
  */
 export async function sendEmailVerificationOtp(): Promise<void> {
   if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/email/send-otp", {});
+  await api.post<void>("/api/v1/auth/email/send-otp/", {});
 }
 
 /**
@@ -273,7 +273,7 @@ export async function verifyEmailAddress(otp: string): Promise<AuthUser> {
     saveUser(updated);
     return updated;
   }
-  const raw = await api.post<BackendUser>("/api/v1/auth/email/verify", { otp });
+  const raw = await api.post<BackendUser>("/api/v1/auth/email/verify/", { otp });
   const updated = mapUser(raw) as AuthUser;
   saveUser(updated);
   return updated;
@@ -285,7 +285,7 @@ export async function verifyEmailAddress(otp: string): Promise<AuthUser> {
  */
 export async function resendEmailVerificationOtp(): Promise<void> {
   if (USE_MOCK) return;
-  await api.post<void>("/api/v1/auth/email/resend", {});
+  await api.post<void>("/api/v1/auth/email/resend/", {});
 }
 
 // ─── Legacy aliases (kept for any other callers) ──────────────────────────────
