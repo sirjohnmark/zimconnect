@@ -140,7 +140,15 @@ function SkeletonCard() {
   return <div className="aspect-[4/3] animate-pulse rounded-2xl bg-gray-100" />;
 }
 
-function NewBuyerDashboard({ firstName }: { firstName: string }) {
+function NewBuyerDashboard({
+  firstName,
+  suggested,
+  loading,
+}: {
+  firstName: string;
+  suggested: Listing[];
+  loading: boolean;
+}) {
   return (
     <div className="space-y-8 pb-10">
       <div className="rounded-2xl bg-apple-blue px-6 py-8 text-white shadow-md sm:px-10 sm:py-10">
@@ -167,24 +175,35 @@ function NewBuyerDashboard({ firstName }: { firstName: string }) {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue">Getting Started</p>
-        <h2 className="mt-1 text-xl font-bold text-gray-900">Find what you need</h2>
-        <div className="mt-5 space-y-3">
-          {[
-            "Browse listings across all categories",
-            "Save items you like to revisit later",
-            "Message sellers directly to ask questions",
-          ].map((step, index) => (
-            <div key={step} className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-sm font-bold text-apple-blue shadow-sm">
-                {index + 1}
-              </span>
-              <p className="text-sm font-medium text-gray-700">{step}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <section>
+        <SectionHeader
+          eyebrow="Fresh on the market"
+          title="Latest Listings"
+          href="/listings"
+          linkLabel="View all"
+        />
+        {loading ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        ) : suggested.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+            {suggested.map((listing) => (
+              <CompactListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon="bag"
+            title="No listings yet"
+            description="Be the first to know when items go live."
+            action={{ label: "Browse Marketplace", href: "/listings" }}
+            size="sm"
+          />
+        )}
+      </section>
 
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue">Want to sell?</p>
@@ -517,7 +536,7 @@ export default function DashboardPage() {
   const shouldShowAnalytics = !loading && isSellerRole && (activeListings ?? 0) > 0;
 
   if (isNewBuyer) {
-    return <NewBuyerDashboard firstName={firstName} />;
+    return <NewBuyerDashboard firstName={firstName} suggested={suggested} loading={loading} />;
   }
 
   if (isNewSeller) {
