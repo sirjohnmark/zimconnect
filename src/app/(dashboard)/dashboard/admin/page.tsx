@@ -432,8 +432,8 @@ export default function AdminOverviewPage() {
               ) : (
                 <div className="divide-y divide-gray-50 rounded-2xl border border-gray-100 bg-white shadow-sm">
                   {recentUsers.map((u) => {
-                    const initials = `${u.first_name.charAt(0)}${u.last_name.charAt(0)}`.toUpperCase()
-                      || u.username.charAt(0).toUpperCase();
+                    const initials = `${(u.first_name ?? "").charAt(0)}${(u.last_name ?? "").charAt(0)}`.toUpperCase()
+                      || (u.username ?? "?").charAt(0).toUpperCase();
                     const roleColors: Record<string, string> = {
                       ADMIN:     "bg-purple-100 text-purple-700",
                       MODERATOR: "bg-indigo-100 text-indigo-700",

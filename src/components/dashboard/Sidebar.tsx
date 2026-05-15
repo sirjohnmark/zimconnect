@@ -428,18 +428,20 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             <div className="h-8 animate-pulse rounded-lg bg-gray-100" />
           </div>
         ) : isStaff ? (
-          <NavSection title="Admin">
+          <div className="space-y-0.5">
             {ADMIN_NAV.map((item) => (
               <NavLink key={item.href} item={item} onClick={onNavClick} />
             ))}
-          </NavSection>
+          </div>
         ) : null}
 
-        <NavSection title="Account">
-          {ACCOUNT_NAV.map((item) => (
-            <NavLink key={item.href} item={item} onClick={onNavClick} />
-          ))}
-        </NavSection>
+        {!isStaff && (
+          <NavSection title="Account">
+            {ACCOUNT_NAV.map((item) => (
+              <NavLink key={item.href} item={item} onClick={onNavClick} />
+            ))}
+          </NavSection>
+        )}
       </nav>
 
       <div className="border-t border-gray-100 px-3 py-4">
