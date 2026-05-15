@@ -92,11 +92,13 @@ class ListingListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_primary_image(self, obj: Listing) -> str | None:
-        """Return the URL of the first primary image, or None."""
-        # Works with prefetched images to avoid extra queries
+        """Return the absolute URL of the first primary image, or None."""
+        request = self.context.get("request")
         for img in obj.images.all():
             if img.is_primary:
-                return img.image.url if img.image else None
+                if img.image:
+                    url = img.image.url
+                    return request.build_absolute_uri(url) if request else url
         return None
 
 

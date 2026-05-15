@@ -101,7 +101,7 @@ class ListingListCreateView(APIView):
 
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(qs, request)
-        serializer = ListingListSerializer(page, many=True)
+        serializer = ListingListSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
@@ -138,7 +138,7 @@ class ListingListCreateView(APIView):
         # Refetch with relations for detail response
         listing = selectors.get_listing_by_id(listing.pk)
         return Response(
-            ListingDetailSerializer(listing).data,
+            ListingDetailSerializer(listing, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -173,7 +173,7 @@ class ListingDetailView(APIView):
 
         increment_view_count(listing_id)
 
-        serializer = ListingDetailSerializer(listing)
+        serializer = ListingDetailSerializer(listing, context={"request": request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -197,7 +197,7 @@ class ListingDetailView(APIView):
         updated = services.update_listing(listing, request.user, **serializer.validated_data)
         updated = selectors.get_listing_by_id(updated.pk)
         return Response(
-            ListingDetailSerializer(updated).data,
+            ListingDetailSerializer(updated, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -238,7 +238,7 @@ class MyListingsView(APIView):
         qs = selectors.get_user_listings(request.user, status=status_filter)
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(qs, request)
-        serializer = ListingListSerializer(page, many=True)
+        serializer = ListingListSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
 
@@ -265,7 +265,7 @@ class ListingPublishView(APIView):
         published = services.publish_listing(listing, request.user)
         published = selectors.get_listing_by_id(published.pk)
         return Response(
-            ListingDetailSerializer(published).data,
+            ListingDetailSerializer(published, context={"request": request}).data,
             status=status.HTTP_200_OK,
         )
 
@@ -300,7 +300,7 @@ class ListingImageUploadView(APIView):
 
         new_images = services.add_images(listing, serializer.validated_data["images"])
         return Response(
-            ListingImageSerializer(new_images, many=True).data,
+            ListingImageSerializer(new_images, many=True, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
