@@ -296,13 +296,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     user?.username ||
     "U";
 
-  // Filter nav items by the current user's permissions.
-  // During loading, show all items so there's no layout shift once auth resolves.
+  // Admin/Moderator only sees "Home" from the marketplace nav.
+  // All other items (Messages, My Listings, Orders, Saved) are irrelevant to them.
   const visibleMarketplaceNav = isLoading
     ? MARKETPLACE_NAV
-    : MARKETPLACE_NAV.filter(
-        (item) => !item.permission || hasPermission(user?.role, item.permission),
-      );
+    : MARKETPLACE_NAV.filter((item) => {
+        if (isStaff) return item.href === "/dashboard";
+        return !item.permission || hasPermission(user?.role, item.permission);
+      });
 
   useEffect(() => {
     getUnreadCount()
@@ -389,34 +390,36 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           )}
         </NavSection>
 
-        <div>
-          <button
-            type="button"
-            onClick={() => setExploreOpen((open) => !open)}
-            className="mb-2 flex w-full items-center justify-between px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600"
-          >
-            <span>Explore</span>
-            <svg
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className={cn("h-4 w-4 transition-transform", exploreOpen && "rotate-180")}
+        {!isStaff && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setExploreOpen((open) => !open)}
+              className="mb-2 flex w-full items-center justify-between px-3 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600"
             >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
+              <span>Explore</span>
+              <svg
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className={cn("h-4 w-4 transition-transform", exploreOpen && "rotate-180")}
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
 
-          {exploreOpen && (
-            <div className="space-y-0.5">
-              {EXPLORE_NAV.map((item) => (
-                <NavLink key={item.href} item={item} onClick={onNavClick} />
-              ))}
-            </div>
-          )}
-        </div>
+            {exploreOpen && (
+              <div className="space-y-0.5">
+                {EXPLORE_NAV.map((item) => (
+                  <NavLink key={item.href} item={item} onClick={onNavClick} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {isLoading ? (
           <div className="space-y-1">

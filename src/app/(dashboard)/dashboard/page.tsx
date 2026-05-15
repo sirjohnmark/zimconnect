@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { getListings, getMyListings, getListing } from "@/lib/api/listings";
 import { getConversations, getUnreadCount } from "@/lib/api/inbox";
 import { getDashboardAnalytics } from "@/lib/api/analytics";
+import { getAdminStats } from "@/lib/api/admin";
+import type { AdminStats } from "@/lib/api/admin";
 import { getSavedIds } from "@/lib/mock/saved";
 import { EngagementChart, CategoryChart } from "@/components/dashboard/AnalyticsChart";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -329,34 +331,37 @@ function SellerMomentumCard({
   );
 }
 
-function AdminDashboard({
-  firstName,
-  unreadMessages,
-  suggested,
-  conversations,
-  convsLoaded,
-  convsError,
-  loading,
-  userId,
-}: {
-  firstName: string;
-  unreadMessages: number | null;
-  suggested: Listing[];
-  conversations: ConversationPreview[];
-  convsLoaded: boolean;
-  convsError: boolean;
-  loading: boolean;
-  userId: number;
-}) {
-  const adminActions = [
-    { label: "Listing Review", href: "/dashboard/admin-listings", desc: "Approve or reject pending listings", color: "bg-blue-50 border-blue-100", iconColor: "text-blue-500" },
-    { label: "Users", href: "/dashboard/users", desc: "Manage accounts and roles", color: "bg-purple-50 border-purple-100", iconColor: "text-purple-500" },
-    { label: "Seller Applications", href: "/dashboard/upgrade-requests", desc: "Review upgrade requests", color: "bg-amber-50 border-amber-100", iconColor: "text-amber-500" },
-    { label: "Categories", href: "/dashboard/categories", desc: "Add and edit categories", color: "bg-green-50 border-green-100", iconColor: "text-green-500" },
+function AdminDashboard({ firstName }: { firstName: string }) {
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  useEffect(() => {
+    getAdminStats()
+      .then(setStats)
+      .catch(() => {})
+      .finally(() => setStatsLoading(false));
+  }, []);
+
+  const statCards = [
+    { label: "Total Users",    value: stats?.totalUsers    ?? null, color: "text-apple-blue",  href: "/dashboard/users" },
+    { label: "Total Sellers",  value: stats?.totalSellers  ?? null, color: "text-emerald-600", href: "/dashboard/users" },
+    { label: "Total Buyers",   value: stats?.totalBuyers   ?? null, color: "text-orange-500",  href: "/dashboard/users" },
+    { label: "Total Listings", value: stats?.totalListings ?? null, color: "text-indigo-600",  href: "/dashboard/admin-listings" },
+    { label: "Pending Review", value: stats?.pendingListings  ?? null, color: "text-amber-500",  href: "/dashboard/admin-listings" },
+    { label: "Active",         value: stats?.activeListings   ?? null, color: "text-green-600",  href: "/dashboard/admin-listings" },
+    { label: "Rejected",       value: stats?.rejectedListings ?? null, color: "text-red-500",    href: "/dashboard/admin-listings" },
+    { label: "Categories",     value: stats?.totalCategories  ?? null, color: "text-purple-600", href: "/dashboard/categories" },
+  ];
+
+  const quickLinks = [
+    { label: "Listing Review",      href: "/dashboard/admin-listings",  desc: "Approve or reject pending listings" },
+    { label: "Users",               href: "/dashboard/users",           desc: "Manage accounts and roles" },
+    { label: "Seller Applications", href: "/dashboard/upgrade-requests",desc: "Review upgrade requests" },
+    { label: "Categories",          href: "/dashboard/categories",      desc: "Add and edit categories" },
   ];
 
   return (
-    <div className="space-y-10 pb-10">
+    <div className="space-y-8 pb-10">
       <div className="rounded-2xl bg-apple-blue px-5 py-7 text-white shadow-md sm:px-10 sm:py-10">
         <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-white/50">Admin Panel</p>
         <h1 className="text-2xl font-extrabold sm:text-3xl">{firstName} 👋</h1>
@@ -365,7 +370,7 @@ function AdminDashboard({
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/dashboard/admin" className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]">
-            Admin Overview
+            Detailed Overview
           </Link>
           <Link href="/listings" className="rounded-lg border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]">
             Browse Marketplace
@@ -373,107 +378,44 @@ function AdminDashboard({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {adminActions.map((action) => (
-          <Link
-            key={action.href}
-            href={action.href}
-            className={cn("flex flex-col gap-2 rounded-2xl border p-5 shadow-sm transition-shadow hover:shadow-md", action.color)}
-          >
-            <p className={cn("text-sm font-bold", action.iconColor)}>{action.label}</p>
-            <p className="text-xs text-gray-500 leading-snug">{action.desc}</p>
+      {/* Real stats */}
+      {(stats?.pendingListings ?? 0) > 0 && !statsLoading && (
+        <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3">
+          <p className="text-sm font-semibold text-amber-800">
+            {stats!.pendingListings} listing{stats!.pendingListings !== 1 ? "s" : ""} waiting for review
+          </p>
+          <Link href="/dashboard/admin-listings" className="rounded-lg bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
+            Review now
+          </Link>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {statCards.map(({ label, value, color, href }) => (
+          <Link key={label} href={href} className="group rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm transition-shadow hover:shadow-md">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+            {statsLoading ? (
+              <div className="mt-2 h-7 w-12 animate-pulse rounded-lg bg-gray-100" />
+            ) : (
+              <p className={cn("mt-1.5 text-2xl font-bold tabular-nums", color)}>
+                {value !== null ? value.toLocaleString() : "—"}
+              </p>
+            )}
           </Link>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Unread Messages</p>
-          <p className="mt-2 text-3xl font-bold text-amber-600">
-            {unreadMessages !== null ? String(unreadMessages) : "—"}
-          </p>
-        </div>
-        <Link href="/dashboard/messages" className="flex flex-col justify-center rounded-2xl border border-apple-blue/10 bg-blue-50 px-5 py-4 shadow-sm hover:shadow-md transition-shadow">
-          <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue">Messages</p>
-          <p className="mt-1 text-sm text-gray-600">View your inbox</p>
-        </Link>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
-        <section>
-          <SectionHeader eyebrow="Marketplace" title="Recent Listings" href="/listings" linkLabel="View all" />
-          {loading ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
-            </div>
-          ) : suggested.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
-              {suggested.map((listing) => <CompactListingCard key={listing.id} listing={listing} />)}
-            </div>
-          ) : (
-            <EmptyState icon="listing" title="No listings yet" description="The marketplace has no listings yet." size="sm" />
-          )}
-        </section>
-
-        <section>
-          <SectionHeader
-            eyebrow="Messages"
-            title={`Inbox${unreadMessages ? ` (${unreadMessages})` : ""}`}
-            href="/dashboard/messages"
-            linkLabel="Open inbox"
-          />
-          {loading ? (
-            <div className="divide-y divide-gray-50 rounded-2xl border border-gray-100 bg-white shadow-sm">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-start gap-3 px-4 py-3.5">
-                  <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-gray-100" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 w-24 animate-pulse rounded bg-gray-100" />
-                    <div className="h-3 w-40 animate-pulse rounded bg-gray-100" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : convsError ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-red-100 bg-red-50 py-8 text-center px-4">
-              <p className="text-sm text-red-600">Could not load messages.</p>
-              <Link href="/dashboard/messages" className="mt-3 text-xs font-semibold text-apple-blue hover:underline">Open inbox →</Link>
-            </div>
-          ) : conversations.length > 0 ? (
-            <div className="divide-y divide-gray-50 rounded-2xl border border-gray-100 bg-white shadow-sm">
-              {conversations.map((conversation) => (
-                <Link
-                  key={conversation.id}
-                  href="/dashboard/messages"
-                  className={cn("flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50", conversation.unread > 0 && "bg-blue-50/40")}
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-apple-blue/10 text-sm font-bold text-apple-blue">
-                    {conversation.initial}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={cn("truncate text-sm", conversation.unread > 0 ? "font-semibold text-gray-900" : "font-medium text-gray-700")}>
-                        {conversation.name}
-                      </p>
-                      <span className="shrink-0 text-xs text-gray-400">{conversation.time}</span>
-                    </div>
-                    {conversation.listingTitle && <p className="truncate text-xs text-gray-400">{conversation.listingTitle}</p>}
-                    <p className={cn("mt-0.5 truncate text-sm", conversation.unread > 0 ? "text-gray-800" : "text-gray-500")}>
-                      {conversation.preview}
-                    </p>
-                  </div>
-                  {conversation.unread > 0 && (
-                    <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-apple-blue text-[11px] font-bold text-white">
-                      {conversation.unread}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <EmptyState icon="chat" title="No conversations" description="No messages yet." size="sm" />
-          )}
-        </section>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {quickLinks.map((action) => (
+          <Link
+            key={action.href}
+            href={action.href}
+            className="flex flex-col gap-1.5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+          >
+            <p className="text-sm font-bold text-apple-blue">{action.label}</p>
+            <p className="text-xs text-gray-500 leading-snug">{action.desc}</p>
+          </Link>
+        ))}
       </div>
     </div>
   );
@@ -583,18 +525,7 @@ export default function DashboardPage() {
   }
 
   if (isAdminUser) {
-    return (
-      <AdminDashboard
-        firstName={firstName}
-        unreadMessages={unreadMessages}
-        suggested={suggested}
-        conversations={conversations}
-        convsLoaded={convsLoaded}
-        convsError={convsError}
-        loading={loading}
-        userId={user?.id ?? 0}
-      />
-    );
+    return <AdminDashboard firstName={firstName} />;
   }
 
   return (
