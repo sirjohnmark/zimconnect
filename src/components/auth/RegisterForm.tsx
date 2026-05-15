@@ -8,7 +8,7 @@ import Link from "next/link";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { useAuth } from "@/lib/auth/useAuth";
 import { useAuthContext } from "@/lib/auth/AuthProvider";
-import { sendOtp, verifyOtpCode, type OtpMethod } from "@/lib/api/auth";
+import { sendOtp, verifyOtpCode, sendEmailVerificationOtp, verifyEmailAddress, type OtpMethod } from "@/lib/api/auth";
 import { generateAndStoreOtp, verifyOtp } from "@/lib/auth/auth";
 import { ApiError, NetworkError } from "@/lib/api/client";
 import type { AuthUser } from "@/lib/api/auth";
@@ -253,12 +253,13 @@ export function RegisterForm() {
     if (!USE_MOCK) {
       try {
         await registerAuth(data);
-        // Account created — proceed to OTP steps within this form.
-        // We verify first (pre-auth endpoints) then call login() after OTP confirmation,
-        // avoiding any chicken-and-egg problem with backends that gate login on verification.
+        // Registration auto-sends an OTP to email. Log in now so the
+        // authenticated verify endpoint (/auth/email/verify) works in step 4.
+        await login({ email: data.email, password: data.password });
         setFormData(data);
-        setMethod(data.phone ? "phone" : "email");
-        setStep(3);
+        setMethod("email");
+        setStep(4);
+        startResendCooldown();
         return;
       } catch (err) {
         if (err instanceof NetworkError) {
@@ -325,11 +326,7 @@ export function RegisterForm() {
       setSentCode(code);
     } else {
       try {
-        await sendOtp(
-          apiMethod(verifyMethod),
-          verifyMethod === "email" ? formData.email : undefined,
-          verifyMethod === "phone" ? formData.phone : undefined,
-        );
+        await sendEmailVerificationOtp();
       } catch {
         return;
       }
@@ -389,17 +386,10 @@ export function RegisterForm() {
         const verifiedUser: AuthUser = { ...loginResponse.user, email_verified: true, is_verified: true };
         setUser(verifiedUser);
       } else {
-        // Real API: verify OTP then login to get tokens
-        await verifyOtpCode(
-          otpCode,
-          apiMethod(verifyMethod),
-          verifyMethod === "email" ? formData.email : undefined,
-          verifyMethod === "phone" ? formData.phone : undefined,
-        );
-
+        // Real API: authenticated verify endpoint (logged in after registration)
+        await verifyEmailAddress(otpCode);
         setOtpAttempts(0);
         setOtpStatus("success");
-        await login({ email: formData.email, password: formData.password });
       }
 
       await new Promise((r) => setTimeout(r, 600));
