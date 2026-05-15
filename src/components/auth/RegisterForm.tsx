@@ -218,10 +218,12 @@ export function RegisterForm() {
     register,
     handleSubmit,
     getValues,
+    setValue,
     trigger,
     formState: { errors, isSubmitting },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
+    shouldUnregister: false,
   });
 
   useEffect(() => {
@@ -236,9 +238,13 @@ export function RegisterForm() {
   function onStep1Next() {
     const { first_name, last_name, username, email, phone } = getValues();
     const partial = { first_name, last_name, username, email, phone };
-    // Trigger validation for step-1 fields only
     trigger(["first_name", "last_name", "username", "email"]).then((valid) => {
       if (valid) {
+        // Explicitly write step-1 values back into the form store so they
+        // survive the unmount and are available when handleSubmit runs on step 2.
+        (Object.entries(partial) as [keyof RegisterInput, string | undefined][]).forEach(
+          ([key, val]) => { if (val !== undefined) setValue(key, val); },
+        );
         setFormData((prev) => ({ ...prev, ...partial } as RegisterInput));
         setStep(2);
       }
