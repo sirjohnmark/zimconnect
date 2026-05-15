@@ -24,6 +24,7 @@ from apps.adminpanel.serializers import (
     AdminSellerRequestActionSerializer,
     AdminSellerRequestDetailSerializer,
     AdminSellerRequestListSerializer,
+    AdminUpgradeRequestFlatSerializer,
     AdminUserDetailSerializer,
     AdminUserListSerializer,
     AdminUserUpdateSerializer,
@@ -458,6 +459,78 @@ class SellerRequestRejectView(APIView):
             AdminSellerRequestDetailSerializer(rejected).data,
             status=status.HTTP_200_OK,
         )
+
+
+class UpgradeRequestListView(APIView):
+    """GET /api/v1/admin/upgrade-requests/ — paginated flat list for the frontend upgrade-requests page."""
+
+    permission_classes = (IsModerator,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_upgrade_requests_list",
+        summary="List seller upgrade requests (flat)",
+        description="Paginated flat list of seller upgrade requests. Filterable by status. **Moderator or admin.**",
+        parameters=[
+            OpenApiParameter("status", OpenApiTypes.STR, description="Filter by status: PENDING, APPROVED, REJECTED"),
+        ],
+        responses={200: AdminUpgradeRequestFlatSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        filters = {k: v for k, v in {"status": request.query_params.get("status")}.items() if v is not None}
+        qs = selectors.get_seller_upgrade_requests(filters or None)
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = AdminUpgradeRequestFlatSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class UpgradeRequestApproveView(APIView):
+    """POST /api/v1/admin/upgrade-requests/{id}/approve/ — approve and promote user (flat response)."""
+
+    permission_classes = (IsModerator,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_upgrade_requests_approve",
+        summary="Approve seller upgrade request (flat)",
+        description="Approve the request and promote the buyer to SELLER. **Moderator or admin.**",
+        request=None,
+        responses={
+            200: OpenApiResponse(response=AdminUpgradeRequestFlatSerializer, description="Approved request"),
+            400: OpenApiResponse(description="Request is not PENDING"),
+            404: OpenApiResponse(description="Request not found"),
+        },
+    )
+    def post(self, request: Request, request_id: int) -> Response:
+        upgrade_request = selectors.get_seller_upgrade_request_by_id(request_id)
+        approved = services.approve_seller_upgrade(upgrade_request, request.user)
+        return Response(AdminUpgradeRequestFlatSerializer(approved).data, status=status.HTTP_200_OK)
+
+
+class UpgradeRequestRejectView(APIView):
+    """POST /api/v1/admin/upgrade-requests/{id}/reject/ — reject with reason (flat response)."""
+
+    permission_classes = (IsModerator,)
+
+    @extend_schema(
+        tags=["Admin"],
+        operation_id="admin_upgrade_requests_reject",
+        summary="Reject seller upgrade request (flat)",
+        description="Reject the request with a mandatory reason. **Moderator or admin.**",
+        request=AdminSellerRequestActionSerializer,
+        responses={
+            200: OpenApiResponse(response=AdminUpgradeRequestFlatSerializer, description="Rejected request"),
+            400: OpenApiResponse(description="Reason required or request not pending"),
+            404: OpenApiResponse(description="Request not found"),
+        },
+    )
+    def post(self, request: Request, request_id: int) -> Response:
+        serializer = AdminSellerRequestActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        upgrade_request = selectors.get_seller_upgrade_request_by_id(request_id)
+        rejected = services.reject_seller_upgrade(upgrade_request, request.user, serializer.validated_data["reason"])
+        return Response(AdminUpgradeRequestFlatSerializer(rejected).data, status=status.HTTP_200_OK)
 
 
 class DeletedUsersView(APIView):

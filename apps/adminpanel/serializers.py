@@ -294,3 +294,57 @@ class AdminSellerRequestActionSerializer(serializers.Serializer):
     """Input for rejecting a seller upgrade request (requires a reason)."""
 
     reason = serializers.CharField(min_length=10, max_length=1000)
+
+
+class AdminUpgradeRequestFlatSerializer(serializers.ModelSerializer):
+    """
+    Flat representation of a seller upgrade request for the /upgrade-requests/ endpoint.
+
+    Matches the AdminUpgradeRequest TypeScript interface used by the frontend.
+    """
+
+    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+    full_name = serializers.SerializerMethodField()
+    business_type = serializers.SerializerMethodField()
+    national_id_url = serializers.SerializerMethodField()
+    passport_url = serializers.SerializerMethodField()
+    company_registration_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SellerUpgradeRequest
+        fields = (
+            "id",
+            "status",
+            "business_type",
+            "business_name",
+            "business_description",
+            "rejection_reason",
+            "requested_at",
+            "reviewed_at",
+            "user_id",
+            "username",
+            "email",
+            "full_name",
+            "national_id_url",
+            "passport_url",
+            "company_registration_url",
+        )
+        read_only_fields = fields
+
+    def get_full_name(self, obj) -> str:
+        parts = [obj.user.first_name, obj.user.last_name]
+        return " ".join(p for p in parts if p).strip()
+
+    def get_business_type(self, obj) -> str:
+        return "individual"
+
+    def get_national_id_url(self, obj) -> str | None:
+        return None
+
+    def get_passport_url(self, obj) -> str | None:
+        return None
+
+    def get_company_registration_url(self, obj) -> str | None:
+        return None

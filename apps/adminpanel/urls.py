@@ -25,9 +25,13 @@ urlpatterns = [
     # Soft-deleted listings
     path("listings/deleted/", views.DeletedListingsView.as_view(), name="deleted-listings"),
     path("listings/<int:listing_id>/restore/", views.RestoreListingView.as_view(), name="restore-listing"),
-    # Seller upgrade requests
+    # Seller upgrade requests (legacy admin-only)
     path("seller-requests/", views.SellerRequestListView.as_view(), name="seller-request-list"),
     path("seller-requests/<int:request_id>/", views.SellerRequestDetailView.as_view(), name="seller-request-detail"),
     path("seller-requests/<int:request_id>/approve/", views.SellerRequestApproveView.as_view(), name="seller-request-approve"),
     path("seller-requests/<int:request_id>/reject/", views.SellerRequestRejectView.as_view(), name="seller-request-reject"),
+    # Seller upgrade requests (flat format — matches frontend upgrade-requests page)
+    path("upgrade-requests/", views.UpgradeRequestListView.as_view(), name="upgrade-request-list"),
+    path("upgrade-requests/<int:request_id>/approve/", views.UpgradeRequestApproveView.as_view(), name="upgrade-request-approve"),
+    path("upgrade-requests/<int:request_id>/reject/", views.UpgradeRequestRejectView.as_view(), name="upgrade-request-reject"),
 ]
