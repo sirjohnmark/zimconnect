@@ -204,8 +204,9 @@ export function RegisterForm() {
   const [sentCode, setSentCode]     = useState<string | null>(null);
   const [otpError, setOtpError]     = useState<string | null>(null);
   const [formError, setFormError]   = useState<string | null>(null);
-  const [sending, setSending]       = useState(false);
-  const [verifying, setVerifying]   = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [sending, setSending]         = useState(false);
+  const [verifying, setVerifying]     = useState(false);
   const [resendCooldown, setCooldown] = useState(0);
   // VULN-13: track failed OTP attempts to prevent brute-force
   const [otpAttempts, setOtpAttempts] = useState(0);
@@ -216,11 +217,12 @@ export function RegisterForm() {
 
   const {
     register,
-    handleSubmit,
     getValues,
     setValue,
+    setError,
+    clearErrors,
     trigger,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     shouldUnregister: false,
@@ -240,8 +242,8 @@ export function RegisterForm() {
     const partial = { first_name, last_name, username, email, phone };
     trigger(["first_name", "last_name", "username", "email"]).then((valid) => {
       if (valid) {
-        // Explicitly write step-1 values back into the form store so they
-        // survive the unmount and are available when handleSubmit runs on step 2.
+        // Explicitly write step-1 values into the form store so errors
+        // are available to display if handleStep2Continue is called.
         (Object.entries(partial) as [keyof RegisterInput, string | undefined][]).forEach(
           ([key, val]) => { if (val !== undefined) setValue(key, val); },
         );
@@ -251,19 +253,42 @@ export function RegisterForm() {
     });
   }
 
-  // ── Step 2: password → collect full details ─────────────────────────────
+  // ── Step 2: password — validate only step-2 fields, combine with formData ──
 
-  async function onDetailsSubmit(data: RegisterInput) {
+  async function handleStep2Continue() {
+    if (!formData) return;
     setFormError(null);
 
+    const password         = getValues("password") ?? "";
+    const confirm_password = getValues("confirm_password") ?? "";
+
+    let hasError = false;
+    if (password.length < 8) {
+      setError("password", { message: "Password must be at least 8 characters" });
+      hasError = true;
+    } else {
+      clearErrors("password");
+    }
+    if (!confirm_password) {
+      setError("confirm_password", { message: "Please confirm your password" });
+      hasError = true;
+    } else if (password !== confirm_password) {
+      setError("confirm_password", { message: "Passwords do not match" });
+      hasError = true;
+    } else {
+      clearErrors("confirm_password");
+    }
+    if (hasError) return;
+
+    const allData: RegisterInput = { ...formData, password, confirm_password };
+
     if (!USE_MOCK) {
+      setRegistering(true);
       try {
-        await registerAuth(data);
-        // Log in immediately so the authenticated /auth/email/verify endpoint
-        // works. The (auth) layout's usePublicGuard then redirects unverified
-        // users to /verify-email where they enter the registration OTP.
-        await login({ email: data.email, password: data.password });
-        return;
+        await registerAuth(allData);
+        // Log in so the authenticated /auth/email/verify endpoint works.
+        // usePublicGuard then redirects unverified users to /verify-email.
+        await login({ email: allData.email, password: allData.password });
       } catch (err) {
         if (err instanceof NetworkError) {
           setFormError("Unable to connect to server.");
@@ -276,12 +301,14 @@ export function RegisterForm() {
         } else {
           setFormError("Something went wrong. Please try again.");
         }
-        return;
+      } finally {
+        setRegistering(false);
       }
+      return;
     }
 
-    setFormData(data);
-    setMethod(data.phone ? "phone" : "email");
+    setFormData(allData);
+    setMethod(allData.phone ? "phone" : "email");
     setStep(3);
   }
 
@@ -497,7 +524,7 @@ export function RegisterForm() {
 
       {/* ── Step 2: Role + password ── */}
       {step === 2 && (
-        <form onSubmit={handleSubmit(onDetailsSubmit)} noValidate className="space-y-4">
+        <div className="space-y-4">
           {formError && <Alert message={formError} />}
 
           <Input
@@ -527,11 +554,11 @@ export function RegisterForm() {
             >
               Back
             </button>
-            <Button type="submit" className="flex-1" loading={isSubmitting}>
+            <Button type="button" className="flex-1" loading={registering} onClick={handleStep2Continue}>
               Continue
             </Button>
           </div>
-        </form>
+        </div>
       )}
 
       {/* ── Step 3: Choose verify method ── */}
