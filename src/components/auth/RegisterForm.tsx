@@ -253,13 +253,10 @@ export function RegisterForm() {
     if (!USE_MOCK) {
       try {
         await registerAuth(data);
-        // Registration auto-sends an OTP to email. Log in now so the
-        // authenticated verify endpoint (/auth/email/verify) works in step 4.
+        // Log in immediately so the authenticated /auth/email/verify endpoint
+        // works. The (auth) layout's usePublicGuard then redirects unverified
+        // users to /verify-email where they enter the registration OTP.
         await login({ email: data.email, password: data.password });
-        setFormData(data);
-        setMethod("email");
-        setStep(4);
-        startResendCooldown();
         return;
       } catch (err) {
         if (err instanceof NetworkError) {

@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { usePublicGuard } from "@/lib/auth/usePublicGuard";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const { isLoading, isAuthenticated } = usePublicGuard();
+  const pathname = usePathname();
 
-  // While auth state is resolving OR the user is authenticated (redirect pending),
-  // show a spinner so the login/register form never flashes for logged-in users.
-  if (isLoading || isAuthenticated) {
+  // Allow authenticated-but-unverified users to reach /verify-email so they can
+  // complete the flow without being sent back to login. For all other auth pages,
+  // hide the form while the redirect is pending.
+  const onVerifyEmail = pathname.startsWith("/verify-email");
+  if (isLoading || (isAuthenticated && !onVerifyEmail)) {
     return (
       <div className="flex h-dvh items-center justify-center bg-gray-50">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-apple-blue border-t-transparent" />
