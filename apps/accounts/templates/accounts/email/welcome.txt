@@ -1,0 +1,9 @@
+Hi {{ username }},
+
+Welcome to Sanganai! We're glad to have you.
+
+Your account is ready. Visit the app and verify your email address to get started.
+
+If you have any questions, just reply to this email.
+
+— The Sanganai Team

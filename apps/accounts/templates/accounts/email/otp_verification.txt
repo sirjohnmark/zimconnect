@@ -1,0 +1,11 @@
+Hi {{ username }},
+
+Your Sanganai verification code is:
+
+{{ otp }}
+
+This code expires in {{ expiry_minutes }} minutes.
+
+If you didn't request this code, you can safely ignore this email.
+
+— The Sanganai Team

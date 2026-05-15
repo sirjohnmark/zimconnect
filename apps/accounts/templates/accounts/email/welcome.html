@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Sanganai</title>
+  <style>
+    body { margin: 0; padding: 0; background: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111; }
+    .wrapper { max-width: 560px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .header { background: #0071e3; padding: 32px 40px; text-align: center; }
+    .header h1 { margin: 0; color: #fff; font-size: 22px; font-weight: 600; letter-spacing: -.3px; }
+    .body { padding: 36px 40px; }
+    .body p { margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #374151; }
+    .footer { padding: 20px 40px; text-align: center; font-size: 12px; color: #9ca3af; border-top: 1px solid #f0f0f0; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>Welcome to Sanganai</h1>
+    </div>
+    <div class="body">
+      <p>Hi <strong>{{ username }}</strong>,</p>
+      <p>Your account has been created. Please verify your email address to activate all features.</p>
+      <p>If you have any questions, just reply to this email — we're happy to help.</p>
+    </div>
+    <div class="footer">
+      &copy; {% now "Y" %} Sanganai. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
