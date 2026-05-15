@@ -101,8 +101,8 @@ function ViewModal({
   useEffect(() => { setLocalRole(user.role); }, [user.role]);
 
   const initials =
-    `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase() ||
-    user.username.charAt(0).toUpperCase();
+    `${(user.first_name ?? "").charAt(0)}${(user.last_name ?? "").charAt(0)}`.toUpperCase() ||
+    (user.username ?? "?").charAt(0).toUpperCase();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -499,8 +499,8 @@ export default function UsersPage() {
                 ) : (
                   users.map((u) => {
                     const initials =
-                      `${u.first_name.charAt(0)}${u.last_name.charAt(0)}`.toUpperCase() ||
-                      u.username.charAt(0).toUpperCase();
+                      `${(u.first_name ?? "").charAt(0)}${(u.last_name ?? "").charAt(0)}`.toUpperCase() ||
+                      (u.username ?? "?").charAt(0).toUpperCase();
                     const isBusy = busyId === u.id;
 
                     return (
