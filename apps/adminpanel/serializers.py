@@ -40,11 +40,16 @@ class AdminDashboardSerializer(serializers.Serializer):
     """Aggregate stats for the admin dashboard."""
 
     total_users = serializers.IntegerField()
+    total_sellers = serializers.IntegerField()
+    total_buyers = serializers.IntegerField()
     total_listings = serializers.IntegerField()
+    total_listings_all = serializers.IntegerField()
     total_listings_pending = serializers.IntegerField()
+    total_listings_rejected = serializers.IntegerField()
     new_users_today = serializers.IntegerField()
     new_listings_today = serializers.IntegerField()
     total_conversations = serializers.IntegerField()
+    total_categories = serializers.IntegerField()
 
 
 # ──────────────────────────────────────────────

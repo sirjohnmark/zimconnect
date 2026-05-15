@@ -12,8 +12,9 @@ from django.db.models import Count, Q, QuerySet
 from django.utils import timezone
 
 from apps.accounts.models import SellerUpgradeRequest
+from apps.categories.models import Category
 from apps.common.cache import CacheKeys, TTL_DASHBOARD_STATS
-from apps.common.constants import ListingStatus, SellerUpgradeStatus
+from apps.common.constants import ListingStatus, SellerUpgradeStatus, UserRole
 from apps.common.exceptions import NotFoundError
 from apps.inbox.models import Conversation
 from apps.listings.models import Listing
@@ -30,21 +31,31 @@ def get_dashboard_stats() -> dict:
     today = timezone.now().date()
 
     total_users = User.objects.count()
+    total_sellers = User.objects.filter(role=UserRole.SELLER).count()
+    total_buyers = User.objects.filter(role=UserRole.BUYER).count()
     new_users_today = User.objects.filter(created_at__date=today).count()
 
     total_listings_active = Listing.objects.filter(status=ListingStatus.ACTIVE).count()
     total_listings_pending = Listing.objects.filter(status=ListingStatus.DRAFT).count()
+    total_listings_rejected = Listing.objects.filter(status=ListingStatus.REJECTED).count()
+    total_listings_all = Listing.objects.count()
     new_listings_today = Listing.objects.filter(created_at__date=today).count()
 
     total_conversations = Conversation.objects.count()
+    total_categories = Category.objects.count()
 
     data = {
         "total_users": total_users,
+        "total_sellers": total_sellers,
+        "total_buyers": total_buyers,
         "total_listings": total_listings_active,
+        "total_listings_all": total_listings_all,
         "total_listings_pending": total_listings_pending,
+        "total_listings_rejected": total_listings_rejected,
         "new_users_today": new_users_today,
         "new_listings_today": new_listings_today,
         "total_conversations": total_conversations,
+        "total_categories": total_categories,
     }
     cache.set(CacheKeys.DASHBOARD_STATS, data, TTL_DASHBOARD_STATS)
     return data
