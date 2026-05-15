@@ -15,11 +15,18 @@ from rest_framework.views import APIView
 
 from apps.accounts import services
 from apps.accounts.serializers import (
+    SellerDashboardSerializer,
     SellerProfileMeSerializer,
     SellerProfilePublicSerializer,
     SellerProfileUpdateSerializer,
+    SellerUpgradeRequestSerializer,
+    SellerUpgradeStatusSerializer,
 )
+from apps.common.constants import ListingStatus
 from apps.common.permissions import IsSeller
+from apps.common.throttling import SellerUpgradeThrottle
+from apps.listings import selectors as listing_selectors
+from apps.listings.serializers import ListingListSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -103,3 +110,136 @@ class SellerMeView(APIView):
             SellerProfileMeSerializer(profile).data,
             status=status.HTTP_200_OK,
         )
+
+
+class SellerApplyView(APIView):
+    """POST /api/v1/sellers/apply/ — submit a seller application."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (SellerUpgradeThrottle,)
+
+    @extend_schema(
+        tags=["Sellers"],
+        operation_id="sellers_apply",
+        summary="Apply to become a seller",
+        description=(
+            "Submit a seller application for the authenticated BUYER account. "
+            "Email or phone must be verified. Only one pending application is allowed."
+        ),
+        request=SellerUpgradeRequestSerializer,
+        responses={
+            201: OpenApiResponse(response=SellerUpgradeStatusSerializer, description="Application submitted"),
+            400: OpenApiResponse(description="Verification required"),
+            403: OpenApiResponse(description="Only buyers can apply"),
+            409: OpenApiResponse(description="Pending application already exists"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = SellerUpgradeRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        upgrade_request = services.create_seller_upgrade_request(
+            user=request.user,
+            business_name=serializer.validated_data["business_name"],
+            business_description=serializer.validated_data.get("business_description", ""),
+        )
+        return Response(
+            SellerUpgradeStatusSerializer(upgrade_request).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SellerApplicationStatusView(APIView):
+    """GET /api/v1/sellers/application-status/ — latest seller application status."""
+
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=["Sellers"],
+        operation_id="sellers_application_status",
+        summary="Get seller application status",
+        description="Return the authenticated user's latest seller application, if one exists.",
+        responses={
+            200: OpenApiResponse(response=SellerUpgradeStatusSerializer, description="Application status"),
+            401: OpenApiResponse(description="Not authenticated"),
+            404: OpenApiResponse(description="No application found"),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        from apps.common.exceptions import NotFoundError
+
+        upgrade_request = services.get_latest_seller_upgrade_request(request.user)
+        if upgrade_request is None:
+            raise NotFoundError("No seller application found.")
+
+        return Response(
+            SellerUpgradeStatusSerializer(upgrade_request).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class SellerDashboardView(APIView):
+    """GET /api/v1/sellers/dashboard/ — seller dashboard summary."""
+
+    permission_classes = (IsAuthenticated, IsSeller)
+
+    @extend_schema(
+        tags=["Sellers"],
+        operation_id="sellers_dashboard",
+        summary="Seller dashboard",
+        description="Return the authenticated seller's shop profile, listing counts, and recent listings.",
+        responses={
+            200: OpenApiResponse(response=SellerDashboardSerializer, description="Seller dashboard summary"),
+            401: OpenApiResponse(description="Not authenticated"),
+            403: OpenApiResponse(description="Only sellers can access this endpoint"),
+            404: OpenApiResponse(description="Seller profile not found"),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        profile = services.get_seller_profile_for_user(request.user)
+        listings = listing_selectors.get_user_listings(request.user)
+        recent_listings = listings[:5]
+        stats = {
+            "total": listings.count(),
+            "draft": listings.filter(status=ListingStatus.DRAFT).count(),
+            "active": listings.filter(status=ListingStatus.ACTIVE).count(),
+            "sold": listings.filter(status=ListingStatus.SOLD).count(),
+            "rejected": listings.filter(status=ListingStatus.REJECTED).count(),
+        }
+        data = {
+            "user": request.user,
+            "seller_profile": profile,
+            "listing_stats": stats,
+            "recent_listings": recent_listings,
+        }
+        return Response(SellerDashboardSerializer(data).data, status=status.HTTP_200_OK)
+
+
+class SellerListingsView(APIView):
+    """GET /api/v1/sellers/listings/ — authenticated seller's listings."""
+
+    permission_classes = (IsAuthenticated, IsSeller)
+
+    @extend_schema(
+        tags=["Sellers"],
+        operation_id="sellers_listings",
+        summary="Seller listings",
+        description="List the authenticated seller's own listings. Filterable by status.",
+        responses={
+            200: OpenApiResponse(response=ListingListSerializer(many=True), description="Seller listings"),
+            401: OpenApiResponse(description="Not authenticated"),
+            403: OpenApiResponse(description="Only sellers can access this endpoint"),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        from apps.common.pagination import StandardResultsSetPagination
+
+        qs = listing_selectors.get_user_listings(
+            request.user,
+            status=request.query_params.get("status"),
+        )
+        paginator = StandardResultsSetPagination()
+        page = paginator.paginate_queryset(qs, request)
+        serializer = ListingListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)

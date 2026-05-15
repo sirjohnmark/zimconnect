@@ -102,6 +102,16 @@ def change_user_role(user, admin_user, new_role: str) -> object:
     old_role = user.role
     user.role = new_role
     user.save(update_fields=["role", "updated_at"])
+
+    if new_role == UserRole.SELLER:
+        SellerProfile.objects.get_or_create(
+            user=user,
+            defaults={
+                "shop_name": user.username,
+                "shop_description": "",
+            },
+        )
+
     user.refresh_from_db()
     logger.info(
         "user_role_changed user_id=%d old=%s new=%s admin=%d",

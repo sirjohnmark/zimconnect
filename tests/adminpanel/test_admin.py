@@ -5,6 +5,7 @@ Tests for the admin panel app — dashboard, user management, listing moderation
 import pytest
 from rest_framework import status
 
+from apps.accounts.models import SellerProfile
 from apps.common.constants import ListingStatus, UserRole
 from apps.listings.models import Listing
 from tests.conftest import ListingFactory, UserFactory
@@ -100,6 +101,7 @@ class TestAdminUserManagement:
         )
         assert resp.status_code == status.HTTP_200_OK
         assert resp.data["role"] == UserRole.SELLER
+        assert SellerProfile.objects.filter(user=buyer_user).exists()
 
     def test_cannot_change_own_role(self, admin_client, admin_user):
         resp = admin_client.patch(

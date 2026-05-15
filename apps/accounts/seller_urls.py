@@ -14,6 +14,10 @@ from apps.accounts import seller_views
 app_name = "sellers"
 
 urlpatterns = [
+    path("apply/", seller_views.SellerApplyView.as_view(), name="apply"),
+    path("application-status/", seller_views.SellerApplicationStatusView.as_view(), name="application-status"),
+    path("dashboard/", seller_views.SellerDashboardView.as_view(), name="dashboard"),
+    path("listings/", seller_views.SellerListingsView.as_view(), name="listings"),
     path("me/", seller_views.SellerMeView.as_view(), name="me"),
     path("<str:username>/", seller_views.SellerPublicView.as_view(), name="public-profile"),
 ]

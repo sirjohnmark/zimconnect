@@ -16,6 +16,7 @@ urlpatterns = [
     path("logout/", views.LogoutView.as_view(), name="logout"),
     path("token/refresh/", views.TokenRefreshView.as_view(), name="token-refresh"),
     path("profile/", views.UserProfileView.as_view(), name="profile"),
+    path("buyer-dashboard/", views.BuyerDashboardView.as_view(), name="buyer-dashboard"),
     # Phone OTP verification
     path("phone/send-otp/", views.SendOTPView.as_view(), name="phone-send-otp"),
     path("phone/verify/", views.VerifyOTPView.as_view(), name="phone-verify"),

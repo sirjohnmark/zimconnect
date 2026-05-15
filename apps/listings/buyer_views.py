@@ -11,14 +11,57 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts import services as account_services
+from apps.accounts.serializers import BuyerDashboardSerializer
+from apps.common.constants import SellerUpgradeStatus, UserRole
 from apps.common.pagination import StandardResultsSetPagination
-from apps.common.permissions import IsBuyer
+from apps.common.permissions import IsBuyerOrSeller
+from apps.inbox.models import Conversation
 from apps.listings import selectors, services
+from apps.listings.models import SavedListing
 from apps.listings.serializers import SavedListingSerializer
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class BuyerDashboardView(APIView):
+    """GET /api/v1/buyers/dashboard/ — dashboard summary for buyer mode."""
+
+    permission_classes = (IsAuthenticated, IsBuyerOrSeller)
+
+    @extend_schema(
+        tags=["Buyers"],
+        operation_id="buyers_dashboard",
+        summary="Buyer dashboard",
+        description=(
+            "Return the authenticated user's buyer dashboard summary. "
+            "Approved sellers keep buyer-mode access."
+        ),
+        responses={
+            200: OpenApiResponse(response=BuyerDashboardSerializer, description="Buyer dashboard summary"),
+            401: OpenApiResponse(description="Not authenticated"),
+            403: OpenApiResponse(description="Only buyers or sellers can access this endpoint"),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        latest_request = account_services.get_latest_seller_upgrade_request(request.user)
+        data = {
+            "user": request.user,
+            "default_dashboard": "seller" if request.user.role == UserRole.SELLER else "buyer",
+            "can_apply_to_sell": (
+                request.user.role == UserRole.BUYER
+                and (
+                    latest_request is None
+                    or latest_request.status == SellerUpgradeStatus.REJECTED
+                )
+            ),
+            "seller_application": latest_request,
+            "saved_listings_count": SavedListing.objects.filter(buyer=request.user).count(),
+            "conversations_count": Conversation.objects.filter(participants=request.user).count(),
+        }
+        return Response(BuyerDashboardSerializer(data).data, status=status.HTTP_200_OK)
 
 
 class SavedListingView(APIView):
@@ -27,7 +70,7 @@ class SavedListingView(APIView):
     POST /api/v1/buyers/saved/ — add a listing to the wishlist.
     """
 
-    permission_classes = (IsAuthenticated, IsBuyer)
+    permission_classes = (IsAuthenticated, IsBuyerOrSeller)
 
     @extend_schema(
         tags=["Buyers"],
@@ -89,7 +132,7 @@ class SavedListingView(APIView):
 class SavedListingDeleteView(APIView):
     """DELETE /api/v1/buyers/saved/{listing_id}/ — remove a listing from the wishlist."""
 
-    permission_classes = (IsAuthenticated, IsBuyer)
+    permission_classes = (IsAuthenticated, IsBuyerOrSeller)
 
     @extend_schema(
         tags=["Buyers"],

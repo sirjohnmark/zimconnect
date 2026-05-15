@@ -5,10 +5,11 @@ DRF serializers for the accounts app.
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from apps.common.constants import SellerUpgradeStatus, UserRole
+from apps.common.constants import SellerUpgradeStatus
 from apps.common.exceptions import ConflictError
 
 from apps.accounts.models import SellerProfile
+from apps.listings.serializers import ListingListSerializer
 
 User = get_user_model()
 
@@ -22,7 +23,6 @@ class UserRegistrationSerializer(serializers.Serializer):
     confirm_password = serializers.CharField(min_length=8, max_length=128, write_only=True)
     first_name = serializers.CharField(max_length=100, required=False, default="")
     last_name = serializers.CharField(max_length=100, required=False, default="")
-    role = serializers.HiddenField(default=UserRole.BUYER)
     phone = serializers.CharField(max_length=15)
 
     def validate_email(self, value: str) -> str:
@@ -268,3 +268,33 @@ class SellerUpgradeStatusSerializer(serializers.Serializer):
     rejection_reason = serializers.CharField(read_only=True)
     requested_at = serializers.DateTimeField(read_only=True)
     reviewed_at = serializers.DateTimeField(read_only=True, allow_null=True)
+
+
+class BuyerDashboardSerializer(serializers.Serializer):
+    """Dashboard summary for authenticated buyer accounts."""
+
+    user = UserProfileSerializer(read_only=True)
+    default_dashboard = serializers.CharField(read_only=True)
+    can_apply_to_sell = serializers.BooleanField(read_only=True)
+    seller_application = SellerUpgradeStatusSerializer(read_only=True, allow_null=True)
+    saved_listings_count = serializers.IntegerField(read_only=True)
+    conversations_count = serializers.IntegerField(read_only=True)
+
+
+class SellerListingStatsSerializer(serializers.Serializer):
+    """Counts for the authenticated seller's own listings."""
+
+    total = serializers.IntegerField(read_only=True)
+    draft = serializers.IntegerField(read_only=True)
+    active = serializers.IntegerField(read_only=True)
+    sold = serializers.IntegerField(read_only=True)
+    rejected = serializers.IntegerField(read_only=True)
+
+
+class SellerDashboardSerializer(serializers.Serializer):
+    """Dashboard summary for approved seller accounts."""
+
+    user = UserProfileSerializer(read_only=True)
+    seller_profile = SellerProfileMeSerializer(read_only=True)
+    listing_stats = SellerListingStatsSerializer(read_only=True)
+    recent_listings = ListingListSerializer(many=True, read_only=True)

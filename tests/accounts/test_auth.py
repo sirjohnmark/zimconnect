@@ -41,7 +41,7 @@ class TestRegistration:
         assert resp.data["email"] == "buyer@test.com"
         assert resp.data["role"] == "BUYER"
 
-    def test_register_seller(self, api_client, mocker):
+    def test_register_with_seller_role_still_creates_buyer(self, api_client, mocker):
         mocker.patch("apps.accounts.tasks.send_welcome_email")
         mocker.patch("apps.accounts.tasks.send_otp_task")
         mocker.patch("apps.accounts.tasks.send_email_otp_task")
@@ -55,7 +55,7 @@ class TestRegistration:
         }
         resp = api_client.post(REGISTER_URL, data, format="json")
         assert resp.status_code == status.HTTP_201_CREATED
-        assert resp.data["role"] == "SELLER"
+        assert resp.data["role"] == "BUYER"
 
     def test_register_cannot_be_admin(self, api_client, mocker):
         mocker.patch("apps.accounts.tasks.send_welcome_email")
@@ -69,7 +69,8 @@ class TestRegistration:
             "role": "ADMIN",
         }
         resp = api_client.post(REGISTER_URL, data, format="json")
-        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert resp.status_code == status.HTTP_201_CREATED
+        assert resp.data["role"] == "BUYER"
 
     def test_register_duplicate_email(self, api_client, buyer_user, mocker):
         mocker.patch("apps.accounts.tasks.send_welcome_email")

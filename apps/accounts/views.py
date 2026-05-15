@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 
 from apps.accounts import services
 from apps.accounts.serializers import (
+    BuyerDashboardSerializer,
     ForgotPasswordSerializer,
     LoginResponseSerializer,
     LogoutRequestSerializer,
@@ -49,7 +50,10 @@ class RegisterView(APIView):
         tags=["Auth"],
         operation_id="auth_register",
         summary="Register a new user",
-        description="Create a new BUYER or SELLER account. Rate-limited to 5 requests/hour.",
+        description=(
+            "Create a new account. All public registrations are created as BUYER "
+            "accounts; users apply separately before they can sell."
+        ),
         request=UserRegistrationSerializer,
         responses={
             201: OpenApiResponse(response=UserProfileSerializer, description="User created"),
@@ -67,7 +71,6 @@ class RegisterView(APIView):
             email=data["email"],
             username=data["username"],
             password=data["password"],
-            role=data["role"],
             first_name=data.get("first_name", ""),
             last_name=data.get("last_name", ""),
             phone=data["phone"],
@@ -214,6 +217,47 @@ class UserProfileView(APIView):
 
         user = services.update_user_profile(request.user, **serializer.validated_data)
         return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
+
+
+class BuyerDashboardView(APIView):
+    """GET /api/v1/auth/buyer-dashboard/ — dashboard summary for buyer mode."""
+
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=["Auth"],
+        operation_id="auth_buyer_dashboard",
+        summary="Buyer dashboard",
+        description=(
+            "Return the authenticated user's buyer dashboard summary. "
+            "Every account can use buyer mode; SELLER users keep buyer capabilities."
+        ),
+        responses={
+            200: OpenApiResponse(response=BuyerDashboardSerializer, description="Buyer dashboard summary"),
+            401: OpenApiResponse(description="Not authenticated"),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        from apps.common.constants import SellerUpgradeStatus, UserRole
+        from apps.inbox.models import Conversation
+        from apps.listings.models import SavedListing
+
+        latest_request = services.get_latest_seller_upgrade_request(request.user)
+        data = {
+            "user": request.user,
+            "default_dashboard": "seller" if request.user.role == UserRole.SELLER else "buyer",
+            "can_apply_to_sell": (
+                request.user.role == UserRole.BUYER
+                and (
+                    latest_request is None
+                    or latest_request.status == SellerUpgradeStatus.REJECTED
+                )
+            ),
+            "seller_application": latest_request,
+            "saved_listings_count": SavedListing.objects.filter(buyer=request.user).count(),
+            "conversations_count": Conversation.objects.filter(participants=request.user).count(),
+        }
+        return Response(BuyerDashboardSerializer(data).data, status=status.HTTP_200_OK)
 
 
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

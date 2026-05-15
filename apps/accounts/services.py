@@ -35,7 +35,7 @@ def create_user(
     email: str,
     username: str,
     password: str,
-    role: str,
+    role: str = UserRole.BUYER,
     **kwargs,
 ) -> User:
     """
@@ -55,11 +55,11 @@ def create_user(
         email=email,
         username=username,
         password=password,
-        role=role,
+        role=UserRole.BUYER,
         **kwargs,
     )
 
-    logger.info("user_registered email=%s role=%s user_id=%d", email, role, user.pk)
+    logger.info("user_registered email=%s role=%s user_id=%d", email, user.role, user.pk)
     return user
 
 

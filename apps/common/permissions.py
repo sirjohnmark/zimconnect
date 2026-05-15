@@ -74,6 +74,22 @@ class IsBuyer(BasePermission):
         return self.has_permission(request, view)
 
 
+class IsBuyerOrSeller(BasePermission):
+    """Allow access to normal marketplace users: BUYER or SELLER."""
+
+    message = "Buyer or seller access required."
+
+    def has_permission(self, request, view):
+        return (
+            request.user
+            and request.user.is_authenticated
+            and getattr(request.user, "role", None) in {UserRole.BUYER, UserRole.SELLER}
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
+
 class IsAdminOrReadOnly(BasePermission):
     """
     Full access for ADMIN users; read-only for everyone else.
