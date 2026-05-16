@@ -42,9 +42,7 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 function toPreview(conv: Conversation, myId: number): ConversationPreview {
-  const other =
-    conv.participants.find((p) => p.id !== myId) ?? conv.participants[0];
-
+  const other = conv.other_participant;
   const name = other?.username ?? "Unknown";
 
   return {

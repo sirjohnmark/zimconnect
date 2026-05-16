@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/useAuth";
 import {
   getConversations,
-  markMessageRead,
+  markConversationRead,
   type Conversation,
   type ConversationParticipant,
   type Message,
@@ -124,7 +124,7 @@ function ConversationRow({
   myId: number;
   onClick: () => void;
 }) {
-  const other = conv.participants.find((p) => p.id !== myId) ?? conv.participants[0];
+  const other = conv.other_participant ?? { id: 0, username: "Unknown", profile_picture: null };
   const unread = conv.unread_count;
 
   return (
@@ -153,7 +153,7 @@ function ConversationRow({
             "truncate text-sm",
             unread > 0 ? "font-semibold text-gray-900" : "font-medium text-gray-700",
           )}>
-            {conv.participants.map((p) => p.username).join(" & ")}
+            {other.username}
           </p>
           <span className="shrink-0 text-xs text-gray-400">{formatTime(conv.updated_at)}</span>
         </div>
@@ -189,7 +189,7 @@ function Bubble({ msg, isMe }: { msg: Message; isMe: boolean }) {
         <p>{msg.content}</p>
         <p className={cn("mt-1 text-right text-[11px]", isMe ? "text-white/50" : "text-gray-400")}>
           {formatMessageTime(msg.created_at)}
-          {isMe && <span className="ml-1">{msg.is_read ? "✓✓" : "✓"}</span>}
+          {isMe && <span className="ml-1">{msg.status === "read" ? "✓✓" : "✓"}</span>}
         </p>
       </div>
     </div>
@@ -209,7 +209,7 @@ function ChatHeader({
   isConnected: boolean;
   onBack: () => void;
 }) {
-  const other = conv.participants.find((p) => p.id !== myId) ?? conv.participants[0];
+  const other = conv.other_participant ?? { id: 0, username: "Unknown", profile_picture: null };
 
   return (
     <div className="flex shrink-0 items-center gap-3 border-b border-gray-100 bg-white px-4 py-3">
@@ -239,11 +239,9 @@ function ChatHeader({
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          {conv.participants.map((p) => (
-            <span key={p.id} className="text-sm font-semibold text-gray-900">
-              @{p.username}
-            </span>
-          ))}
+          <span className="text-sm font-semibold text-gray-900">
+            @{other.username}
+          </span>
         </div>
         {conv.listing ? (
           <Link
@@ -351,14 +349,14 @@ function ChatThread({
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  // Mark latest unread as read when thread is open
+  // Mark all unread messages as read when thread is open
   useEffect(() => {
-    const unread = messages.filter((m) => m.sender.id !== myId && !m.is_read);
+    const unread = messages.filter((m) => m.sender.id !== myId && m.status !== "read");
     if (unread.length === 0) return;
     const last = unread[unread.length - 1];
     markAsRead(last.id);
-    markMessageRead(last.id).catch(() => {});
-  }, [messages, myId, markAsRead]);
+    markConversationRead(conv.id).catch(() => {});
+  }, [messages, myId, markAsRead, conv.id]);
 
   return (
     <>
@@ -516,7 +514,7 @@ export default function AdminMessagesPage() {
     const q = search.toLowerCase();
     if (!q) return true;
     return (
-      c.participants.some((p) => p.username.toLowerCase().includes(q)) ||
+      (c.other_participant?.username.toLowerCase().includes(q) ?? false) ||
       (c.listing?.title.toLowerCase().includes(q) ?? false)
     );
   });

@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
 import {
   getConversations,
-  markMessageRead,
+  markConversationRead,
   type Conversation,
   type ConversationParticipant,
   type Message,
@@ -35,8 +35,8 @@ function formatMessageTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-ZW", { hour: "2-digit", minute: "2-digit" });
 }
 
-function getOther(conv: Conversation, myId: number): ConversationParticipant {
-  return conv.participants.find((p) => p.id !== myId) ?? conv.participants[0];
+function getOther(conv: Conversation, _myId: number): ConversationParticipant {
+  return conv.other_participant ?? { id: 0, username: "Unknown", profile_picture: null };
 }
 
 function initial(username: string): string {
@@ -122,7 +122,7 @@ function Bubble({ msg, isMe }: { msg: Message; isMe: boolean }) {
         <p>{msg.content}</p>
         <p className={cn("mt-1 text-right text-[11px]", isMe ? "text-white/50" : "text-gray-400")}>
           {formatMessageTime(msg.created_at)}
-          {isMe && <span className="ml-1">{msg.is_read ? "✓✓" : "✓"}</span>}
+          {isMe && <span className="ml-1">{msg.status === "read" ? "✓✓" : "✓"}</span>}
         </p>
       </div>
     </div>
@@ -248,14 +248,14 @@ function ChatThread({ conv, myId, onBack }: { conv: Conversation; myId: number; 
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  // Mark latest unread message as read when thread is open
+  // Mark all unread messages as read when thread is open
   useEffect(() => {
-    const unread = messages.filter((m) => m.sender.id !== myId && !m.is_read);
+    const unread = messages.filter((m) => m.sender.id !== myId && m.status !== "read");
     if (unread.length === 0) return;
     const last = unread[unread.length - 1];
     markAsRead(last.id);
-    markMessageRead(last.id).catch(() => {});
-  }, [messages, myId, markAsRead]);
+    markConversationRead(conv.id).catch(() => {});
+  }, [messages, myId, markAsRead, conv.id]);
 
   const firstMessageDate = messages[0]?.created_at;
 

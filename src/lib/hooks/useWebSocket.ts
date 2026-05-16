@@ -20,8 +20,8 @@ interface UseWebSocketReturn {
 }
 
 export function useWebSocket(conversationId: number): UseWebSocketReturn {
-  const wsRef       = useRef<WebSocket | null>(null);
-  const retryRef    = useRef(0);
+  const wsRef        = useRef<WebSocket | null>(null);
+  const retryRef     = useRef(0);
   const unmountedRef = useRef(false);
 
   const [messages,    setMessages]    = useState<Message[]>([]);
@@ -50,20 +50,28 @@ export function useWebSocket(conversationId: number): UseWebSocketReturn {
           const data = JSON.parse(event.data) as
             | { type: "history"; messages: Message[] }
             | { type: "chat_message"; message: Message }
-            | { type: "messages_read"; message_id: number; reader: string }
+            | { type: "message_status"; message_id: number; status: string }
+            | { type: "batch_status"; status: string; reader_id: number }
+            | { type: "typing"; user_id: number; username: string; is_typing: boolean }
             | { type: "error"; message: string };
 
           if (data.type === "history") {
             setMessages(data.messages);
           } else if (data.type === "chat_message") {
             setMessages((prev) => [...prev, data.message]);
-          } else if (data.type === "messages_read") {
+          } else if (data.type === "message_status") {
             setMessages((prev) =>
               prev.map((m) =>
-                m.id <= data.message_id ? { ...m, is_read: true } : m,
+                m.id === data.message_id ? { ...m, status: data.status } : m,
               ),
             );
+          } else if (data.type === "batch_status") {
+            // Batch read/delivered receipt from the other participant
+            setMessages((prev) =>
+              prev.map((m) => ({ ...m, status: data.status })),
+            );
           }
+          // typing events are not stored in state — callers can extend if needed
         } catch {
           // ignore malformed frames
         }
@@ -72,7 +80,6 @@ export function useWebSocket(conversationId: number): UseWebSocketReturn {
       ws.onclose = () => {
         if (unmountedRef.current) return;
         setIsConnected(false);
-        // Exponential backoff reconnect
         const delay = RETRY_DELAYS[Math.min(retryRef.current, RETRY_DELAYS.length - 1)];
         retryRef.current += 1;
         setTimeout(connect, delay);
@@ -95,7 +102,7 @@ export function useWebSocket(conversationId: number): UseWebSocketReturn {
   const sendMessage = useCallback((content: string) => {
     const ws = wsRef.current;
     if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "chat_message", content }));
+      ws.send(JSON.stringify({ type: "message", content }));
     }
   }, []);
 
