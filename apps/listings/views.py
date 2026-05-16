@@ -166,7 +166,29 @@ class ListingDetailView(APIView):
         },
     )
     def get(self, request: Request, listing_id: int) -> Response:
-        listing = selectors.get_listing_by_id(listing_id)
+        from apps.common.constants import UserRole
+
+        user = request.user
+        is_mod = (
+            user
+            and user.is_authenticated
+            and getattr(user, "role", None) in {UserRole.ADMIN, UserRole.MODERATOR}
+        )
+
+        # Admins/moderators see everything; owners see their own listings;
+        # everyone else (including anonymous) only sees ACTIVE listings.
+        if is_mod:
+            listing = selectors.get_listing_by_id(listing_id)
+        elif user and user.is_authenticated:
+            # Try the public view first; fall back to owner-scoped if not active.
+            try:
+                listing = selectors.get_public_listing_by_id(listing_id)
+            except Exception:  # noqa: BLE001
+                listing = selectors.get_listing_by_id(listing_id)
+                if listing.owner_id != user.pk:
+                    raise NotFoundError(f"Listing with id {listing_id} not found.")
+        else:
+            listing = selectors.get_public_listing_by_id(listing_id)
 
         # Accumulate view in Redis; flushed to DB every 5 minutes by Celery
         from apps.listings.tasks import increment_view_count

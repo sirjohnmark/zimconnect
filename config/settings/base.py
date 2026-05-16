@@ -90,6 +90,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.common.middleware.RLSContextMiddleware",
     "apps.common.middleware.RequestLoggingMiddleware",
     "apps.common.middleware.VersionHeaderMiddleware",
 ]
@@ -122,13 +123,9 @@ import dj_database_url  # noqa: E402
 
 DATABASE_URL = config("DATABASE_URL", default="sqlite:///db.sqlite3")
 
-DATABASES = {
-    "default": dj_database_url.parse(
-        DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True,
-    ),
-}
+_db = dj_database_url.parse(DATABASE_URL, conn_max_age=600, conn_health_checks=True)
+_db["ATOMIC_REQUESTS"] = True  # Required: wraps each request in a transaction so SET LOCAL persists
+DATABASES = {"default": _db}
 
 # ──────────────────────────────────────────────
 # Password validation
@@ -165,7 +162,7 @@ AUTH_USER_MODEL = "accounts.User"
 # ──────────────────────────────────────────────
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.common.authentication.RLSJWTAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",

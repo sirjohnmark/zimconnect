@@ -22,6 +22,8 @@ def get_listing_by_id(listing_id: int) -> Listing:
     Return a listing with related owner, category, and prefetched images.
 
     Cached for 5 minutes. Raises NotFoundError if not found.
+    Internal use only — does NOT apply public visibility filtering.
+    Use get_public_listing_by_id() for unauthenticated / non-owner access.
     """
     cache_key = make_cache_key(CacheKeys.LISTING_DETAIL_PREFIX, listing_id)
     listing = cache.get(cache_key)
@@ -39,6 +41,26 @@ def get_listing_by_id(listing_id: int) -> Listing:
         raise NotFoundError(f"Listing with id {listing_id} not found.")
 
     cache.set(cache_key, listing, TTL_LISTING_DETAIL)
+    return listing
+
+
+def get_public_listing_by_id(listing_id: int) -> Listing:
+    """
+    Return a listing visible to the general public: ACTIVE and not soft-deleted.
+
+    Raises NotFoundError for missing, non-active, or deleted listings so that
+    private listing existence is never disclosed to unauthenticated callers.
+    """
+    try:
+        listing = (
+            Listing.objects
+            .filter(status=ListingStatus.ACTIVE)
+            .select_related("owner", "category")
+            .prefetch_related("images")
+            .get(pk=listing_id)
+        )
+    except Listing.DoesNotExist:
+        raise NotFoundError(f"Listing with id {listing_id} not found.")
     return listing
 
 
@@ -89,14 +111,21 @@ def get_active_listings(filters: dict | None = None) -> QuerySet:
         qs = qs.filter(condition=condition)
 
     if search := filters.get("search"):
-        query = SearchQuery(search, search_type="plain")
-        qs = qs.filter(search_vector=query).annotate(
-            rank=SearchRank("search_vector", query),
-        )
-        # Override ordering to rank + recency for FTS results
-        if filters.get("featured"):
-            qs = qs.filter(is_featured=True)
-        return qs.order_by("-rank", "-created_at")
+        from django.db import connection as _conn
+
+        if _conn.vendor == "postgresql":
+            query = SearchQuery(search, search_type="plain")
+            qs = qs.filter(search_vector=query).annotate(
+                rank=SearchRank("search_vector", query),
+            )
+            if filters.get("featured"):
+                qs = qs.filter(is_featured=True)
+            return qs.order_by("-rank", "-created_at")
+        else:
+            # SQLite fallback: simple title/description contains search
+            qs = qs.filter(
+                Q(title__icontains=search) | Q(description__icontains=search)
+            )
 
     if filters.get("featured"):
         qs = qs.filter(is_featured=True)

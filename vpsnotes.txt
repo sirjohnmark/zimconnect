@@ -2,7 +2,7 @@ ssh sanganai@187.124.216.181
 cd /home/sanganai/zimconnect
 source venv/bin/activate
 git pull origin tradelink
-pip install -r requirements.txt
+pip install -r requirements/prod.txt
 python manage.py migrate
 python manage.py collectstatic --noinput
 sudo systemctl restart gunicorn

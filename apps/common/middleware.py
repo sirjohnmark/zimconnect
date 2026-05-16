@@ -77,6 +77,41 @@ class RequestLoggingMiddleware:
         return response
 
 
+class RLSContextMiddleware:
+    """
+    Ensure every request starts with a clean anonymous RLS context.
+
+    For authenticated requests the RLSJWTAuthentication class overwrites these
+    values with the real user ID and role after token validation.  This
+    middleware guarantees anonymous requests never accidentally inherit a prior
+    user's context from a pooled connection.
+
+    Place AFTER AuthenticationMiddleware in MIDDLEWARE so that Django's session-
+    based user is available (DRF JWT auth happens inside the view, so we only
+    clear stale state here).
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request: HttpRequest) -> HttpResponse:
+        _clear_rls_context_safe()
+        return self.get_response(request)
+
+
+def _clear_rls_context_safe() -> None:
+    """Reset RLS session variables without failing on SQLite or missing DB."""
+    try:
+        from django.db import connection
+
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT set_config('app.current_user_id', '', true)")
+            cursor.execute("SELECT set_config('app.current_user_role', '', true)")
+            cursor.execute("SELECT set_config('app.service_role', '', true)")
+    except Exception:  # noqa: BLE001
+        pass
+
+
 class VersionHeaderMiddleware:
     """
     Append ``X-API-Version: 1`` to every API response.

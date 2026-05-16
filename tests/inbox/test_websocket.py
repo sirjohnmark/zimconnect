@@ -154,7 +154,7 @@ class TestChatConsumerMessaging:
         await comm.disconnect()
 
     async def test_mark_read(self, buyer_user, seller_user):
-        """mark_read event should broadcast a messages_read event."""
+        """mark_read event should broadcast a message_status event with status=read."""
         conv = await database_sync_to_async(ConversationFactory)(
             participants=[buyer_user, seller_user],
         )
@@ -163,6 +163,7 @@ class TestChatConsumerMessaging:
         msg = await database_sync_to_async(MessageFactory)(
             conversation=conv,
             sender=seller_user,
+            recipient=buyer_user,
             content="Hey buyer!",
         )
 
@@ -178,9 +179,9 @@ class TestChatConsumerMessaging:
         await comm.send_json_to({"type": "mark_read", "message_id": msg.pk})
 
         resp = await comm.receive_json_from(timeout=5)
-        assert resp["type"] == "messages_read"
+        assert resp["type"] == "message_status"
         assert resp["message_id"] == msg.pk
-        assert resp["reader"] == buyer_user.username
+        assert resp["status"] == "read"
 
         # Verify DB updated
         await database_sync_to_async(msg.refresh_from_db)()

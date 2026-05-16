@@ -10,7 +10,7 @@ from apps.listings.models import Listing
 from tests.conftest import CategoryFactory, ListingFactory, UserFactory
 
 LIST_URL = "/api/v1/listings/"
-MY_LISTINGS_URL = "/api/v1/listings/my-listings/"
+MY_LISTINGS_URL = "/api/v1/listings/my/"
 
 
 def _detail_url(listing_id):

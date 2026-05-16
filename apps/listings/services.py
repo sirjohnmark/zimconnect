@@ -250,7 +250,11 @@ def _process_images(listing: Listing, images: list, *, is_initial: bool) -> list
 
 
 def _update_search_vector(listing: Listing) -> None:
-    """Recompute the search_vector column for a single listing."""
+    """Recompute the search_vector column for a single listing (PostgreSQL only)."""
+    from django.db import connection
+
+    if connection.vendor != "postgresql":
+        return
     Listing.all_objects.filter(pk=listing.pk).update(
         search_vector=(
             SearchVector("title", weight="A")
