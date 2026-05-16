@@ -501,28 +501,28 @@ ALTER TABLE saved_listings DISABLE ROW LEVEL SECURITY;
 """
 
 # ---------------------------------------------------------------------------
-# categories_category table  (public read-only)
+# categories table  (public read-only)
 # ---------------------------------------------------------------------------
 
 CATEGORIES_RLS = """
-ALTER TABLE categories_category ENABLE ROW LEVEL SECURITY;
-ALTER TABLE categories_category FORCE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories FORCE ROW LEVEL SECURITY;
 
 -- Everyone can read active categories.
 CREATE POLICY "categories_select_all"
-  ON categories_category FOR SELECT
+  ON categories FOR SELECT
   USING (true);
 
 -- Only admins and service role can write categories.
 CREATE POLICY "categories_write_admin"
-  ON categories_category FOR ALL
+  ON categories FOR ALL
   USING (app_is_admin() OR app_is_service_role());
 """
 
 CATEGORIES_RLS_DROP = """
-DROP POLICY IF EXISTS "categories_write_admin" ON categories_category;
-DROP POLICY IF EXISTS "categories_select_all" ON categories_category;
-ALTER TABLE categories_category DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "categories_write_admin" ON categories;
+DROP POLICY IF EXISTS "categories_select_all" ON categories;
+ALTER TABLE categories DISABLE ROW LEVEL SECURITY;
 """
 
 # ---------------------------------------------------------------------------
