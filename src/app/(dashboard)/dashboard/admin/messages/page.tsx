@@ -6,13 +6,15 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth/useAuth";
 import {
   getConversations,
+  getConversationMessages,
+  sendMessage as apiSendMessage,
   markConversationRead,
   type Conversation,
   type ConversationParticipant,
   type Message,
 } from "@/lib/api/inbox";
 import { useWebSocket } from "@/lib/hooks/useWebSocket";
-import { cn } from "@/lib/utils";
+import { cn, toAbsoluteUrl } from "@/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -256,13 +258,16 @@ function ChatHeader({
       </div>
 
       {/* Listing thumbnail */}
-      {conv.listing?.primary_image && (
-        <Link href={`/listings/${conv.listing.id}`} className="hidden shrink-0 sm:block">
-          <div className="relative h-10 w-14 overflow-hidden rounded-lg bg-gray-100">
-            <Image src={conv.listing.primary_image} alt={conv.listing.title} fill className="object-cover" />
-          </div>
-        </Link>
-      )}
+      {conv.listing?.primary_image && (() => {
+        const imgUrl = toAbsoluteUrl(conv.listing.primary_image);
+        return imgUrl ? (
+          <Link href={`/listings/${conv.listing.id}`} className="hidden shrink-0 sm:block">
+            <div className="relative h-10 w-14 overflow-hidden rounded-lg bg-gray-100">
+              <Image src={imgUrl} alt={conv.listing.title} fill className="object-cover" unoptimized />
+            </div>
+          </Link>
+        ) : null;
+      })()}
     </div>
   );
 }
@@ -336,27 +341,69 @@ function ChatThread({
   onBack: () => void;
   onConnectionChange: (connected: boolean) => void;
 }) {
-  const { messages, isConnected, sendMessage, markAsRead } = useWebSocket(conv.id);
-  const endRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages]       = useState<Message[]>([]);
+  const [loadingMsgs, setLoadingMsgs] = useState(true);
+  const [sending, setSending]         = useState(false);
+  const endRef                        = useRef<HTMLDivElement>(null);
+  const seenIdsRef                    = useRef(new Set<number>());
 
-  // Report connection state up to page
+  useEffect(() => {
+    setLoadingMsgs(true);
+    setMessages([]);
+    seenIdsRef.current.clear();
+    getConversationMessages(conv.id)
+      .then((data) => {
+        const msgs = [...data.results].reverse();
+        msgs.forEach((m) => seenIdsRef.current.add(m.id));
+        setMessages(msgs);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMsgs(false));
+  }, [conv.id]);
+
+  const handleWsMessage = useCallback((msg: Message) => {
+    if (seenIdsRef.current.has(msg.id)) return;
+    seenIdsRef.current.add(msg.id);
+    setMessages((prev) => [...prev, msg]);
+  }, []);
+
+  const handleStatusUpdate = useCallback((messageId: number, status: string) => {
+    setMessages((prev) => prev.map((m) => m.id === messageId ? { ...m, status } : m));
+  }, []);
+
+  const { isConnected, markAsRead } = useWebSocket(conv.id, handleWsMessage, handleStatusUpdate);
+  const endRefInner = endRef;
+
   useEffect(() => {
     onConnectionChange(isConnected);
   }, [isConnected, onConnectionChange]);
 
-  // Auto-scroll on new messages
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+    endRefInner.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length, endRefInner]);
 
-  // Mark all unread messages as read when thread is open
   useEffect(() => {
+    if (loadingMsgs || messages.length === 0) return;
     const unread = messages.filter((m) => m.sender.id !== myId && m.status !== "read");
     if (unread.length === 0) return;
-    const last = unread[unread.length - 1];
-    markAsRead(last.id);
+    markAsRead(unread[unread.length - 1].id);
     markConversationRead(conv.id).catch(() => {});
-  }, [messages, myId, markAsRead, conv.id]);
+  }, [messages, myId, markAsRead, conv.id, loadingMsgs]);
+
+  async function handleSend(text: string) {
+    setSending(true);
+    try {
+      const msg = await apiSendMessage(conv.id, text);
+      if (!seenIdsRef.current.has(msg.id)) {
+        seenIdsRef.current.add(msg.id);
+        setMessages((prev) => [...prev, msg]);
+      }
+    } catch {
+      // silent
+    } finally {
+      setSending(false);
+    }
+  }
 
   return (
     <>
@@ -364,42 +411,42 @@ function ChatThread({
       <ConnectionStatus connected={isConnected} />
 
       <div className="flex-1 space-y-3 overflow-y-auto bg-gray-50 px-4 py-4">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-sm text-gray-400">
-              {isConnected ? "No messages yet." : "Connecting…"}
-            </p>
+        {loadingMsgs ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <p className="text-sm text-gray-400">Loading messages…</p>
           </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="text-sm text-gray-400">No messages yet.</p>
+          </div>
+        ) : (
+          messages.map((msg, i) => {
+            const prevMsg = i > 0 ? messages[i - 1] : null;
+            const showDateDivider =
+              !prevMsg ||
+              new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
+            return (
+              <div key={msg.id}>
+                {showDateDivider && (
+                  <div className="flex items-center gap-3 my-4">
+                    <div className="flex-1 border-t border-gray-200" />
+                    <span className="shrink-0 text-xs text-gray-400">
+                      {new Date(msg.created_at).toLocaleDateString("en-ZW", {
+                        weekday: "long", day: "numeric", month: "long",
+                      })}
+                    </span>
+                    <div className="flex-1 border-t border-gray-200" />
+                  </div>
+                )}
+                <Bubble msg={msg} isMe={msg.sender.id === myId} />
+              </div>
+            );
+          })
         )}
-
-        {messages.map((msg, i) => {
-          const prevMsg = i > 0 ? messages[i - 1] : null;
-          const showDateDivider =
-            !prevMsg ||
-            new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
-
-          return (
-            <div key={msg.id}>
-              {showDateDivider && (
-                <div className="flex items-center gap-3 my-4">
-                  <div className="flex-1 border-t border-gray-200" />
-                  <span className="shrink-0 text-xs text-gray-400">
-                    {new Date(msg.created_at).toLocaleDateString("en-ZW", {
-                      weekday: "long", day: "numeric", month: "long",
-                    })}
-                  </span>
-                  <div className="flex-1 border-t border-gray-200" />
-                </div>
-              )}
-              <Bubble msg={msg} isMe={msg.sender.id === myId} />
-            </div>
-          );
-        })}
-
         <div ref={endRef} />
       </div>
 
-      <MessageInput onSend={sendMessage} disabled={!isConnected} />
+      <MessageInput onSend={handleSend} disabled={sending} />
     </>
   );
 }

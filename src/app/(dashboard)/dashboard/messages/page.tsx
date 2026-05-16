@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { BackButton } from "@/components/ui/BackButton";
 import {
   getConversations,
+  getConversationMessages,
+  sendMessage as apiSendMessage,
   markConversationRead,
   type Conversation,
   type ConversationParticipant,
@@ -14,7 +16,7 @@ import {
 } from "@/lib/api/inbox";
 import { NetworkError } from "@/lib/api/client";
 import { useWebSocket } from "@/lib/hooks/useWebSocket";
-import { cn } from "@/lib/utils";
+import { cn, toAbsoluteUrl } from "@/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -47,10 +49,11 @@ function initial(username: string): string {
 
 function Avatar({ username, src, size = "md" }: { username: string; src?: string | null; size?: "sm" | "md" | "lg" }) {
   const sz = { sm: "h-8 w-8 text-xs", md: "h-10 w-10 text-sm", lg: "h-12 w-12 text-base" }[size];
+  const absUrl = toAbsoluteUrl(src);
   return (
     <span className={cn("relative flex shrink-0 items-center justify-center rounded-full bg-apple-blue/10 font-bold text-apple-blue overflow-hidden", sz)}>
-      {src
-        ? <Image src={src} alt={username} fill className="object-cover" />
+      {absUrl
+        ? <Image src={absUrl} alt={username} fill className="object-cover" unoptimized />
         : initial(username)}
     </span>
   );
@@ -169,13 +172,16 @@ function ChatHeader({ conv, myId, isConnected, onBack }: {
         )}
       </div>
 
-      {conv.listing?.primary_image && (
-        <Link href={`/listings/${conv.listing.id}`} className="hidden sm:block shrink-0">
-          <div className="relative h-10 w-14 rounded-lg overflow-hidden bg-gray-100">
-            <Image src={conv.listing.primary_image} alt={conv.listing.title} fill className="object-cover" />
-          </div>
-        </Link>
-      )}
+      {conv.listing?.primary_image && (() => {
+        const imgUrl = toAbsoluteUrl(conv.listing.primary_image);
+        return imgUrl ? (
+          <Link href={`/listings/${conv.listing.id}`} className="hidden sm:block shrink-0">
+            <div className="relative h-10 w-14 rounded-lg overflow-hidden bg-gray-100">
+              <Image src={imgUrl} alt={conv.listing.title} fill className="object-cover" unoptimized />
+            </div>
+          </Link>
+        ) : null;
+      })()}
     </div>
   );
 }
@@ -237,25 +243,75 @@ function MessageInput({ onSend, disabled }: { onSend: (text: string) => void; di
   );
 }
 
-// ─── Chat thread (WebSocket-connected) ───────────────────────────────────────
+// ─── Chat thread ─────────────────────────────────────────────────────────────
 
 function ChatThread({ conv, myId, onBack }: { conv: Conversation; myId: number; onBack: () => void }) {
-  const { messages, isConnected, sendMessage, markAsRead } = useWebSocket(conv.id);
-  const endRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages]       = useState<Message[]>([]);
+  const [loadingMsgs, setLoadingMsgs] = useState(true);
+  const [sending, setSending]         = useState(false);
+  const endRef                        = useRef<HTMLDivElement>(null);
+  const seenIdsRef                    = useRef(new Set<number>());
+
+  // Load messages from REST on mount
+  useEffect(() => {
+    setLoadingMsgs(true);
+    setMessages([]);
+    seenIdsRef.current.clear();
+    getConversationMessages(conv.id)
+      .then((data) => {
+        const msgs = [...data.results].reverse(); // API returns newest-first
+        msgs.forEach((m) => seenIdsRef.current.add(m.id));
+        setMessages(msgs);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingMsgs(false));
+  }, [conv.id]);
+
+  // Append new real-time message from WebSocket (dedup by id)
+  const handleWsMessage = useCallback((msg: Message) => {
+    if (seenIdsRef.current.has(msg.id)) return;
+    seenIdsRef.current.add(msg.id);
+    setMessages((prev) => [...prev, msg]);
+  }, []);
+
+  // Update status of a specific message (read receipts)
+  const handleStatusUpdate = useCallback((messageId: number, status: string) => {
+    setMessages((prev) =>
+      prev.map((m) => m.id === messageId ? { ...m, status } : m),
+    );
+  }, []);
+
+  const { isConnected, markAsRead } = useWebSocket(conv.id, handleWsMessage, handleStatusUpdate);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
-  // Mark all unread messages as read when thread is open
+  // Mark unread as read when thread is open
   useEffect(() => {
+    if (loadingMsgs || messages.length === 0) return;
     const unread = messages.filter((m) => m.sender.id !== myId && m.status !== "read");
     if (unread.length === 0) return;
     const last = unread[unread.length - 1];
     markAsRead(last.id);
     markConversationRead(conv.id).catch(() => {});
-  }, [messages, myId, markAsRead, conv.id]);
+  }, [messages, myId, markAsRead, conv.id, loadingMsgs]);
+
+  async function handleSend(text: string) {
+    setSending(true);
+    try {
+      const msg = await apiSendMessage(conv.id, text);
+      if (!seenIdsRef.current.has(msg.id)) {
+        seenIdsRef.current.add(msg.id);
+        setMessages((prev) => [...prev, msg]);
+      }
+    } catch {
+      // Could show a toast — for now silently fail
+    } finally {
+      setSending(false);
+    }
+  }
 
   const firstMessageDate = messages[0]?.created_at;
 
@@ -274,22 +330,29 @@ function ChatThread({ conv, myId, onBack }: { conv: Conversation; myId: number; 
           </div>
         )}
 
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-sm text-gray-400">
-              {isConnected ? "No messages yet. Say hello!" : "Connecting…"}
-            </p>
+        {loadingMsgs ? (
+          <div className="flex flex-col gap-3 py-4">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className={cn("flex gap-2", n % 2 === 0 ? "ml-auto flex-row-reverse" : "")}>
+                <div className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-gray-100" />
+                <div className="h-10 w-48 animate-pulse rounded-2xl bg-gray-100" />
+              </div>
+            ))}
           </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-gray-400">No messages yet. Say hello!</p>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <Bubble key={msg.id} msg={msg} isMe={msg.sender.id === myId} />
+          ))
         )}
-
-        {messages.map((msg) => (
-          <Bubble key={msg.id} msg={msg} isMe={msg.sender.id === myId} />
-        ))}
 
         <div ref={endRef} />
       </div>
 
-      <MessageInput onSend={sendMessage} disabled={!isConnected} />
+      <MessageInput onSend={handleSend} disabled={sending} />
     </>
   );
 }

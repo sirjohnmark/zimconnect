@@ -9,22 +9,31 @@ const WS_BASE =
     .replace(/^https/, "wss")
     .replace(/^http/, "ws");
 
-// Reconnect delays: 3s → 6s → 12s → 30s max
 const RETRY_DELAYS = [3000, 6000, 12000, 30000];
 
 interface UseWebSocketReturn {
-  messages: Message[];
   isConnected: boolean;
-  sendMessage: (content: string) => void;
   markAsRead: (messageId: number) => void;
 }
 
-export function useWebSocket(conversationId: number): UseWebSocketReturn {
-  const wsRef        = useRef<WebSocket | null>(null);
-  const retryRef     = useRef(0);
-  const unmountedRef = useRef(false);
+/**
+ * Manages the WebSocket connection for a conversation.
+ * Message state is owned by the caller — pass callbacks to receive events.
+ *
+ * @param onNewMessage  Called when another participant sends a message via WS.
+ * @param onStatusUpdate Called when a message status changes (read/delivered).
+ */
+export function useWebSocket(
+  conversationId: number,
+  onNewMessage: (msg: Message) => void,
+  onStatusUpdate?: (messageId: number, status: string) => void,
+): UseWebSocketReturn {
+  const wsRef         = useRef<WebSocket | null>(null);
+  const retryRef      = useRef(0);
+  const unmountedRef  = useRef(false);
+  const callbacksRef  = useRef({ onNewMessage, onStatusUpdate });
+  callbacksRef.current = { onNewMessage, onStatusUpdate };
 
-  const [messages,    setMessages]    = useState<Message[]>([]);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
@@ -34,8 +43,14 @@ export function useWebSocket(conversationId: number): UseWebSocketReturn {
       if (unmountedRef.current) return;
 
       const token = getAccessToken();
-      const url   = `${WS_BASE}/ws/chat/${conversationId}/?token=${token ?? ""}`;
-      const ws    = new WebSocket(url);
+      if (!token) {
+        // Retry shortly — token may not be set yet (auth initializing)
+        setTimeout(connect, 1000);
+        return;
+      }
+
+      const url = `${WS_BASE}/ws/chat/${conversationId}/?token=${token}`;
+      const ws  = new WebSocket(url);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -52,26 +67,14 @@ export function useWebSocket(conversationId: number): UseWebSocketReturn {
             | { type: "chat_message"; message: Message }
             | { type: "message_status"; message_id: number; status: string }
             | { type: "batch_status"; status: string; reader_id: number }
-            | { type: "typing"; user_id: number; username: string; is_typing: boolean }
-            | { type: "error"; message: string };
+            | { type: "typing" | "error" };
 
-          if (data.type === "history") {
-            setMessages(data.messages);
-          } else if (data.type === "chat_message") {
-            setMessages((prev) => [...prev, data.message]);
+          if (data.type === "chat_message") {
+            callbacksRef.current.onNewMessage(data.message);
           } else if (data.type === "message_status") {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === data.message_id ? { ...m, status: data.status } : m,
-              ),
-            );
-          } else if (data.type === "batch_status") {
-            // Batch read/delivered receipt from the other participant
-            setMessages((prev) =>
-              prev.map((m) => ({ ...m, status: data.status })),
-            );
+            callbacksRef.current.onStatusUpdate?.(data.message_id, data.status);
           }
-          // typing events are not stored in state — callers can extend if needed
+          // history and batch_status are informational — REST is source of truth
         } catch {
           // ignore malformed frames
         }
@@ -85,9 +88,7 @@ export function useWebSocket(conversationId: number): UseWebSocketReturn {
         setTimeout(connect, delay);
       };
 
-      ws.onerror = () => {
-        ws.close(); // triggers onclose → reconnect
-      };
+      ws.onerror = () => { ws.close(); };
     }
 
     connect();
@@ -99,13 +100,6 @@ export function useWebSocket(conversationId: number): UseWebSocketReturn {
     };
   }, [conversationId]);
 
-  const sendMessage = useCallback((content: string) => {
-    const ws = wsRef.current;
-    if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: "message", content }));
-    }
-  }, []);
-
   const markAsRead = useCallback((messageId: number) => {
     const ws = wsRef.current;
     if (ws?.readyState === WebSocket.OPEN) {
@@ -113,5 +107,5 @@ export function useWebSocket(conversationId: number): UseWebSocketReturn {
     }
   }, []);
 
-  return { messages, isConnected, sendMessage, markAsRead };
+  return { isConnected, markAsRead };
 }
