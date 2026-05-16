@@ -130,11 +130,11 @@ function VerificationSection({ userId }: { userId: string }) {
                 <svg viewBox="0 0 20 20" fill="currentColor" className="h-6 w-6 text-gray-400">
                   <path fillRule="evenodd" d="M3 17a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm3.293-7.707a1 1 0 0 1 1.414 0L9 10.586V3a1 1 0 1 1 2 0v7.586l1.293-1.293a1 1 0 1 1 1.414 1.414l-3 3a1 1 0 0 1-1.414 0l-3-3a1 1 0 0 1 0-1.414Z" clipRule="evenodd" />
                 </svg>
-                <p className="text-xs text-gray-500">Click to upload PDF, JPG or PNG</p>
+                <p className="text-xs text-gray-500">Click to upload PDF, JPG, PNG, or HEIC</p>
               </>
             )}
           </div>
-          <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={handleFile} />
+          <input ref={inputRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.heic,.heif" className="sr-only" onChange={handleFile} />
         </div>
 
         <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700">

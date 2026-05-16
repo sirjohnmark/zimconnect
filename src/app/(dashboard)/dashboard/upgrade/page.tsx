@@ -38,13 +38,13 @@ type Step1Input = z.infer<typeof step1Schema>;
 
 // ─── File constraints ─────────────────────────────────────────────────────────
 
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf"];
 const MAX_SIZE_MB    = 5;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 function validateFile(file: File | null | undefined, required: boolean): string | null {
   if (!file) return required ? "This document is required" : null;
-  if (!ACCEPTED_TYPES.includes(file.type)) return "Must be JPG, PNG, WebP, or PDF";
+  if (!ACCEPTED_TYPES.includes(file.type)) return "Must be JPG, PNG, WebP, HEIC, or PDF";
   if (file.size > MAX_SIZE_BYTES) return `File must be under ${MAX_SIZE_MB} MB`;
   return null;
 }
@@ -433,7 +433,7 @@ export default function UpgradePage() {
       {submitError && <ErrorAlert message={submitError} />}
 
       <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500">
-        Upload clear photos or scans. Accepted formats: JPG, PNG, WebP, PDF. Max {MAX_SIZE_MB} MB each.
+        Upload clear photos or scans. Accepted formats: JPG, PNG, WebP, HEIC, PDF. Max {MAX_SIZE_MB} MB each.
       </div>
 
       {/* Identity document group — at least one required */}

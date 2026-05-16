@@ -16,7 +16,7 @@ export interface ImageUploadProps {
   error?: string;
 }
 
-const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
 const MAX_SIZE_MB = 5;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
@@ -65,7 +65,7 @@ export function ImageUpload({
 
     for (const file of incoming) {
       if (!ACCEPTED.includes(file.type)) {
-        setFileError("Use JPEG, PNG, WebP, or GIF images");
+        setFileError("Use JPEG, PNG, WebP, GIF, or HEIC images");
         continue;
       }
 
@@ -208,7 +208,7 @@ export function ImageUpload({
           </div>
 
           <p className="text-xs text-gray-400">
-            JPEG, PNG, WebP, or GIF up to {MAX_SIZE_MB}MB · {value.length}/{max}
+            JPEG, PNG, WebP, GIF, or HEIC up to {MAX_SIZE_MB}MB · {value.length}/{max}
           </p>
 
           <input

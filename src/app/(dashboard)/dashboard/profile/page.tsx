@@ -13,12 +13,12 @@ import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 
 // ─── File validation ──────────────────────────────────────────────────────────
 
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const MAX_IMAGE_BYTES      = 5 * 1024 * 1024; // 5 MB
 
 function validateImageFile(file: File): string | null {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type))
-    return "Only JPEG, PNG, or WebP images are allowed.";
+    return "Only JPEG, PNG, WebP, or HEIC images are allowed.";
   if (file.size > MAX_IMAGE_BYTES)
     return "Image must be under 5 MB.";
   return null;
@@ -78,7 +78,7 @@ function AvatarUpload({
       <input ref={inputRef} type="file" accept="image/*" className="sr-only" onChange={handleFile} />
       <div>
         <p className="text-sm font-semibold text-gray-900">Profile Photo</p>
-        <p className="mt-0.5 text-xs text-gray-500">JPG or PNG, max 5 MB. Click the photo to change it.</p>
+        <p className="mt-0.5 text-xs text-gray-500">JPG, PNG, or HEIC, max 5 MB. Click the photo to change it.</p>
         {avatar && (
           <button type="button" onClick={onRemove} className="mt-2 text-xs font-medium text-red-500 hover:text-red-700 transition-colors">
             Remove photo
