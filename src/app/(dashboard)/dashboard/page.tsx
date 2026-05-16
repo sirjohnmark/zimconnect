@@ -532,22 +532,40 @@ export default function DashboardPage() {
   const isBuyerRole  = user?.role === "BUYER";
   const isSellerRole = user?.role === "SELLER";
 
-  // Show buyer onboarding only when conversations loaded successfully and are empty
-  const isNewBuyer =
-    !loading && isBuyerRole && convsLoaded && conversations.length === 0;
+  // While API data is still loading, show a role-appropriate skeleton to
+  // prevent the default seller-dashboard layout from flashing on buyer accounts.
+  if (loading) {
+    return (
+      <div className="space-y-6 pb-10 animate-pulse">
+        <div className="h-24 rounded-2xl bg-gray-100" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-20 rounded-2xl bg-gray-100" />
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="aspect-[4/3] rounded-2xl bg-gray-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-  // Show seller onboarding only for sellers — never for buyers
+  // Show buyer onboarding when conversations loaded and are empty
+  const isNewBuyer = isBuyerRole && convsLoaded && conversations.length === 0;
+
+  // Show seller onboarding only for sellers with no activity yet
   const isNewSeller =
-    !loading &&
     isSellerRole &&
     activeListings === 0 &&
     convsLoaded && conversations.length === 0 &&
     (totalViews === 0 || totalViews === null);
 
-  const shouldShowAnalytics = !loading && isSellerRole && (activeListings ?? 0) > 0;
+  const shouldShowAnalytics = isSellerRole && (activeListings ?? 0) > 0;
 
   if (isNewBuyer) {
-    return <NewBuyerDashboard firstName={firstName} suggested={suggested} loading={loading} />;
+    return <NewBuyerDashboard firstName={firstName} suggested={suggested} loading={false} />;
   }
 
   if (isNewSeller) {
