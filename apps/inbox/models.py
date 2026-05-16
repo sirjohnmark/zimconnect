@@ -144,7 +144,9 @@ class ConversationParticipant(models.Model):
 
     class Meta:
         db_table = "conversation_participants"
-        unique_together = [("conversation", "user")]
+        constraints = [
+            models.UniqueConstraint(fields=["conversation", "user"], name="uq_conv_participant"),
+        ]
         indexes = [
             models.Index(fields=["user", "conversation"], name="idx_cp_user_conv"),
         ]
