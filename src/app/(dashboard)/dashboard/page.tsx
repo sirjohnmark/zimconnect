@@ -151,27 +151,33 @@ function NewBuyerDashboard({
 }) {
   return (
     <div className="space-y-8 pb-10">
-      <div className="rounded-2xl bg-apple-blue px-6 py-8 text-white shadow-md sm:px-10 sm:py-10">
-        <p className="text-sm font-semibold uppercase tracking-wider text-white/60">
-          Welcome to Sanganai
-        </p>
-        <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">{firstName} 👋</h1>
-        <p className="mt-3 max-w-md text-sm text-white/80">
-          Discover great deals, save your favourites, and message sellers directly.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href="/listings"
-            className="rounded-lg bg-white px-6 py-3 text-sm font-bold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]"
-          >
-            Browse Marketplace
-          </Link>
-          <Link
-            href="/dashboard/saved"
-            className="rounded-lg border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
-          >
-            My Saved Items
-          </Link>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 px-5 py-5 text-white shadow-md sm:px-7 sm:py-6">
+        <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-8 right-20 h-24 w-24 rounded-full bg-white/5" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50">
+              Welcome to Sanganai
+            </p>
+            <h1 className="mt-0.5 text-xl font-bold sm:text-2xl">{firstName} 👋</h1>
+            <p className="mt-1 hidden text-sm text-white/70 sm:block">
+              Discover great deals, save favourites, message sellers.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/listings"
+              className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm transition-all duration-75 hover:bg-blue-50 active:scale-[0.97]"
+            >
+              Browse Marketplace
+            </Link>
+            <Link
+              href="/dashboard/saved"
+              className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
+            >
+              Saved Items
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -225,34 +231,33 @@ function NewBuyerDashboard({
 function NewUserDashboard({ firstName }: { firstName: string }) {
   return (
     <div className="space-y-8 pb-10">
-      <div className="rounded-2xl bg-apple-blue px-6 py-8 text-white shadow-md sm:px-10 sm:py-10">
-        <p className="text-sm font-semibold uppercase tracking-wider text-white/60">
-          Welcome to Sanganai
-        </p>
-
-        <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">
-          {firstName} 👋
-        </h1>
-
-        <p className="mt-3 max-w-md text-sm text-white/80">
-          Let’s get you your first buyer. Post one item, make it visible, then
-          buyers can message you directly.
-        </p>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link
-            href="/dashboard/listings/create"
-            className="rounded-lg bg-white px-6 py-3 text-sm font-bold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]"
-          >
-            + Post Your First Listing
-          </Link>
-
-          <Link
-            href="/listings"
-            className="rounded-lg border border-white/30 bg-white/10 px-6 py-3 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
-          >
-            Browse Marketplace
-          </Link>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 px-5 py-5 text-white shadow-md sm:px-7 sm:py-6">
+        <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-8 right-20 h-24 w-24 rounded-full bg-white/5" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50">
+              Welcome to Sanganai
+            </p>
+            <h1 className="mt-0.5 text-xl font-bold sm:text-2xl">{firstName} 👋</h1>
+            <p className="mt-1 hidden text-sm text-white/70 sm:block">
+              Post your first listing and start getting buyers.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/dashboard/listings/create"
+              className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm transition-all duration-75 hover:bg-blue-50 active:scale-[0.97]"
+            >
+              + Post First Listing
+            </Link>
+            <Link
+              href="/listings"
+              className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
+            >
+              Browse
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -381,19 +386,25 @@ function AdminDashboard({ firstName }: { firstName: string }) {
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="rounded-2xl bg-apple-blue px-5 py-7 text-white shadow-md sm:px-10 sm:py-10">
-        <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-white/50">Admin Panel</p>
-        <h1 className="text-2xl font-extrabold sm:text-3xl">{firstName} 👋</h1>
-        <p className="mt-2 max-w-md text-sm text-white/70">
-          Manage the platform — review listings, moderate users, and handle seller applications.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/dashboard/admin" className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]">
-            Detailed Overview
-          </Link>
-          <Link href="/listings" className="rounded-lg border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]">
-            Browse Marketplace
-          </Link>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 px-5 py-5 text-white shadow-md sm:px-7 sm:py-6">
+        <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-8 right-20 h-24 w-24 rounded-full bg-white/5" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50">Admin Panel</p>
+            <h1 className="mt-0.5 text-xl font-bold sm:text-2xl">{firstName} 👋</h1>
+            <p className="mt-1 hidden text-sm text-white/70 sm:block">
+              Review listings, moderate users, manage the platform.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/dashboard/admin" className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm transition-all duration-75 hover:bg-blue-50 active:scale-[0.97]">
+              Detailed Overview
+            </Link>
+            <Link href="/listings" className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]">
+              Marketplace
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -549,42 +560,43 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-10 pb-10">
-      <div className="rounded-2xl bg-apple-blue px-5 py-7 text-white shadow-md sm:px-10 sm:py-10">
-        <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-white/50">
-          {greeting}
-        </p>
-
-        <h1 className="text-2xl font-extrabold sm:text-3xl">
-          {firstName} 👋
-        </h1>
-
-        <p className="mt-2 max-w-md text-sm text-white/70">
-          Here’s what’s happening with your listings and messages today.
-        </p>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          {isSellerRole && (
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-blue-500 px-5 py-5 text-white shadow-md sm:px-7 sm:py-6">
+        <div className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-8 right-20 h-24 w-24 rounded-full bg-white/5" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50">
+              {greeting}
+            </p>
+            <h1 className="mt-0.5 text-xl font-bold sm:text-2xl">{firstName} 👋</h1>
+            <p className="mt-1 hidden text-sm text-white/70 sm:block">
+              Here’s what’s happening with your account today.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {isSellerRole && (
+              <Link
+                href="/dashboard/listings/create"
+                className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-600 shadow-sm transition-all duration-75 hover:bg-blue-50 active:scale-[0.97]"
+              >
+                + Post a Listing
+              </Link>
+            )}
             <Link
-              href="/dashboard/listings/create"
-              className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-apple-blue shadow transition-all duration-75 hover:bg-light-gray active:scale-[0.97]"
+              href="/listings"
+              className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
             >
-              + Post a Listing
+              Browse
             </Link>
-          )}
-          <Link
-            href="/listings"
-            className="rounded-lg border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
-          >
-            Browse Marketplace
-          </Link>
-          {isBuyerRole && (
-            <Link
-              href="/dashboard/upgrade"
-              className="rounded-lg border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
-            >
-              Become a Seller
-            </Link>
-          )}
+            {isBuyerRole && (
+              <Link
+                href="/dashboard/upgrade"
+                className="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition-all duration-75 hover:bg-white/20 active:scale-[0.97]"
+              >
+                Become a Seller
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
