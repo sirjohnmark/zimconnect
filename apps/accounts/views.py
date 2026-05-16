@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 
 from apps.accounts import services
 from apps.accounts.serializers import (
+    BackupCodesResponseSerializer,
     BuyerDashboardSerializer,
     ForgotPasswordSerializer,
     LoginResponseSerializer,
@@ -19,6 +20,13 @@ from apps.accounts.serializers import (
     SellerUpgradeRequestSerializer,
     SellerUpgradeStatusSerializer,
     TokenResponseSerializer,
+    TwoFAChallengeResponseSerializer,
+    TwoFAConfirmSerializer,
+    TwoFADisableSerializer,
+    TwoFARegenerateCodesSerializer,
+    TwoFASetupResponseSerializer,
+    TwoFAStatusSerializer,
+    TwoFAVerifySerializer,
     UserLoginSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
@@ -35,6 +43,8 @@ from apps.common.throttling import (
     PasswordResetThrottle,
     RegisterRateThrottle,
     SellerUpgradeThrottle,
+    TwoFASetupThrottle,
+    TwoFAVerifyThrottle,
 )
 
 logger = logging.getLogger(__name__)
@@ -114,14 +124,20 @@ class LoginView(APIView):
         serializer = UserLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user, tokens = services.authenticate_user(
+        user, auth_data = services.authenticate_user(
             email=serializer.validated_data["email"],
             password=serializer.validated_data["password"],
         )
 
+        if auth_data.get("requires_2fa"):
+            return Response(
+                TwoFAChallengeResponseSerializer(auth_data).data,
+                status=status.HTTP_200_OK,
+            )
+
         return Response(
             {
-                "tokens": TokenResponseSerializer(tokens).data,
+                "tokens": TokenResponseSerializer(auth_data).data,
                 "user": UserProfileSerializer(user).data,
             },
             status=status.HTTP_200_OK,
@@ -616,3 +632,189 @@ class ResetPasswordView(APIView):
             {"message": "Your password has been reset successfully."},
             status=status.HTTP_200_OK,
         )
+
+
+# ──────────────────────────────────────────────
+# Two-Factor Authentication (TOTP)
+# ──────────────────────────────────────────────
+
+
+class TwoFAStatusView(APIView):
+    """GET /api/v1/auth/2fa/status/ — return current 2FA status."""
+
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=["2FA"],
+        operation_id="twofa_status",
+        summary="2FA status",
+        description="Return whether two-factor authentication is enabled for the authenticated user.",
+        responses={
+            200: OpenApiResponse(response=TwoFAStatusSerializer, description="2FA status"),
+            401: OpenApiResponse(description="Not authenticated"),
+        },
+    )
+    def get(self, request: Request) -> Response:
+        data = services.get_2fa_status(request.user)
+        return Response(TwoFAStatusSerializer(data).data, status=status.HTTP_200_OK)
+
+
+class TwoFASetupView(APIView):
+    """POST /api/v1/auth/2fa/setup/ — start TOTP setup, return QR code."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (TwoFASetupThrottle,)
+
+    @extend_schema(
+        tags=["2FA"],
+        operation_id="twofa_setup",
+        summary="Start 2FA setup",
+        description=(
+            "Generate a TOTP secret and return a QR code data URI + manual key. "
+            "Scan the QR code with your authenticator app, then call "
+            "POST /api/v1/auth/2fa/confirm/ with a 6-digit code to activate."
+        ),
+        request=None,
+        responses={
+            200: OpenApiResponse(response=TwoFASetupResponseSerializer, description="QR code + secret"),
+            401: OpenApiResponse(description="Not authenticated"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        data = services.start_totp_setup(request.user)
+        return Response(TwoFASetupResponseSerializer(data).data, status=status.HTTP_200_OK)
+
+
+class TwoFAConfirmView(APIView):
+    """POST /api/v1/auth/2fa/confirm/ — confirm setup with TOTP code, return backup codes."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (TwoFASetupThrottle,)
+
+    @extend_schema(
+        tags=["2FA"],
+        operation_id="twofa_confirm",
+        summary="Confirm 2FA setup",
+        description=(
+            "Submit the 6-digit code from your authenticator app to activate 2FA. "
+            "On success, 10 single-use backup recovery codes are returned — "
+            "save them somewhere safe. You will only see them once."
+        ),
+        request=TwoFAConfirmSerializer,
+        responses={
+            200: OpenApiResponse(response=BackupCodesResponseSerializer, description="Backup codes"),
+            400: OpenApiResponse(description="Invalid code or no setup in progress"),
+            401: OpenApiResponse(description="Not authenticated"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = TwoFAConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        codes = services.confirm_totp_setup(request.user, serializer.validated_data["code"])
+        return Response({"backup_codes": codes}, status=status.HTTP_200_OK)
+
+
+class TwoFAVerifyView(APIView):
+    """POST /api/v1/auth/2fa/verify/ — verify challenge token + TOTP/backup code."""
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (TwoFAVerifyThrottle,)
+
+    @extend_schema(
+        tags=["2FA"],
+        operation_id="twofa_verify",
+        summary="Verify 2FA during login",
+        description=(
+            "Submit the challenge_token received from the login endpoint along with "
+            "a 6-digit authenticator code or a backup recovery code. "
+            "On success, returns the same JWT pair + user profile as a normal login."
+        ),
+        request=TwoFAVerifySerializer,
+        responses={
+            200: OpenApiResponse(response=LoginResponseSerializer, description="JWT tokens + user profile"),
+            400: OpenApiResponse(description="Invalid or expired code"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = TwoFAVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user, tokens = services.verify_2fa_challenge(
+            token=serializer.validated_data["challenge_token"],
+            code=serializer.validated_data["code"],
+        )
+        return Response(
+            {
+                "tokens": TokenResponseSerializer(tokens).data,
+                "user": UserProfileSerializer(user).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class TwoFADisableView(APIView):
+    """POST /api/v1/auth/2fa/disable/ — disable 2FA after re-authentication."""
+
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(
+        tags=["2FA"],
+        operation_id="twofa_disable",
+        summary="Disable 2FA",
+        description=(
+            "Disable two-factor authentication. Requires the account password "
+            "and a valid TOTP or backup code to confirm identity."
+        ),
+        request=TwoFADisableSerializer,
+        responses={
+            200: OpenApiResponse(response=MessageResponseSerializer, description="2FA disabled"),
+            400: OpenApiResponse(description="Invalid password or code"),
+            401: OpenApiResponse(description="Not authenticated"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = TwoFADisableSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        services.disable_totp(
+            request.user,
+            password=serializer.validated_data["password"],
+            code=serializer.validated_data["code"],
+        )
+        return Response({"message": "Two-factor authentication has been disabled."}, status=status.HTTP_200_OK)
+
+
+class TwoFARegenerateBackupCodesView(APIView):
+    """POST /api/v1/auth/2fa/backup-codes/regenerate/ — regenerate backup codes."""
+
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (TwoFASetupThrottle,)
+
+    @extend_schema(
+        tags=["2FA"],
+        operation_id="twofa_regenerate_backup_codes",
+        summary="Regenerate backup codes",
+        description=(
+            "Invalidate all existing backup codes and generate 10 new ones. "
+            "Requires the account password and a valid TOTP code. "
+            "The new codes are returned once — save them immediately."
+        ),
+        request=TwoFARegenerateCodesSerializer,
+        responses={
+            200: OpenApiResponse(response=BackupCodesResponseSerializer, description="New backup codes"),
+            400: OpenApiResponse(description="Invalid password or code"),
+            401: OpenApiResponse(description="Not authenticated"),
+            429: OpenApiResponse(description="Rate limit exceeded"),
+        },
+    )
+    def post(self, request: Request) -> Response:
+        serializer = TwoFARegenerateCodesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        codes = services.regenerate_backup_codes(
+            request.user,
+            password=serializer.validated_data["password"],
+            code=serializer.validated_data["code"],
+        )
+        return Response({"backup_codes": codes}, status=status.HTTP_200_OK)

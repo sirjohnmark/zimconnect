@@ -31,4 +31,11 @@ urlpatterns = [
     # Seller upgrade
     path("upgrade-to-seller/", views.UpgradeToSellerView.as_view(), name="upgrade-to-seller"),
     path("upgrade-status/", views.UpgradeStatusView.as_view(), name="upgrade-status"),
+    # Two-Factor Authentication (TOTP)
+    path("2fa/status/", views.TwoFAStatusView.as_view(), name="2fa-status"),
+    path("2fa/setup/", views.TwoFASetupView.as_view(), name="2fa-setup"),
+    path("2fa/confirm/", views.TwoFAConfirmView.as_view(), name="2fa-confirm"),
+    path("2fa/verify/", views.TwoFAVerifyView.as_view(), name="2fa-verify"),
+    path("2fa/disable/", views.TwoFADisableView.as_view(), name="2fa-disable"),
+    path("2fa/backup-codes/regenerate/", views.TwoFARegenerateBackupCodesView.as_view(), name="2fa-backup-regen"),
 ]

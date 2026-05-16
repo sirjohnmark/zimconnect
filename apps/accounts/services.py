@@ -85,6 +85,18 @@ def authenticate_user(email: str, password: str) -> tuple[User, dict]:
         logger.warning("auth_failed email=%s reason=inactive user_id=%d", email, user.pk)
         raise ServiceError("This account has been deactivated.")
 
+    # Check 2FA
+    from apps.accounts.models import TwoFactorDevice
+
+    try:
+        device = TwoFactorDevice.objects.get(user=user, is_enabled=True)
+        if device.is_enabled:
+            challenge_token = create_2fa_challenge(user)
+            logger.info("user_authenticated_2fa_required email=%s user_id=%d", email, user.pk)
+            return user, {"requires_2fa": True, "challenge_token": challenge_token}
+    except TwoFactorDevice.DoesNotExist:
+        pass
+
     tokens = _generate_tokens(user)
     logger.info("user_authenticated email=%s user_id=%d", email, user.pk)
     return user, tokens
@@ -536,3 +548,335 @@ def confirm_password_reset(token: str, new_password: str) -> None:
     user.save(update_fields=["password", "password_reset_token", "password_reset_expires_at", "updated_at"])
 
     logger.info("password_reset_confirmed: user_id=%d", user.pk)
+
+
+# ──────────────────────────────────────────────
+# Two-Factor Authentication (TOTP)
+# ──────────────────────────────────────────────
+
+TOTP_CHALLENGE_TTL = 300           # 5 minutes
+TOTP_CHALLENGE_MAX_ATTEMPTS = 5
+TOTP_BACKUP_CODE_COUNT = 10
+
+
+def _get_fernet():
+    from cryptography.fernet import Fernet
+
+    key = getattr(settings, "TOTP_ENCRYPTION_KEY", "")
+    if not key:
+        raise ServiceError("Two-factor authentication is not configured on this server.")
+    return Fernet(key.encode() if isinstance(key, str) else key)
+
+
+def _encrypt_totp_secret(secret: str) -> str:
+    return _get_fernet().encrypt(secret.encode()).decode()
+
+
+def _decrypt_totp_secret(encrypted: str) -> str:
+    return _get_fernet().decrypt(encrypted.encode()).decode()
+
+
+def _hash_backup_code(code: str) -> str:
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+def _generate_backup_code() -> str:
+    """Return a cryptographically secure 12-character hex recovery code."""
+    return secrets.token_hex(6)
+
+
+def _challenge_key(token: str) -> str:
+    return f"2fa_challenge:{token}"
+
+
+def _challenge_attempts_key(token: str) -> str:
+    return f"2fa_attempts:{token}"
+
+
+def _generate_qr_code_data_uri(uri: str) -> str:
+    """Return a data:image/png;base64,... URI for the given otpauth URI."""
+    import base64
+    import io
+
+    import qrcode
+
+    qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=8, border=4)
+    qr.add_data(uri)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return "data:image/png;base64," + base64.b64encode(buf.read()).decode()
+
+
+def get_2fa_status(user) -> dict:
+    """Return whether 2FA is enabled and related metadata."""
+    from apps.accounts.models import TwoFactorDevice
+
+    try:
+        device = TwoFactorDevice.objects.get(user=user)
+        backup_remaining = user.backup_codes.filter(is_used=False).count()
+        return {
+            "is_enabled": device.is_enabled,
+            "enabled_at": device.enabled_at,
+            "backup_codes_remaining": backup_remaining if device.is_enabled else 0,
+        }
+    except TwoFactorDevice.DoesNotExist:
+        return {"is_enabled": False, "enabled_at": None, "backup_codes_remaining": 0}
+
+
+@transaction.atomic
+def start_totp_setup(user) -> dict:
+    """
+    Begin TOTP setup for a user.
+
+    Generates a new secret, stores it encrypted as `temp_encrypted_secret`,
+    and returns the QR code data URI + manual key for display.
+    The secret is NOT yet active — confirm_totp_setup() activates it.
+    """
+    import pyotp
+
+    from apps.accounts.models import TwoFactorDevice
+
+    secret = pyotp.random_base32()
+    issuer = getattr(settings, "TOTP_ISSUER", "Sanganai")
+    uri = pyotp.TOTP(secret).provisioning_uri(name=user.email, issuer_name=issuer)
+    qr_code = _generate_qr_code_data_uri(uri)
+
+    device, _ = TwoFactorDevice.objects.get_or_create(user=user)
+    device.temp_encrypted_secret = _encrypt_totp_secret(secret)
+    device.save(update_fields=["temp_encrypted_secret", "updated_at"])
+
+    logger.info("totp_setup_started user_id=%d", user.pk)
+    return {"secret": secret, "uri": uri, "qr_code": qr_code}
+
+
+@transaction.atomic
+def confirm_totp_setup(user, code: str) -> list[str]:
+    """
+    Verify the TOTP code from the user's authenticator app to complete setup.
+
+    On success: enables 2FA, moves temp secret to active secret, generates
+    and returns 10 plaintext backup codes (shown once, hashed before storage).
+    Raises ServiceError if no setup was started or the code is invalid.
+    """
+    import pyotp
+
+    from apps.accounts.models import BackupCode, TwoFactorDevice
+
+    try:
+        device = TwoFactorDevice.objects.select_for_update().get(user=user)
+    except TwoFactorDevice.DoesNotExist:
+        raise ServiceError("No 2FA setup in progress. Please start setup first.")
+
+    if not device.temp_encrypted_secret:
+        raise ServiceError("No 2FA setup in progress. Please start setup first.")
+
+    secret = _decrypt_totp_secret(device.temp_encrypted_secret)
+    totp = pyotp.TOTP(secret)
+
+    if not totp.verify(code, valid_window=1):
+        raise ServiceError("Invalid verification code. Please check your authenticator app and try again.")
+
+    device.encrypted_secret = device.temp_encrypted_secret
+    device.temp_encrypted_secret = ""
+    device.is_enabled = True
+    device.enabled_at = timezone.now()
+    device.save(update_fields=["encrypted_secret", "temp_encrypted_secret", "is_enabled", "enabled_at", "updated_at"])
+
+    plaintext_codes = _create_backup_codes(user)
+    logger.info("totp_enabled user_id=%d", user.pk)
+    return plaintext_codes
+
+
+def _create_backup_codes(user) -> list[str]:
+    """Delete existing backup codes for user and create fresh ones. Returns plaintext codes."""
+    from apps.accounts.models import BackupCode
+
+    user.backup_codes.all().delete()
+    codes = [_generate_backup_code() for _ in range(TOTP_BACKUP_CODE_COUNT)]
+    BackupCode.objects.bulk_create([
+        BackupCode(user=user, code_hash=_hash_backup_code(c))
+        for c in codes
+    ])
+    return codes
+
+
+def verify_totp_code(user, code: str) -> bool:
+    """
+    Verify a TOTP code against the user's active secret.
+
+    Returns True on success, raises ServiceError on failure.
+    Does NOT handle challenge tokens — use verify_2fa_challenge() for login flow.
+    """
+    import pyotp
+
+    from apps.accounts.models import TwoFactorDevice
+
+    try:
+        device = TwoFactorDevice.objects.get(user=user, is_enabled=True)
+    except TwoFactorDevice.DoesNotExist:
+        raise ServiceError("Two-factor authentication is not enabled on this account.")
+
+    secret = _decrypt_totp_secret(device.encrypted_secret)
+    if not pyotp.TOTP(secret).verify(code, valid_window=1):
+        raise ServiceError("Invalid verification code.")
+    return True
+
+
+def _try_backup_code(user, code: str) -> bool:
+    """
+    Attempt to consume a backup code. Returns True on success, False if not found.
+    Uses select_for_update to prevent double-use under concurrent requests.
+    """
+    from apps.accounts.models import BackupCode
+
+    code_hash = _hash_backup_code(code.strip().lower())
+    try:
+        bc = BackupCode.objects.select_for_update().get(user=user, code_hash=code_hash, is_used=False)
+    except BackupCode.DoesNotExist:
+        return False
+    bc.is_used = True
+    bc.used_at = timezone.now()
+    bc.save(update_fields=["is_used", "used_at"])
+    logger.info("backup_code_used user_id=%d", user.pk)
+    return True
+
+
+def create_2fa_challenge(user) -> str:
+    """
+    Store a short-lived challenge token in Redis and return it.
+
+    The token maps to user.pk with a TTL of TOTP_CHALLENGE_TTL seconds.
+    """
+    from django.core.cache import cache
+
+    token = secrets.token_urlsafe(32)
+    cache.set(_challenge_key(token), user.pk, TOTP_CHALLENGE_TTL)
+    logger.info("2fa_challenge_created user_id=%d", user.pk)
+    return token
+
+
+@transaction.atomic
+def verify_2fa_challenge(token: str, code: str) -> tuple:
+    """
+    Validate challenge_token + code (TOTP or backup).
+
+    Returns (user, tokens_dict) on success.
+    Raises ServiceError on invalid/expired token, wrong code, or too many attempts.
+    """
+    from django.core.cache import cache
+
+    user_id = cache.get(_challenge_key(token))
+    if user_id is None:
+        logger.warning("2fa_challenge_missing token_prefix=%s", token[:8])
+        raise ServiceError("This verification session has expired. Please log in again.")
+
+    attempts_key = _challenge_attempts_key(token)
+    attempts = cache.get(attempts_key, 0)
+
+    if attempts >= TOTP_CHALLENGE_MAX_ATTEMPTS:
+        cache.delete(_challenge_key(token))
+        logger.warning("2fa_challenge_locked user_id=%s", user_id)
+        raise ServiceError("Too many failed attempts. Please log in again.")
+
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        cache.delete(_challenge_key(token))
+        raise ServiceError("Invalid verification session. Please log in again.")
+
+    # Try TOTP code
+    try:
+        import pyotp
+        from apps.accounts.models import TwoFactorDevice
+
+        device = TwoFactorDevice.objects.get(user=user, is_enabled=True)
+        secret = _decrypt_totp_secret(device.encrypted_secret)
+        if pyotp.TOTP(secret).verify(code, valid_window=1):
+            cache.delete(_challenge_key(token))
+            cache.delete(attempts_key)
+            tokens = _generate_tokens(user)
+            logger.info("2fa_verified user_id=%d method=totp", user.pk)
+            return user, tokens
+    except Exception:  # noqa: BLE001
+        pass
+
+    # Try backup code
+    if _try_backup_code(user, code):
+        cache.delete(_challenge_key(token))
+        cache.delete(attempts_key)
+        tokens = _generate_tokens(user)
+        return user, tokens
+
+    # Both failed
+    cache.set(attempts_key, attempts + 1, TOTP_CHALLENGE_TTL)
+    remaining = TOTP_CHALLENGE_MAX_ATTEMPTS - (attempts + 1)
+    logger.warning("2fa_failed user_id=%d attempts=%d", user.pk, attempts + 1)
+    raise ServiceError(
+        f"Invalid code. {remaining} attempt{'s' if remaining != 1 else ''} remaining."
+        if remaining > 0
+        else "Invalid code. No more attempts — please log in again."
+    )
+
+
+@transaction.atomic
+def disable_totp(user, password: str, code: str) -> None:
+    """
+    Disable 2FA after verifying the user's password and a valid TOTP or backup code.
+    """
+    from apps.accounts.models import TwoFactorDevice
+
+    if not user.check_password(password):
+        raise ServiceError("Incorrect password.")
+
+    try:
+        device = TwoFactorDevice.objects.get(user=user, is_enabled=True)
+    except TwoFactorDevice.DoesNotExist:
+        raise ServiceError("Two-factor authentication is not enabled on this account.")
+
+    import pyotp
+
+    secret = _decrypt_totp_secret(device.encrypted_secret)
+    code_valid = pyotp.TOTP(secret).verify(code, valid_window=1) or _try_backup_code(user, code)
+
+    if not code_valid:
+        raise ServiceError("Invalid verification code. Please enter a valid authenticator code or backup code.")
+
+    device.is_enabled = False
+    device.encrypted_secret = ""
+    device.temp_encrypted_secret = ""
+    device.enabled_at = None
+    device.save(update_fields=["is_enabled", "encrypted_secret", "temp_encrypted_secret", "enabled_at", "updated_at"])
+    user.backup_codes.all().delete()
+
+    logger.info("totp_disabled user_id=%d", user.pk)
+
+
+@transaction.atomic
+def regenerate_backup_codes(user, password: str, code: str) -> list[str]:
+    """
+    Regenerate backup codes after verifying the user's password and a valid TOTP code.
+
+    Returns the new plaintext codes (shown once).
+    """
+    from apps.accounts.models import TwoFactorDevice
+
+    if not user.check_password(password):
+        raise ServiceError("Incorrect password.")
+
+    try:
+        device = TwoFactorDevice.objects.get(user=user, is_enabled=True)
+    except TwoFactorDevice.DoesNotExist:
+        raise ServiceError("Two-factor authentication is not enabled on this account.")
+
+    import pyotp
+
+    secret = _decrypt_totp_secret(device.encrypted_secret)
+    if not pyotp.TOTP(secret).verify(code, valid_window=1):
+        raise ServiceError("Invalid authenticator code.")
+
+    codes = _create_backup_codes(user)
+    logger.info("backup_codes_regenerated user_id=%d", user.pk)
+    return codes

@@ -90,6 +90,36 @@ class IsBuyerOrSeller(BasePermission):
         return self.has_permission(request, view)
 
 
+class RequireTwoFactor(BasePermission):
+    """
+    For ADMIN and MODERATOR users: block access unless 2FA is enabled.
+
+    Applied to admin dashboard views. Regular buyers/sellers are not affected.
+    Returns a 403 with code `2fa_setup_required` so the frontend can redirect
+    to the security settings page instead of showing a generic error.
+    """
+
+    message = "Admin and moderator accounts must have two-factor authentication enabled."
+
+    def has_permission(self, request, view):
+        from apps.common.constants import UserRole
+
+        if not request.user or not request.user.is_authenticated:
+            return True  # Let IsAuthenticated handle unauthenticated requests.
+
+        role = getattr(request.user, "role", None)
+        if role not in {UserRole.ADMIN, UserRole.MODERATOR}:
+            return True  # Non-admin users are not required to have 2FA.
+
+        try:
+            return request.user.totp_device.is_enabled
+        except Exception:  # noqa: BLE001
+            return False
+
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
+
+
 class IsAdminOrReadOnly(BasePermission):
     """
     Full access for ADMIN users; read-only for everyone else.

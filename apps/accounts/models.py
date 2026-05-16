@@ -127,6 +127,62 @@ class User(AbstractBaseUser, PermissionsMixin, SoftDeleteModel):
         return self.email
 
 
+class TwoFactorDevice(models.Model):
+    """
+    TOTP authenticator device for a user.
+
+    Secrets are Fernet-encrypted at rest. `temp_encrypted_secret` holds the
+    candidate secret during setup; it moves to `encrypted_secret` once the
+    user proves possession by entering a valid TOTP code.
+    """
+
+    user = models.OneToOneField(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="totp_device",
+    )
+    encrypted_secret = models.CharField(max_length=512, blank=True, default="")
+    temp_encrypted_secret = models.CharField(max_length=512, blank=True, default="")
+    is_enabled = models.BooleanField(default=False, db_index=True)
+    enabled_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "totp_devices"
+        verbose_name = "two-factor device"
+        verbose_name_plural = "two-factor devices"
+
+    def __str__(self) -> str:
+        return f"TwoFactorDevice(user={self.user_id}, enabled={self.is_enabled})"
+
+
+class BackupCode(models.Model):
+    """Single-use recovery code for 2FA bypass."""
+
+    user = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="backup_codes",
+        db_index=True,
+    )
+    code_hash = models.CharField(max_length=64, db_index=True)
+    is_used = models.BooleanField(default=False, db_index=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "backup_codes"
+        verbose_name = "backup code"
+        verbose_name_plural = "backup codes"
+        indexes = [
+            models.Index(fields=["user", "is_used"], name="bc_user_used_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"BackupCode(user={self.user_id}, used={self.is_used})"
+
+
 class SellerUpgradeRequest(models.Model):
     """
     Tracks a buyer's request to be upgraded to SELLER role.

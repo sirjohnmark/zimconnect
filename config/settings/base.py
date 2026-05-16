@@ -31,6 +31,18 @@ AT_API_KEY = config("AT_API_KEY", default="")
 AT_SENDER_ID = config("AT_SENDER_ID", default="")
 
 # ──────────────────────────────────────────────
+# Two-factor authentication (TOTP)
+# ──────────────────────────────────────────────
+# Fernet key for encrypting TOTP secrets at rest.
+# Generate via: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# MUST be changed in production — the default is dev-only.
+TOTP_ENCRYPTION_KEY = config(
+    "TOTP_ENCRYPTION_KEY",
+    default="c2FuZ2FuYWktZGV2LXRvdHAta2V5LW5vdC1wcm9kISE=",
+)
+TOTP_ISSUER = config("TOTP_ISSUER", default="Sanganai")
+
+# ──────────────────────────────────────────────
 # Application definition
 # ──────────────────────────────────────────────
 DJANGO_APPS = [

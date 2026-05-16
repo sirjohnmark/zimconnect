@@ -132,8 +132,8 @@ def send_password_reset_email(self, user_id: int, reset_token: str) -> None:
     try:
         from django.conf import settings as django_settings
 
-        frontend_url = getattr(django_settings, "FRONTEND_URL", "").rstrip("/")
-        reset_url = f"{frontend_url}/reset-password?token={reset_token}" if frontend_url else ""
+        frontend_url = (getattr(django_settings, "FRONTEND_URL", "") or "https://sanganai.co.zw").rstrip("/")
+        reset_url = f"{frontend_url}/reset-password?token={reset_token}"
 
         context = {
             "username": user.username,

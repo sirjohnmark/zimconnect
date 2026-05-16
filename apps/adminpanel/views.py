@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from apps.common.exceptions import NotFoundError, ServiceError
 from apps.common.pagination import StandardResultsSetPagination
-from apps.common.permissions import IsAdmin, IsModerator
+from apps.common.permissions import IsAdmin, IsModerator, RequireTwoFactor
 from apps.adminpanel import selectors, services
 from apps.adminpanel.serializers import (
     AdminDashboardSerializer,
@@ -42,7 +42,7 @@ User = get_user_model()
 class DashboardView(APIView):
     """GET /api/v1/admin/dashboard/ â€” aggregate stats (admin only)."""
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -68,7 +68,7 @@ class DashboardView(APIView):
 class AdminUserListView(APIView):
     """GET /api/v1/admin/users/ â€” paginated user list (admin only)."""
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -107,7 +107,7 @@ class AdminUserDetailView(APIView):
     PATCH /api/v1/admin/users/{id}/ â€” update is_active or role.
     """
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -189,7 +189,7 @@ class AdminUserDetailView(APIView):
 class ModerationListView(APIView):
     """GET /api/v1/admin/listings/moderation/ â€” draft listings for review."""
 
-    permission_classes = (IsModerator,)
+    permission_classes = (IsModerator, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -209,7 +209,7 @@ class ModerationListView(APIView):
 class ModerationDetailView(APIView):
     """GET /api/v1/admin/listings/moderation/{id}/ â€” single listing detail for review."""
 
-    permission_classes = (IsModerator,)
+    permission_classes = (IsModerator, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -230,7 +230,7 @@ class ModerationDetailView(APIView):
 class ApproveListingView(APIView):
     """POST /api/v1/admin/listings/moderation/{id}/approve/ â€” approve a draft listing."""
 
-    permission_classes = (IsModerator,)
+    permission_classes = (IsModerator, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -254,7 +254,7 @@ class ApproveListingView(APIView):
 class RejectListingView(APIView):
     """POST /api/v1/admin/listings/moderation/{id}/reject/ â€” reject a listing with reason."""
 
-    permission_classes = (IsModerator,)
+    permission_classes = (IsModerator, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -292,7 +292,7 @@ class RejectListingView(APIView):
 class DeletedListingsView(APIView):
     """GET /api/v1/admin/listings/deleted/ — list soft-deleted listings (admin only)."""
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -312,7 +312,7 @@ class DeletedListingsView(APIView):
 class RestoreListingView(APIView):
     """POST /api/v1/admin/listings/{id}/restore/ — restore a soft-deleted listing."""
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -346,7 +346,7 @@ class RestoreListingView(APIView):
 class SellerRequestListView(APIView):
     """GET /api/v1/admin/seller-requests/ — paginated list of upgrade requests."""
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -376,7 +376,7 @@ class SellerRequestListView(APIView):
 class SellerRequestDetailView(APIView):
     """GET /api/v1/admin/seller-requests/{id}/ — single request detail."""
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -399,7 +399,7 @@ class SellerRequestDetailView(APIView):
 class SellerRequestApproveView(APIView):
     """POST /api/v1/admin/seller-requests/{id}/approve/ — approve and promote user."""
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -428,7 +428,7 @@ class SellerRequestApproveView(APIView):
 class SellerRequestRejectView(APIView):
     """POST /api/v1/admin/seller-requests/{id}/reject/ — reject with mandatory reason."""
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -464,7 +464,7 @@ class SellerRequestRejectView(APIView):
 class UpgradeRequestListView(APIView):
     """GET /api/v1/admin/upgrade-requests/ — paginated flat list for the frontend upgrade-requests page."""
 
-    permission_classes = (IsModerator,)
+    permission_classes = (IsModerator, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -488,7 +488,7 @@ class UpgradeRequestListView(APIView):
 class UpgradeRequestApproveView(APIView):
     """POST /api/v1/admin/upgrade-requests/{id}/approve/ — approve and promote user (flat response)."""
 
-    permission_classes = (IsModerator,)
+    permission_classes = (IsModerator, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -511,7 +511,7 @@ class UpgradeRequestApproveView(APIView):
 class UpgradeRequestRejectView(APIView):
     """POST /api/v1/admin/upgrade-requests/{id}/reject/ — reject with reason (flat response)."""
 
-    permission_classes = (IsModerator,)
+    permission_classes = (IsModerator, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],
@@ -536,7 +536,7 @@ class UpgradeRequestRejectView(APIView):
 class DeletedUsersView(APIView):
     """GET /api/v1/admin/users/deleted/ — list soft-deleted users (admin only)."""
 
-    permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin, RequireTwoFactor)
 
     @extend_schema(
         tags=["Admin"],

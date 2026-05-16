@@ -57,6 +57,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """Read-only representation of a user profile."""
 
     is_verified = serializers.SerializerMethodField()
+    totp_enabled = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -74,6 +75,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "phone_verified",
             "email_verified",
             "is_verified",
+            "totp_enabled",
             "is_active",
             "created_at",
             "updated_at",
@@ -81,8 +83,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_is_verified(self, obj) -> bool:
-        """True if at least one verification channel (email or phone) is confirmed."""
         return obj.email_verified or obj.phone_verified
+
+    def get_totp_enabled(self, obj) -> bool:
+        try:
+            return obj.totp_device.is_enabled
+        except Exception:  # noqa: BLE001
+            return False
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -279,6 +286,81 @@ class BuyerDashboardSerializer(serializers.Serializer):
     seller_application = SellerUpgradeStatusSerializer(read_only=True, allow_null=True)
     saved_listings_count = serializers.IntegerField(read_only=True)
     conversations_count = serializers.IntegerField(read_only=True)
+
+
+# ──────────────────────────────────────────────
+# Two-Factor Authentication
+# ──────────────────────────────────────────────
+
+
+class TwoFAStatusSerializer(serializers.Serializer):
+    """Read-only 2FA status for the authenticated user."""
+
+    is_enabled = serializers.BooleanField(read_only=True)
+    enabled_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    backup_codes_remaining = serializers.IntegerField(read_only=True)
+
+
+class TwoFASetupResponseSerializer(serializers.Serializer):
+    """Returned by start_totp_setup: QR code + manual key."""
+
+    secret = serializers.CharField(read_only=True)
+    uri = serializers.CharField(read_only=True)
+    qr_code = serializers.CharField(read_only=True, help_text="data:image/png;base64,... URI")
+
+
+class TwoFAConfirmSerializer(serializers.Serializer):
+    """Confirm TOTP setup with a 6-digit code."""
+
+    code = serializers.RegexField(
+        regex=r"^\d{6}$",
+        help_text="6-digit code from your authenticator app.",
+    )
+
+
+class TwoFAChallengeResponseSerializer(serializers.Serializer):
+    """Returned by LoginView when the user has 2FA enabled."""
+
+    requires_2fa = serializers.BooleanField(read_only=True)
+    challenge_token = serializers.CharField(read_only=True)
+
+
+class TwoFAVerifySerializer(serializers.Serializer):
+    """Verify a 2FA challenge during login."""
+
+    challenge_token = serializers.CharField()
+    code = serializers.CharField(
+        min_length=6,
+        max_length=64,
+        help_text="6-digit TOTP code or a recovery backup code.",
+    )
+
+
+class TwoFADisableSerializer(serializers.Serializer):
+    """Disable 2FA — requires password + valid TOTP/backup code."""
+
+    password = serializers.CharField(write_only=True)
+    code = serializers.CharField(
+        min_length=6,
+        max_length=64,
+        help_text="6-digit TOTP code or a backup recovery code.",
+    )
+
+
+class TwoFARegenerateCodesSerializer(serializers.Serializer):
+    """Regenerate backup codes — requires password + valid TOTP code."""
+
+    password = serializers.CharField(write_only=True)
+    code = serializers.RegexField(
+        regex=r"^\d{6}$",
+        help_text="6-digit code from your authenticator app.",
+    )
+
+
+class BackupCodesResponseSerializer(serializers.Serializer):
+    """List of plaintext backup codes (shown once)."""
+
+    backup_codes = serializers.ListField(child=serializers.CharField(), read_only=True)
 
 
 class SellerListingStatsSerializer(serializers.Serializer):

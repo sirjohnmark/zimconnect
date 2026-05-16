@@ -89,3 +89,17 @@ class SellerUpgradeThrottle(UserRateThrottle):
 
     scope = "seller_upgrade"
     rate = "3/day"
+
+
+class TwoFAVerifyThrottle(AnonRateThrottle):
+    """10 2FA verification attempts per 15 minutes per IP (login-flow protection)."""
+
+    scope = "twofa_verify"
+    rate = "10/15min"
+
+
+class TwoFASetupThrottle(UserRateThrottle):
+    """5 2FA setup/confirm/regenerate operations per hour per user."""
+
+    scope = "twofa_setup"
+    rate = "5/hour"
