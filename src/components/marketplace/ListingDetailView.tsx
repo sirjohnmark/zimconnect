@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { BackButton } from "@/components/ui/BackButton";
 import { SaveButton } from "@/components/marketplace/SaveButton";
 import { ReviewsSection } from "@/components/marketplace/ReviewsSection";
 import { getListing, getListingBySlug } from "@/lib/api/listings";
 import { ApiError, NetworkError } from "@/lib/api/client";
+import { startConversation } from "@/lib/api/inbox";
+import { useAuth } from "@/lib/auth/useAuth";
 import type { Listing, ListingCondition } from "@/types/listing";
 import { cn } from "@/lib/utils";
 
@@ -117,9 +120,18 @@ interface Props {
 }
 
 export function ListingDetailView({ id, backHref, backLabel }: Props) {
+  const router = useRouter();
+  const { user } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Contact modal state
+  const [showContact, setShowContact] = useState(false);
+  const [contactMsg, setContactMsg] = useState("");
+  const [sending, setSending] = useState(false);
+  const [contactErr, setContactErr] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const numericId = parseInt(id, 10);
@@ -240,17 +252,33 @@ export function ListingDetailView({ id, backHref, backLabel }: Props) {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2.5">
-                <a
-                  href="/dashboard/messages"
-                  className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:scale-[0.97] transition-all"
-                >
-                  <svg className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M3.43 2.524A41.29 41.29 0 0 1 10 2c2.236 0 4.43.18 6.57.524 1.437.231 2.43 1.49 2.43 2.902v5.148c0 1.413-.993 2.67-2.43 2.902a41.202 41.202 0 0 1-5.183.501.78.78 0 0 0-.528.224l-3.202 3.203A.75.75 0 0 1 6.375 17v-2.136a41.415 41.415 0 0 1-2.945-.34C1.993 14.271 1 13.012 1 11.6V5.426c0-1.413.993-2.67 2.43-2.902Z" clipRule="evenodd" />
-                  </svg>
-                  Send Message
-                </a>
-              </div>
+              {user && user.id !== owner.id && (
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => { setContactErr(null); setShowContact(true); setTimeout(() => textareaRef.current?.focus(), 50); }}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-apple-blue py-3 text-sm font-semibold text-white hover:opacity-90 active:scale-[0.97] transition-all"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3.43 2.524A41.29 41.29 0 0 1 10 2c2.236 0 4.43.18 6.57.524 1.437.231 2.43 1.49 2.43 2.902v5.148c0 1.413-.993 2.67-2.43 2.902a41.202 41.202 0 0 1-5.183.501.78.78 0 0 0-.528.224l-3.202 3.203A.75.75 0 0 1 6.375 17v-2.136a41.415 41.415 0 0 1-2.945-.34C1.993 14.271 1 13.012 1 11.6V5.426c0-1.413.993-2.67 2.43-2.902Z" clipRule="evenodd" />
+                    </svg>
+                    Contact Seller
+                  </button>
+                </div>
+              )}
+              {!user && (
+                <div className="flex flex-col gap-2.5">
+                  <a
+                    href={`/login?next=/listings/${id}`}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-apple-blue py-3 text-sm font-semibold text-white hover:opacity-90 active:scale-[0.97] transition-all"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3.43 2.524A41.29 41.29 0 0 1 10 2c2.236 0 4.43.18 6.57.524 1.437.231 2.43 1.49 2.43 2.902v5.148c0 1.413-.993 2.67-2.43 2.902a41.202 41.202 0 0 1-5.183.501.78.78 0 0 0-.528.224l-3.202 3.203A.75.75 0 0 1 6.375 17v-2.136a41.415 41.415 0 0 1-2.945-.34C1.993 14.271 1 13.012 1 11.6V5.426c0-1.413.993-2.67 2.43-2.902Z" clipRule="evenodd" />
+                    </svg>
+                    Login to Contact
+                  </a>
+                </div>
+              )}
             </div>
           )}
 
@@ -272,6 +300,92 @@ export function ListingDetailView({ id, backHref, backLabel }: Props) {
           <SaveButton listingId={String(listingId)} variant="full" />
         </div>
       </div>
+
+      {/* ── Contact Seller Modal ── */}
+      {showContact && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Contact seller"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setShowContact(false)}
+          />
+
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Message {owner.username}</p>
+                <p className="text-xs text-gray-400 truncate mt-0.5">{title}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowContact(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 transition-colors"
+                aria-label="Close"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4 space-y-3">
+              <textarea
+                ref={textareaRef}
+                rows={4}
+                value={contactMsg}
+                onChange={(e) => setContactMsg(e.target.value)}
+                placeholder={`Hi, is the ${title} still available?`}
+                maxLength={2000}
+                className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-apple-blue transition-colors"
+              />
+              {contactErr && (
+                <p className="text-xs text-red-500">{contactErr}</p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 px-5 py-4 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setShowContact(false)}
+                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!contactMsg.trim() || sending}
+                onClick={async () => {
+                  const text = contactMsg.trim();
+                  if (!text) return;
+                  setSending(true);
+                  setContactErr(null);
+                  try {
+                    await startConversation({ listing_id: listingId, initial_message: text });
+                    setShowContact(false);
+                    setContactMsg("");
+                    router.push("/dashboard/messages");
+                  } catch {
+                    setContactErr("Failed to send message. Please try again.");
+                  } finally {
+                    setSending(false);
+                  }
+                }}
+                className="flex-1 rounded-xl bg-apple-blue py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40 transition-all"
+              >
+                {sending ? "Sending…" : "Send Message"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
