@@ -1,6 +1,9 @@
-import { Navbar } from "@/components/layout/Navbar";
+"use client";
 
-export default function MarketplaceLayout({ children }: { children: React.ReactNode }) {
+import { Navbar } from "@/components/layout/Navbar";
+import { AuthAwareShell } from "@/components/layout/AuthAwareShell";
+
+function GuestMarketplace({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -8,5 +11,13 @@ export default function MarketplaceLayout({ children }: { children: React.ReactN
         {children}
       </div>
     </div>
+  );
+}
+
+export default function MarketplaceLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthAwareShell guest={(c) => <GuestMarketplace>{c}</GuestMarketplace>}>
+      {children}
+    </AuthAwareShell>
   );
 }
