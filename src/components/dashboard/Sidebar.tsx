@@ -304,6 +304,10 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       pathname.startsWith("/dashboard/schools"),
   );
 
+  const visibleExploreNav = isBuyer
+    ? EXPLORE_NAV.filter((item) => item.href === "/dashboard/jobs")
+    : EXPLORE_NAV;
+
   const userDisplayName =
     `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim() ||
     user?.username ||
@@ -434,7 +438,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 
             {exploreOpen && (
               <div className="space-y-0.5">
-                {EXPLORE_NAV.map((item) => (
+                {visibleExploreNav.map((item) => (
                   <NavLink key={item.href} item={item} onClick={onNavClick} />
                 ))}
               </div>
