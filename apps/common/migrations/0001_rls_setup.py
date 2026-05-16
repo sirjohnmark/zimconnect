@@ -526,42 +526,42 @@ ALTER TABLE categories_category DISABLE ROW LEVEL SECURITY;
 """
 
 # ---------------------------------------------------------------------------
-# inbox_conversation table
+# conversations table
 # ---------------------------------------------------------------------------
 
 CONVERSATIONS_RLS = """
-ALTER TABLE inbox_conversation ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inbox_conversation FORCE ROW LEVEL SECURITY;
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversations FORCE ROW LEVEL SECURITY;
 
 -- Participants can read their own conversations.
 CREATE POLICY "conversations_select_participant"
-  ON inbox_conversation FOR SELECT
+  ON conversations FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM inbox_conversation_participants p
+      SELECT 1 FROM conversations_participants p
       WHERE p.conversation_id = id AND p.user_id = app_current_user_id()
     )
   );
 
 CREATE POLICY "conversations_select_admin"
-  ON inbox_conversation FOR SELECT
+  ON conversations FOR SELECT
   USING (app_is_moderator());
 
 CREATE POLICY "conversations_select_service"
-  ON inbox_conversation FOR SELECT
+  ON conversations FOR SELECT
   USING (app_is_service_role());
 
 -- Authenticated users can create conversations.
 CREATE POLICY "conversations_insert_auth"
-  ON inbox_conversation FOR INSERT
+  ON conversations FOR INSERT
   WITH CHECK (app_current_user_id() IS NOT NULL OR app_is_service_role());
 
 -- Participants or service can update (e.g. updated_at bump).
 CREATE POLICY "conversations_update_participant"
-  ON inbox_conversation FOR UPDATE
+  ON conversations FOR UPDATE
   USING (
     EXISTS (
-      SELECT 1 FROM inbox_conversation_participants p
+      SELECT 1 FROM conversations_participants p
       WHERE p.conversation_id = id AND p.user_id = app_current_user_id()
     )
     OR app_is_service_role()
@@ -569,131 +569,131 @@ CREATE POLICY "conversations_update_participant"
 """
 
 CONVERSATIONS_RLS_DROP = """
-DROP POLICY IF EXISTS "conversations_update_participant" ON inbox_conversation;
-DROP POLICY IF EXISTS "conversations_insert_auth" ON inbox_conversation;
-DROP POLICY IF EXISTS "conversations_select_service" ON inbox_conversation;
-DROP POLICY IF EXISTS "conversations_select_admin" ON inbox_conversation;
-DROP POLICY IF EXISTS "conversations_select_participant" ON inbox_conversation;
-ALTER TABLE inbox_conversation DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "conversations_update_participant" ON conversations;
+DROP POLICY IF EXISTS "conversations_insert_auth" ON conversations;
+DROP POLICY IF EXISTS "conversations_select_service" ON conversations;
+DROP POLICY IF EXISTS "conversations_select_admin" ON conversations;
+DROP POLICY IF EXISTS "conversations_select_participant" ON conversations;
+ALTER TABLE conversations DISABLE ROW LEVEL SECURITY;
 """
 
 # ---------------------------------------------------------------------------
-# inbox_conversation_participants  (M2M join table)
+# conversations_participants  (M2M join table)
 # ---------------------------------------------------------------------------
 
 PARTICIPANTS_RLS = """
-ALTER TABLE inbox_conversation_participants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inbox_conversation_participants FORCE ROW LEVEL SECURITY;
+ALTER TABLE conversations_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE conversations_participants FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY "participants_select_own"
-  ON inbox_conversation_participants FOR SELECT
+  ON conversations_participants FOR SELECT
   USING (user_id = app_current_user_id());
 
 CREATE POLICY "participants_select_participant"
-  ON inbox_conversation_participants FOR SELECT
+  ON conversations_participants FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM inbox_conversation_participants p2
+      SELECT 1 FROM conversations_participants p2
       WHERE p2.conversation_id = conversation_id
         AND p2.user_id = app_current_user_id()
     )
   );
 
 CREATE POLICY "participants_select_admin"
-  ON inbox_conversation_participants FOR SELECT
+  ON conversations_participants FOR SELECT
   USING (app_is_moderator());
 
 CREATE POLICY "participants_select_service"
-  ON inbox_conversation_participants FOR SELECT
+  ON conversations_participants FOR SELECT
   USING (app_is_service_role());
 
 CREATE POLICY "participants_insert_service"
-  ON inbox_conversation_participants FOR INSERT
+  ON conversations_participants FOR INSERT
   WITH CHECK (app_is_service_role() OR app_current_user_id() IS NOT NULL);
 
 CREATE POLICY "participants_delete_service"
-  ON inbox_conversation_participants FOR DELETE
+  ON conversations_participants FOR DELETE
   USING (app_is_service_role() OR app_is_admin());
 """
 
 PARTICIPANTS_RLS_DROP = """
-DROP POLICY IF EXISTS "participants_delete_service" ON inbox_conversation_participants;
-DROP POLICY IF EXISTS "participants_insert_service" ON inbox_conversation_participants;
-DROP POLICY IF EXISTS "participants_select_service" ON inbox_conversation_participants;
-DROP POLICY IF EXISTS "participants_select_admin" ON inbox_conversation_participants;
-DROP POLICY IF EXISTS "participants_select_participant" ON inbox_conversation_participants;
-DROP POLICY IF EXISTS "participants_select_own" ON inbox_conversation_participants;
-ALTER TABLE inbox_conversation_participants DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "participants_delete_service" ON conversations_participants;
+DROP POLICY IF EXISTS "participants_insert_service" ON conversations_participants;
+DROP POLICY IF EXISTS "participants_select_service" ON conversations_participants;
+DROP POLICY IF EXISTS "participants_select_admin" ON conversations_participants;
+DROP POLICY IF EXISTS "participants_select_participant" ON conversations_participants;
+DROP POLICY IF EXISTS "participants_select_own" ON conversations_participants;
+ALTER TABLE conversations_participants DISABLE ROW LEVEL SECURITY;
 """
 
 # ---------------------------------------------------------------------------
-# inbox_message table
+# messages table
 # ---------------------------------------------------------------------------
 
 MESSAGES_RLS = """
-ALTER TABLE inbox_message ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inbox_message FORCE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages FORCE ROW LEVEL SECURITY;
 
 -- Participants in the conversation can read all messages in it.
 CREATE POLICY "messages_select_participant"
-  ON inbox_message FOR SELECT
+  ON messages FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM inbox_conversation_participants p
+      SELECT 1 FROM conversations_participants p
       WHERE p.conversation_id = conversation_id
         AND p.user_id = app_current_user_id()
     )
   );
 
 CREATE POLICY "messages_select_admin"
-  ON inbox_message FOR SELECT
+  ON messages FOR SELECT
   USING (app_is_moderator());
 
 CREATE POLICY "messages_select_service"
-  ON inbox_message FOR SELECT
+  ON messages FOR SELECT
   USING (app_is_service_role());
 
 -- Only participants can send messages; sender must be themselves.
 CREATE POLICY "messages_insert_participant"
-  ON inbox_message FOR INSERT
+  ON messages FOR INSERT
   WITH CHECK (
     sender_id = app_current_user_id()
     AND EXISTS (
-      SELECT 1 FROM inbox_conversation_participants p
+      SELECT 1 FROM conversations_participants p
       WHERE p.conversation_id = conversation_id
         AND p.user_id = app_current_user_id()
     )
   );
 
 CREATE POLICY "messages_insert_service"
-  ON inbox_message FOR INSERT
+  ON messages FOR INSERT
   WITH CHECK (app_is_service_role());
 
 -- Messages can be marked read only within the conversation.
 CREATE POLICY "messages_update_participant"
-  ON inbox_message FOR UPDATE
+  ON messages FOR UPDATE
   USING (
     EXISTS (
-      SELECT 1 FROM inbox_conversation_participants p
+      SELECT 1 FROM conversations_participants p
       WHERE p.conversation_id = conversation_id
         AND p.user_id = app_current_user_id()
     )
   );
 
 CREATE POLICY "messages_update_service"
-  ON inbox_message FOR UPDATE
+  ON messages FOR UPDATE
   USING (app_is_service_role());
 """
 
 MESSAGES_RLS_DROP = """
-DROP POLICY IF EXISTS "messages_update_service" ON inbox_message;
-DROP POLICY IF EXISTS "messages_update_participant" ON inbox_message;
-DROP POLICY IF EXISTS "messages_insert_service" ON inbox_message;
-DROP POLICY IF EXISTS "messages_insert_participant" ON inbox_message;
-DROP POLICY IF EXISTS "messages_select_service" ON inbox_message;
-DROP POLICY IF EXISTS "messages_select_admin" ON inbox_message;
-DROP POLICY IF EXISTS "messages_select_participant" ON inbox_message;
-ALTER TABLE inbox_message DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "messages_update_service" ON messages;
+DROP POLICY IF EXISTS "messages_update_participant" ON messages;
+DROP POLICY IF EXISTS "messages_insert_service" ON messages;
+DROP POLICY IF EXISTS "messages_insert_participant" ON messages;
+DROP POLICY IF EXISTS "messages_select_service" ON messages;
+DROP POLICY IF EXISTS "messages_select_admin" ON messages;
+DROP POLICY IF EXISTS "messages_select_participant" ON messages;
+ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
 """
 
 # ---------------------------------------------------------------------------
@@ -701,10 +701,10 @@ ALTER TABLE inbox_message DISABLE ROW LEVEL SECURITY;
 # ---------------------------------------------------------------------------
 
 EXTRA_INDEXES = """
-CREATE INDEX IF NOT EXISTS idx_rls_users_is_deleted   ON users (is_deleted);
+CREATE INDEX IF NOT EXISTS idx_rls_users_is_deleted    ON users (is_deleted);
 CREATE INDEX IF NOT EXISTS idx_rls_listings_is_deleted ON listings (is_deleted);
-CREATE INDEX IF NOT EXISTS idx_rls_conv_participants   ON inbox_conversation_participants (user_id, conversation_id);
-CREATE INDEX IF NOT EXISTS idx_rls_messages_conv       ON inbox_message (conversation_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_rls_conv_participants   ON conversations_participants (user_id, conversation_id);
+CREATE INDEX IF NOT EXISTS idx_rls_messages_conv       ON messages (conversation_id, status);
 """
 
 DROP_EXTRA_INDEXES = """
@@ -719,7 +719,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("accounts", "0008_twofactordevice_backupcode"),
         ("listings", "0006_savedlisting"),
-        ("inbox", "0001_initial"),
+        ("inbox", "0002_inbox_v2"),
         ("categories", "0001_initial"),
     ]
 
