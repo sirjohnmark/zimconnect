@@ -95,6 +95,7 @@ function mockUser(overrides: Partial<AuthUser> & { id: string | number; email: s
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,
+    totp_enabled: false,
     id: typeof overrides.id === "string" ? parseInt(overrides.id, 10) || Date.now() : overrides.id,
     name: `${overrides.first_name} ${overrides.last_name}`.trim(),
   };

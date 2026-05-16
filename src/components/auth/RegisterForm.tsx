@@ -412,7 +412,7 @@ export function RegisterForm() {
         // Create account then login; loginUser (mock) builds user from stored account.
         // After login, immediately upgrade the verification flags — the OTP was just confirmed.
         await registerAuth(formData);
-        const loginResponse = await login({ email: formData.email, password: formData.password });
+        const loginResponse = await login({ email: formData.email, password: formData.password }) as import("@/lib/api/auth").LoginResponse;
         const verifiedUser: AuthUser = { ...loginResponse.user, email_verified: true, is_verified: true };
         setUser(verifiedUser);
       } else {

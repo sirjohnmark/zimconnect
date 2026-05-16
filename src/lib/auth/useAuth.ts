@@ -2,7 +2,7 @@
 
 import { useAuthContext } from "./AuthProvider";
 import type { AuthState } from "./AuthProvider";
-import type { AuthUser, LoginResponse } from "@/lib/api/auth";
+import type { AuthUser, LoginResult } from "@/lib/api/auth";
 import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
 
@@ -17,8 +17,8 @@ export interface UseAuthReturn {
   isAuthenticated: boolean;
   /** The current user, or null when unauthenticated / loading. */
   user: AuthUser | null;
-  /** Submit credentials — resolves with the full login response. */
-  login: (credentials: LoginInput, staySignedIn?: boolean) => Promise<LoginResponse>;
+  /** Submit credentials — resolves with tokens or a 2FA challenge. */
+  login: (credentials: LoginInput, staySignedIn?: boolean) => Promise<LoginResult>;
   /** Create a new account. In real API mode, OTP verification and login are handled separately. */
   register: (data: RegisterInput) => Promise<AuthUser>;
   /** Clears auth state, calls /api/auth/logout, and redirects. */

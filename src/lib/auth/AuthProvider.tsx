@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useReducer, useRef }
 import { useRouter } from "next/navigation";
 import { getMe, logoutUser, registerUser, updateProfile } from "@/lib/api/auth";
 import { ApiError, NetworkError } from "@/lib/api/client";
-import type { AuthUser, LoginResponse } from "@/lib/api/auth";
+import type { AuthUser, LoginResponse, LoginResult, TwoFAChallengeResponse } from "@/lib/api/auth";
 import type { ProfileUpdatePayload } from "@/lib/api/mappers";
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth";
 import { getStoredUser, clearStoredUser, setMemoryToken, saveUser, saveTokens, setStaySignedIn, login as authLogin } from "@/lib/auth/auth";
@@ -35,7 +35,7 @@ function authReducer(_state: AuthState, action: AuthAction): AuthState {
 
 interface AuthContextValue {
   auth: AuthState;
-  login: (credentials: LoginInput, staySignedIn?: boolean) => Promise<LoginResponse>;
+  login: (credentials: LoginInput, staySignedIn?: boolean) => Promise<LoginResult>;
   register: (data: RegisterInput) => Promise<AuthUser>;
   logout: () => Promise<void>;
   updateUser: (updates: ProfileUpdatePayload) => Promise<AuthUser>;
@@ -144,12 +144,16 @@ export function AuthProvider({ children, logoutRedirect = "/login" }: AuthProvid
     };
   }, []);
 
-  const login = useCallback(async (credentials: LoginInput, staySignedIn: boolean = false): Promise<LoginResponse> => {
+  const login = useCallback(async (credentials: LoginInput, staySignedIn: boolean = false): Promise<LoginResult> => {
     // Cancel any in-flight initSession so a stale 401 can't CLEAR_USER after SET_USER
     initCancelRef.current?.();
     const response = await authLogin(credentials, staySignedIn);
-    dispatch({ type: "SET_USER", user: response.user });
-    return response;
+    if ("requires_2fa" in response && response.requires_2fa) {
+      return response as TwoFAChallengeResponse;
+    }
+    const lr = response as LoginResponse;
+    dispatch({ type: "SET_USER", user: lr.user });
+    return lr;
   }, []);
 
   // register creates the account (and in mock mode also logs in immediately).

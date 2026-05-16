@@ -67,13 +67,14 @@ export function LoginForm() {
       const response = await login(data, staySignedIn);
 
       if ("requires_2fa" in response && response.requires_2fa) {
+        const { challenge_token } = response as unknown as import("@/lib/api/auth").TwoFAChallengeResponse;
         router.push(
-          `/verify-2fa?token=${encodeURIComponent(response.challenge_token)}&redirect=${encodeURIComponent(redirectTo)}&stay=${staySignedIn ? "1" : "0"}`,
+          `/verify-2fa?token=${encodeURIComponent(challenge_token)}&redirect=${encodeURIComponent(redirectTo)}&stay=${staySignedIn ? "1" : "0"}`,
         );
         return;
       }
 
-      const u = response.user;
+      const u = (response as import("@/lib/api/auth").LoginResponse).user;
       const isAdmin = u.role === "ADMIN" || u.role === "MODERATOR";
       const isVerified = u.is_verified || u.email_verified;
       if (!isAdmin && !isVerified) {
