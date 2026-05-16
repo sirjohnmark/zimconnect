@@ -33,9 +33,11 @@ class _ListingInlineSerializer(serializers.Serializer):
     primary_image = serializers.SerializerMethodField()
 
     def get_primary_image(self, obj) -> str | None:
+        request = self.context.get("request")
         for img in obj.images.all():
-            if img.is_primary:
-                return img.image.url if img.image else None
+            if img.is_primary and img.image:
+                url = img.image.url
+                return request.build_absolute_uri(url) if request else url
         return None
 
 
@@ -112,7 +114,7 @@ class ConversationListSerializer(serializers.ModelSerializer):
         other = obj.participants.exclude(pk=request.user.pk).first()
         if other is None:
             return None
-        return _UserInlineSerializer(other).data
+        return _UserInlineSerializer(other, context=self.context).data
 
     def get_last_message(self, obj: Conversation) -> dict | None:
         msg = obj.last_message
