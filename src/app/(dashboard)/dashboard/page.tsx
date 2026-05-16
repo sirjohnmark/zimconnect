@@ -108,7 +108,7 @@ function CompactListingCard({ listing }: { listing: Listing }) {
 
   return (
     <Link
-      href={`/listings/${listing.slug ?? listing.id}`}
+      href={`/dashboard/listings/${listing.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
